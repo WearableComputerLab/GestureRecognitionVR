@@ -23,7 +23,7 @@ public class GestureDetect : MonoBehaviour
 {
     // Gesture Recognition
     [SerializeField]
-    private float detectionThreshold = 0.1f;
+    private float detectionThreshold = 0.5f;
 
     // Hands to record
     [SerializeField]
@@ -40,6 +40,9 @@ public class GestureDetect : MonoBehaviour
 
     [SerializeField]
     private Gesture currentGesture;
+
+    [SerializeField]
+    private Gesture previousGesture;
 
     // Start is called before the first frame update
     void Start()
@@ -58,12 +61,20 @@ public class GestureDetect : MonoBehaviour
         {
 
         }
-
         
 
         if(Input.GetKeyDown(KeyCode.Space)){
             Save(); 
             currentGesture = Recognize();
+            bool hasRecognized = !currentGesture.Equals(new Gesture());
+            //check if gesture is new 
+            if(hasRecognized && !currentGesture.Equals(previousGesture))
+            {
+                Debug.Log("New Gesture Recognized: " + currentGesture.name);
+                previousGesture = currentGesture;
+                currentGesture.onRecognized.Invoke();
+            }
+
             //GesturesToJSON();
         }
     }
@@ -132,6 +143,8 @@ public class GestureDetect : MonoBehaviour
             gestures = JsonUtility.FromJson<SerializableList<Gesture>>(Contents);
         }
     }
+
+
 
     Gesture Recognize()
     {
