@@ -62,7 +62,6 @@ public class GestureDetect : MonoBehaviour
 
         }
         
-
         if(Input.GetKeyDown(KeyCode.Space)){
             Save(); 
             currentGesture = Recognize();
@@ -143,8 +142,6 @@ public class GestureDetect : MonoBehaviour
             gestures = JsonUtility.FromJson<SerializableList<Gesture>>(Contents);
         }
     }
-
-
 
     Gesture Recognize()
     {
