@@ -74,6 +74,7 @@ public class GestureDetect : MonoBehaviour
         //Check if gesture is recognisable and new, log recognised gesture
         if (hasRecognized && !currentGesture.Equals(previousGesture))
         {
+            //Do something for specific Gesture here?
             Debug.Log("New Gesture Recognized: " + currentGesture.name);
             previousGesture = currentGesture;
             currentGesture.onRecognized.Invoke();
