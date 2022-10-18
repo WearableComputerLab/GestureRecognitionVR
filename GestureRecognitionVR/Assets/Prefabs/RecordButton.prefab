@@ -7,6 +7,14 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1295694776053313538, guid: f23f5360ed2881a488e07931732c55cc, type: 3}
+      propertyPath: m_text
+      value: Press to Record
+      objectReference: {fileID: 0}
+    - target: {fileID: 1295694776053313538, guid: f23f5360ed2881a488e07931732c55cc, type: 3}
+      propertyPath: m_fontSize
+      value: 2.9
+      objectReference: {fileID: 0}
     - target: {fileID: 6245046855933183558, guid: f23f5360ed2881a488e07931732c55cc, type: 3}
       propertyPath: m_Name
       value: RecordButton
