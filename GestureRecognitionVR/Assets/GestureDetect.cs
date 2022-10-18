@@ -62,19 +62,21 @@ public class GestureDetect : MonoBehaviour
 
         }
         
+        //Press Space to record a gesture 
         if(Input.GetKeyDown(KeyCode.Space)){
             Save(); 
-            currentGesture = Recognize();
-            bool hasRecognized = !currentGesture.Equals(new Gesture());
-            //check if gesture is new 
-            if(hasRecognized && !currentGesture.Equals(previousGesture))
-            {
-                Debug.Log("New Gesture Recognized: " + currentGesture.name);
-                previousGesture = currentGesture;
-                currentGesture.onRecognized.Invoke();
-            }
-
             //GesturesToJSON();
+        }
+
+        //Check for Recognition (returns recognised Gesture)
+        currentGesture = Recognize();
+        bool hasRecognized = !currentGesture.Equals(new Gesture());
+        //Check if gesture is recognisable and new, log recognised gesture
+        if (hasRecognized && !currentGesture.Equals(previousGesture))
+        {
+            Debug.Log("New Gesture Recognized: " + currentGesture.name);
+            previousGesture = currentGesture;
+            currentGesture.onRecognized.Invoke();
         }
     }
 
@@ -92,7 +94,7 @@ public class GestureDetect : MonoBehaviour
     }
 
     /// <summary>
-    /// Records a gesture when pressing 'R' on the keyboard
+    /// Records a gesture when pressing 'Space' on the keyboard
     /// </summary>
     public void Save()
     {
