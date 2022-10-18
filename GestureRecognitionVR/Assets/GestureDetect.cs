@@ -75,6 +75,8 @@ public class GestureDetect : MonoBehaviour
         if (hasRecognized && !currentGesture.Equals(previousGesture))
         {
             //Do something for specific Gesture here?
+            //if(currentGesture.name == "Thumbs Up")?
+
             Debug.Log("New Gesture Recognized: " + currentGesture.name);
             previousGesture = currentGesture;
             currentGesture.onRecognized.Invoke();
