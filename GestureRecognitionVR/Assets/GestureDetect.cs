@@ -44,6 +44,10 @@ public class GestureDetect : MonoBehaviour
     [SerializeField]
     private Gesture previousGesture;
 
+    [SerializeField]
+    public GameObject cube;
+    public Renderer cubeRenderer;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -53,8 +57,7 @@ public class GestureDetect : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-       hands = FindObjectsOfType<OVRSkeleton>();
-
+        hands = FindObjectsOfType<OVRSkeleton>();
         findHandtoRecord();
         
         for(int i = 0; i < hands.Length; i++)
@@ -74,12 +77,17 @@ public class GestureDetect : MonoBehaviour
         //Check if gesture is recognisable and new, log recognised gesture
         if (hasRecognized && !currentGesture.Equals(previousGesture))
         {
-            //Do something for specific Gesture here?
-            //if(currentGesture.name == "Thumbs Up")?
-
             Debug.Log("New Gesture Recognized: " + currentGesture.name);
             previousGesture = currentGesture;
             currentGesture.onRecognized.Invoke();
+
+            //If current gesture is thumbs up, change cube color to green, any other gesture change to red
+            if (currentGesture.name == "Thumbs Up")
+            {
+                cubeRenderer.material.SetColor("_color", Color.green);
+            } else { 
+                cubeRenderer.material.SetColor("_color", Color.red); 
+            }
         }
     }
 
