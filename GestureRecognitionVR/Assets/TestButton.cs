@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -16,9 +17,11 @@ public class TestButton : MonoBehaviour{
     // Update is called once per frame
     void Update()
     {
-        if (button.onClick != null)
-        {
-            print("Button Pressed");
-        }
+       
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        print(other.name);
     }
 }

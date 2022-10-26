@@ -70,6 +70,7 @@ public class GestureDetect : MonoBehaviour
             Save(); 
             //GesturesToJSON();
         }
+        
 
         //Check for Recognition (returns recognised Gesture)
         currentGesture = Recognize();
@@ -100,7 +101,7 @@ public class GestureDetect : MonoBehaviour
         {
             handToRecord = hands[0];
             fingerBones = new List<OVRBone>(handToRecord.Bones);
-            print(fingerBones.Count);
+            /*print(fingerBones.Count);*/
         }
     }
 
