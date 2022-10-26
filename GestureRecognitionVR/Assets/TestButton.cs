@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 public class TestButton : MonoBehaviour{
-    Button button;
+    public GestureDetect detector;
     
     
     // Start is called before the first frame update
@@ -22,6 +22,8 @@ public class TestButton : MonoBehaviour{
 
     private void OnTriggerEnter(Collider other)
     {
+        detector.Save();
+        detector.GesturesToJSON();
         print(other.name);
     }
 }

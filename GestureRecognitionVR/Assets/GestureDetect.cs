@@ -1,9 +1,12 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.InputSystem.Utilities;
+using UnityEngine.UI;
 
 [System.Serializable]
 public struct Gesture
@@ -11,6 +14,16 @@ public struct Gesture
     public string name;
     public List<Vector3> fingerDatas;
     public UnityEvent onRecognized;
+
+    public Gesture(UnityAction func)
+    {
+        name = "UNNAMED";
+        fingerDatas = null;
+        
+        onRecognized = new UnityEvent();
+        onRecognized.AddListener(func);
+    }
+    
 }
 
 [System.Serializable]
@@ -59,36 +72,30 @@ public class GestureDetect : MonoBehaviour
     {
         hands = FindObjectsOfType<OVRSkeleton>();
         findHandtoRecord();
-        
-        for(int i = 0; i < hands.Length; i++)
+        /*for(int i = 0; i < hands.Length; i++)
         {
 
-        }
+        }*/
         
-        //Press Space to record a gesture 
-        if(Input.GetKeyDown(KeyCode.Space)){
+        //Press Space to record a gesture - This was replaced with a Button within the Virtual Space
+        /*if(Input.GetKeyDown(KeyCode.Space)){
             Save(); 
             //GesturesToJSON();
-        }
+        }*/
         
 
         //Check for Recognition (returns recognised Gesture)
         currentGesture = Recognize();
-        bool hasRecognized = !currentGesture.Equals(new Gesture());
+        bool hasRecognized = !currentGesture.Equals(new Gesture(Thumbs));
         //Check if gesture is recognisable and new, log recognised gesture
         if (hasRecognized && !currentGesture.Equals(previousGesture))
         {
+            print("5");
             Debug.Log("New Gesture Recognized: " + currentGesture.name);
             previousGesture = currentGesture;
             currentGesture.onRecognized.Invoke();
-
-            //If current gesture is thumbs up, change cube color to green, any other gesture change to red
-            if (currentGesture.name == "Thumbs Up")
-            {
-                cubeRenderer.material.SetColor("_color", Color.green);
-            } else { 
-                cubeRenderer.material.SetColor("_color", Color.red); 
-            }
+            print("6");
+            print("7");
         }
     }
 
@@ -113,11 +120,9 @@ public class GestureDetect : MonoBehaviour
         Gesture g = new Gesture();
         g.name = "New Gesture";
         List<Vector3> data = new List<Vector3>();
-        print(fingerBones.Count);
         foreach(OVRBone bone in fingerBones)
         {
             data.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
-            print("Test");
         }
         g.fingerDatas = data;
         gestures.list.Add(g);
@@ -157,9 +162,20 @@ public class GestureDetect : MonoBehaviour
         }
     }
 
+    public void Thumbs()
+    {
+        //If current gesture is thumbs up, change cube color to green, any other gesture change to red
+        if (currentGesture.name == "Thumbs Up")
+        {
+            cubeRenderer.material.SetColor("_color", Color.green);
+        } else { 
+            cubeRenderer.material.SetColor("_color", Color.red); 
+        }
+    }
+
     Gesture Recognize()
     {
-        Gesture currentGesture = new Gesture();
+        Gesture currentGesture = new Gesture(Thumbs);
         float currentMin = Mathf.Infinity;
 
         foreach(Gesture gesture in gestures.list)

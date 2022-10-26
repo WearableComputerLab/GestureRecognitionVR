@@ -17,11 +17,19 @@ public class ConsoleLogger : MonoBehaviour
         if (!condition.StartsWith("[OVRManager]") && !condition.StartsWith("[OculusXRFeature]"))
         {
             tmp.text += condition + "\n";
+            if (type == LogType.Exception)
+            {
+                tmp.text += stacktrace + "\n";
+            }
         }
 
         if (tmp.isTextOverflowing)
         {
             tmp.text = condition + "\n";
+            if (type == LogType.Exception)
+            {
+                tmp.text += stacktrace + "\n";
+            }
         }
     }
 
