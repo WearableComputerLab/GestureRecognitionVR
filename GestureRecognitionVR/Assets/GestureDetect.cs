@@ -19,52 +19,56 @@ public struct Gesture
     {
         name = "UNNAMED";
         fingerDatas = null;
-        
+
         onRecognized = new UnityEvent();
         onRecognized.AddListener(func);
     }
-    
+
+    public override bool Equals(object obj)
+    {
+        Vector3 test1 = Vector3.zero;
+        Vector3 test2 = Vector3.zero;
+
+        float diff = (test1 - test2).magnitude;
+        //if current fingerdata = saved finger data, return.
+        //iterate through fingerdata,
+
+        //grab tip of thumb, find distance vector - vector.magnitude
+        return base.Equals(obj);
+    }
 }
 
 [System.Serializable]
-public class SerializableList <T>
+public class SerializableList<T>
 {
-    public List <T> list;
+    public List<T> list;
 }
 
 public class GestureDetect : MonoBehaviour
 {
     // Gesture Recognition
-    [SerializeField]
-    private float detectionThreshold = 0.5f;
+    [SerializeField] private float detectionThreshold = 0.5f;
 
     // Hands to record
-    [SerializeField]
-    private OVRSkeleton[] hands;
+    [SerializeField] private OVRSkeleton[] hands;
 
-    [SerializeField]
-    private SerializableList<Gesture> gestures;
+    [SerializeField] private SerializableList<Gesture> gestures;
 
- // Record new gestures
-    [Header("Recording")]
-    [SerializeField]
-    private OVRSkeleton handToRecord;
+    // Record new gestures
+    [Header("Recording")] [SerializeField] private OVRSkeleton handToRecord;
     private List<OVRBone> fingerBones = new List<OVRBone>();
 
-    [SerializeField]
-    private Gesture currentGesture;
+    private Gesture? currentGesture;
+    private Gesture? previousGesture;
 
-    [SerializeField]
-    private Gesture previousGesture;
-
-    [SerializeField]
-    public GameObject cube;
+    [SerializeField] public GameObject cube;
     public Renderer cubeRenderer;
+
 
     // Start is called before the first frame update
     void Start()
     {
-       readGesturesFromJSON();
+        readGesturesFromJSON();
     }
 
     // Update is called once per frame
@@ -76,30 +80,27 @@ public class GestureDetect : MonoBehaviour
         {
 
         }*/
-        
+
         //Press Space to record a gesture - This was replaced with a Button within the Virtual Space
         /*if(Input.GetKeyDown(KeyCode.Space)){
             Save(); 
             //GesturesToJSON();
         }*/
-        
+
 
         //Check for Recognition (returns recognised Gesture)
         currentGesture = Recognize();
-        bool hasRecognized = !currentGesture.Equals(new Gesture(Thumbs));
+        bool hasRecognized = currentGesture.HasValue;
         //Check if gesture is recognisable and new, log recognised gesture
-        if (hasRecognized && !currentGesture.Equals(previousGesture))
+        if (hasRecognized && (!previousGesture.HasValue || !currentGesture.Value.Equals(previousGesture.Value)))
         {
-            print("5");
-            Debug.Log("New Gesture Recognized: " + currentGesture.name);
+            Debug.Log("New Gesture Recognized: " + currentGesture.Value.name);
             previousGesture = currentGesture;
-            currentGesture.onRecognized.Invoke();
-            print("6");
-            print("7");
+            currentGesture.Value.onRecognized.Invoke();
         }
     }
 
-   /// <summary>
+    /// <summary>
     /// Find a hand to record 
     /// </summary>
     private void findHandtoRecord()
@@ -118,30 +119,44 @@ public class GestureDetect : MonoBehaviour
     public void Save()
     {
         Gesture g = new Gesture();
-        g.name = "New Gesture";
+        g.name = "Thumbs up";
         List<Vector3> data = new List<Vector3>();
-        foreach(OVRBone bone in fingerBones)
+        foreach (OVRBone bone in fingerBones)
         {
             data.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
         }
+
         g.fingerDatas = data;
+        g.onRecognized = new UnityEvent();
+        if (g.name == "Thumbs up")
+        {
+            g.onRecognized.AddListener(Thumbs);
+        }
+        else if (g.name == "Peace")
+        {
+        }
+
         gestures.list.Add(g);
+        print("saved item");
     }
 
     public void GesturesToJSON()
     {
-        string json = JsonUtility.ToJson(gestures);
-        string saveFile = "savedGestures.json";
+        string json = JsonUtility.ToJson(gestures, true);
+        string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
+        string saveFile = directory + "savedGestures.json";
+        
+        if (!Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
         if (File.Exists(saveFile))
         {
             File.Delete(saveFile);
-            File.WriteAllText(saveFile, json);
-        } 
-        else
-        {
-            File.WriteAllText(saveFile, json);
         }
-        
+
+        File.WriteAllText(saveFile, json);
     }
 
     private void OnValidate()
@@ -155,8 +170,10 @@ public class GestureDetect : MonoBehaviour
 
     public void readGesturesFromJSON()
     {
-        string saveFile = "savedGestures.json";
-        if (File.Exists(saveFile)){
+        string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
+        string saveFile = directory + "savedGestures.json";
+        if (File.Exists(saveFile))
+        {
             string Contents = File.ReadAllText(saveFile);
             gestures = JsonUtility.FromJson<SerializableList<Gesture>>(Contents);
         }
@@ -165,40 +182,45 @@ public class GestureDetect : MonoBehaviour
     public void Thumbs()
     {
         //If current gesture is thumbs up, change cube color to green, any other gesture change to red
-        if (currentGesture.name == "Thumbs Up")
+        if (currentGesture.Value.name == "Thumbs Up")
         {
             cubeRenderer.material.SetColor("_color", Color.green);
-        } else { 
-            cubeRenderer.material.SetColor("_color", Color.red); 
+        }
+        else
+        {
+            cubeRenderer.material.SetColor("_color", Color.red);
         }
     }
 
-    Gesture Recognize()
+    Gesture? Recognize()
     {
-        Gesture currentGesture = new Gesture(Thumbs);
+        Gesture? currentGesture = null;
         float currentMin = Mathf.Infinity;
 
-        foreach(Gesture gesture in gestures.list)
+        foreach (Gesture gesture in gestures.list)
         {
             float sumDistance = 0;
             bool discard = false;
-            for(int i = 0; i < fingerBones.Count; i++)
+            for (int i = 0; i < fingerBones.Count; i++)
             {
                 Vector3 currentData = handToRecord.transform.InverseTransformPoint(fingerBones[i].Transform.position);
                 float distance = Vector3.Distance(currentData, gesture.fingerDatas[i]);
-                if(distance > detectionThreshold)
+                if (distance > detectionThreshold)
                 {
                     discard = true;
                     break;
                 }
+
                 sumDistance += distance;
             }
-            if(!discard && sumDistance < currentMin)
+
+            if (!discard && sumDistance < currentMin)
             {
                 currentMin = sumDistance;
                 currentGesture = gesture;
             }
         }
+
         return currentGesture;
     }
 }
