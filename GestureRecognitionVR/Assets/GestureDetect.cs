@@ -182,7 +182,7 @@ public class GestureDetect : MonoBehaviour
     public void Thumbs()
     {
         //If current gesture is thumbs up, change cube color to green, any other gesture change to red
-        if (currentGesture.Value.name == "Thumbs Up")
+        if (currentGesture.Value.name == "Thumbs up")
         {
             cubeRenderer.material.SetColor("_color", Color.green);
         }
