@@ -63,6 +63,8 @@ public class GestureDetect : MonoBehaviour
 
     [SerializeField] public GameObject cube;
     public Renderer cubeRenderer;
+    public Color newColour;
+    public Color oldColour;
 
 
     // Start is called before the first frame update
@@ -181,15 +183,17 @@ public class GestureDetect : MonoBehaviour
 
     public void Thumbs()
     {
+        StartCoroutine(ThumbsRoutine());
+    }
+
+    public IEnumerator ThumbsRoutine()
+    {
         //If current gesture has name "Thumbs up", change cube color to green, any other gesture change to red
-        if (currentGesture.Value.name == "Thumbs up")
-        {
-            cubeRenderer.material.shader = Shader.Find("Blue");
-        }
-        else
-        {
-            cubeRenderer.material.SetColor("_color", Color.red);
-        }
+        cubeRenderer.material.color = newColour;
+
+        yield return new WaitForSeconds(2);
+
+        cubeRenderer.material.color = oldColour;
     }
 
     Gesture? Recognize()

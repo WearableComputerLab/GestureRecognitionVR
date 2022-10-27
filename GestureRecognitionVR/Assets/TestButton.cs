@@ -24,6 +24,5 @@ public class TestButton : MonoBehaviour{
     {
         detector.Save();
         detector.GesturesToJSON();
-        print(other.name);
     }
 }

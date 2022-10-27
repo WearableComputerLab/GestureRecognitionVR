@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.64907485, g: 0.6911994, b: 0.68366766, a: 1}
+  m_IndirectSpecularColor: {r: 0.22659913, g: 0.39423037, b: 0.5251641, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -1260,6 +1260,8 @@ MonoBehaviour:
   handToRecord: {fileID: 328062953}
   cube: {fileID: 4969057824542013875}
   cubeRenderer: {fileID: 4969057824542013876}
+  newColour: {r: 0, g: 0.16586089, b: 1, a: 0}
+  oldColour: {r: 1, g: 0, b: 0, a: 0}
 --- !u!4 &1652884388
 Transform:
   m_ObjectHideFlags: 0
