@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.22659913, g: 0.39423037, b: 0.5251641, a: 1}
+  m_IndirectSpecularColor: {r: 0.64907485, g: 0.6911994, b: 0.68366766, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -1253,7 +1253,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 92b2b4d1ea4d8164d93e3844dc47915c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  detectionThreshold: 0.5
+  detectionThreshold: 0.2
   hands: []
   gestures:
     list: []
