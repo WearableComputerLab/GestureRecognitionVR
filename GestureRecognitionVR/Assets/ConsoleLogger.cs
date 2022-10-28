@@ -14,7 +14,8 @@ public class ConsoleLogger : MonoBehaviour
 
     private void ApplicationOnlogMessageReceived(string condition, string stacktrace, LogType type)
     {
-        if (!condition.StartsWith("[OVRManager]") && !condition.StartsWith("[OculusXRFeature]"))
+        //
+        if (!condition.StartsWith("[OVRManager]") && !condition.StartsWith("[OculusXRFeature]") && !condition.StartsWith("The current"))
         {
             tmp.text += condition + "\n";
             if (type == LogType.Exception)

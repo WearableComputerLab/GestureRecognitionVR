@@ -2,9 +2,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.UI;
 
@@ -67,10 +69,36 @@ public class GestureDetect : MonoBehaviour
     public Color oldColour;
 
 
+    [SerializeField] public GameObject cube2;
+    public GameObject sphere;
+
+
+    Dictionary<string, UnityAction> gestureNames;
+    public GameObject gestureNamerPrefab;
+    public GameObject gestureNamerPosition;
+
     // Start is called before the first frame update
     void Start()
     {
         readGesturesFromJSON();
+        gestureNames = new Dictionary<string, UnityAction>()
+        {
+            { "Thumbs up", Thumbs },
+            { "Peace", Peace }
+        };
+
+        Vector3 currentPos = gestureNamerPosition.transform.position;
+
+        foreach (KeyValuePair<string, UnityAction> keyValuePair in gestureNames)
+        {
+            GameObject buttonCube = Instantiate(gestureNamerPrefab);
+            GestureName gn = buttonCube.GetComponent<GestureName>();
+            gn.gestName = keyValuePair.Key;
+            gn.gestureDetection = this;
+            buttonCube.transform.position = currentPos;
+            
+            currentPos.x += 0.2f;
+        }
     }
 
     // Update is called once per frame
@@ -89,14 +117,13 @@ public class GestureDetect : MonoBehaviour
             //GesturesToJSON();
         }*/
 
-
         //Check for Recognition (returns recognised Gesture)
         currentGesture = Recognize();
         bool hasRecognized = currentGesture.HasValue;
         //Check if gesture is recognisable and new, log recognised gesture
         if (hasRecognized && (!previousGesture.HasValue || !currentGesture.Value.Equals(previousGesture.Value)))
         {
-            Debug.Log("New Gesture Recognized: " + currentGesture.Value.name);
+            Debug.Log("Gesture Recognized: " + currentGesture.Value.name);
             previousGesture = currentGesture;
             currentGesture.Value.onRecognized.Invoke();
         }
@@ -111,18 +138,18 @@ public class GestureDetect : MonoBehaviour
         {
             handToRecord = hands[0];
             fingerBones = new List<OVRBone>(handToRecord.Bones);
-            /*print(fingerBones.Count);*/
         }
     }
 
     /// <summary>
-    /// Records a gesture when pressing 'Space' on the keyboard
+    /// Records a gesture when Record Button is pressed within Scene
     /// </summary>
-    public void Save()
+    public void Save(string name)
     {
         Gesture g = new Gesture();
-        g.name = "Thumbs up";
+        g.name = name;
         List<Vector3> data = new List<Vector3>();
+
         foreach (OVRBone bone in fingerBones)
         {
             data.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
@@ -130,16 +157,11 @@ public class GestureDetect : MonoBehaviour
 
         g.fingerDatas = data;
         g.onRecognized = new UnityEvent();
-        if (g.name == "Thumbs up")
-        {
-            g.onRecognized.AddListener(Thumbs);
-        }
-        else if (g.name == "Peace")
-        {
-        }
+
+        g.onRecognized.AddListener(gestureNames[g.name]);
 
         gestures.list.Add(g);
-        print("saved item");
+        print("Saved Gesture " + name);
     }
 
     public void GesturesToJSON()
@@ -147,7 +169,7 @@ public class GestureDetect : MonoBehaviour
         string json = JsonUtility.ToJson(gestures, true);
         string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
         string saveFile = directory + "savedGestures.json";
-        
+
         if (!Directory.Exists(directory))
         {
             Directory.CreateDirectory(directory);
@@ -174,6 +196,7 @@ public class GestureDetect : MonoBehaviour
     {
         string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
         string saveFile = directory + "savedGestures.json";
+
         if (File.Exists(saveFile))
         {
             string Contents = File.ReadAllText(saveFile);
@@ -194,6 +217,23 @@ public class GestureDetect : MonoBehaviour
         yield return new WaitForSeconds(2);
 
         cubeRenderer.material.color = oldColour;
+    }
+
+    public void Peace()
+    {
+        StartCoroutine(PeaceRoutine());
+    }
+
+    public IEnumerator PeaceRoutine()
+    {
+        //If current gesture has name "Peace", change cube to a sphere. After 2 seconds, it will change back.
+        cube2.SetActive(false);
+        sphere.SetActive(true);
+
+        yield return new WaitForSeconds(2);
+
+        cube2.SetActive(true);
+        sphere.SetActive(false);
     }
 
     Gesture? Recognize()
@@ -229,8 +269,8 @@ public class GestureDetect : MonoBehaviour
     }
 }
 
-
-#if UNITY_EDITOR
+//Inspector Record Button, no longer used.
+/*#if UNITY_EDITOR
 [CustomEditor(typeof(GestureDetect))]
 public class GestureInspector : Editor
 {
@@ -247,4 +287,4 @@ public class GestureInspector : Editor
         }
     }
 }
-#endif
+#endif*/
