@@ -404,7 +404,7 @@ GameObject:
   - component: {fileID: 419341400}
   - component: {fileID: 419341399}
   m_Layer: 0
-  m_Name: m
+  m_Name: RecordMessage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
