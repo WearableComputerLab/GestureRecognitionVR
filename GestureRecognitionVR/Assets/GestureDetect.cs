@@ -48,31 +48,34 @@ public class SerializableList<T>
 
 public class GestureDetect : MonoBehaviour
 {
-    // Gesture Recognition
+    // Set detectionThreshold. Smaller threshold = more precise hand detection. Set to 0.5.
     [SerializeField] private float detectionThreshold = 0.5f;
 
     // Hands to record
     [SerializeField] private OVRSkeleton[] hands;
 
+    //Create List for Gestures
     [SerializeField] private SerializableList<Gesture> gestures;
 
     // Record new gestures
     [Header("Recording")] [SerializeField] private OVRSkeleton handToRecord;
     private List<OVRBone> fingerBones = new List<OVRBone>();
 
+    //Keep track of which Gesture was most recently recognized
     private Gesture? currentGesture;
     private Gesture? previousGesture;
 
+    //Create cube object and renderer to change color when G1 is recognised (G1Routine). 
     [SerializeField] public GameObject cube;
     public Renderer cubeRenderer;
     public Color newColour;
     public Color oldColour;
 
-
+    //Create second cube, which will be transformed to sphere when G2 is recognised (G2Routine).
     [SerializeField] public GameObject cube2;
     public GameObject sphere;
 
-
+    //Create Dictionary to store Gestures
     Dictionary<string, UnityAction> gestureNames;
     public GameObject gestureNamerPrefab;
     public GameObject gestureNamerPosition;
@@ -80,7 +83,10 @@ public class GestureDetect : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        //Read any previously saved Gestures from existing json data
         readGesturesFromJSON();
+
+        //Set 3 default gestures at startup 
         gestureNames = new Dictionary<string, UnityAction>()
         {
             { "Gesture 1", G1 },
@@ -88,8 +94,8 @@ public class GestureDetect : MonoBehaviour
             { "Gesture 3", G3 }
         };
 
+        //For each Gesture in Dictionary, create cube button on table for recording that Gesture.
         Vector3 currentPos = gestureNamerPosition.transform.position;
-
         foreach (KeyValuePair<string, UnityAction> keyValuePair in gestureNames)
         {
             GameObject buttonCube = Instantiate(gestureNamerPrefab);
@@ -105,20 +111,11 @@ public class GestureDetect : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        //Search for user Hands
         hands = FindObjectsOfType<OVRSkeleton>();
         findHandtoRecord();
-        /*for(int i = 0; i < hands.Length; i++)
-        {
 
-        }*/
-
-        //Press Space to record a gesture - This was replaced with a Button within the Virtual Space
-        /*if(Input.GetKeyDown(KeyCode.Space)){
-            Save(); 
-            //GesturesToJSON();
-        }*/
-
-        //Check for Recognition (returns recognised Gesture)
+        //Check for Recognition (returns recognised Gesture if hand is in correct position)
         currentGesture = Recognize();
         bool hasRecognized = currentGesture.HasValue;
         //Check if gesture is recognisable and new, log recognised gesture
@@ -130,9 +127,9 @@ public class GestureDetect : MonoBehaviour
         }
     }
 
-    /// <summary>
+    /// 
     /// Find a hand to record 
-    /// </summary>
+    /// Set finger bones for hand
     private void findHandtoRecord()
     {
         if (hands.Length > 0)
@@ -142,9 +139,9 @@ public class GestureDetect : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Records a gesture when Record Button is pressed within Scene
-    /// </summary>
+    /// 
+    /// Records a gesture when a Record Button is pressed within Scene
+    /// 
     public void Save(string name)
     {
         Gesture g = new Gesture();
@@ -161,38 +158,44 @@ public class GestureDetect : MonoBehaviour
 
         g.onRecognized.AddListener(gestureNames[g.name]);
 
+        //Add gesture to Gesture List
         gestures.list.Add(g);
         print("Saved Gesture " + name);
     }
 
+    //Save gestures in Gesture List as JSON data
     public void GesturesToJSON()
     {
         string json = JsonUtility.ToJson(gestures, true);
         string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
         string saveFile = directory + "savedGestures.json";
 
+        //If json directory does not exist, create it
         if (!Directory.Exists(directory))
         {
             Directory.CreateDirectory(directory);
         }
 
+        //If a previous saveFile exists, delete
         if (File.Exists(saveFile))
         {
             File.Delete(saveFile);
         }
 
+        //Save json data to new file
         File.WriteAllText(saveFile, json);
     }
 
     private void OnValidate()
     {
-        // update JSON if any changes have been made
+        // update JSON if any changes to the gesture list have been made
         if (gestures.list.Count > 0)
         {
             GesturesToJSON();
         }
     }
 
+    //Read json data from existing json files, save in list 
     public void readGesturesFromJSON()
     {
         string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
@@ -205,14 +208,16 @@ public class GestureDetect : MonoBehaviour
         }
     }
 
+    //Starts the G1Routine when "Gesture 1" is recognised
     public void G1()
     {
         StartCoroutine(G1Routine());
     }
 
+    //When "Gesture 1" is recognised...
     public IEnumerator G1Routine()
     {
-        //If current gesture has name "Gesture 1", change cube color to green, any other gesture change to red
+        //If current gesture has name "Gesture 1", change cube color to green for 2 seconds, then back to red.
         cubeRenderer.material.color = newColour;
 
         yield return new WaitForSeconds(2);
@@ -220,6 +225,7 @@ public class GestureDetect : MonoBehaviour
         cubeRenderer.material.color = oldColour;
     }
 
+    //Starts the G2Routine when "Gesture 2" is recognised 
     public void G2()
     {
         StartCoroutine(G2Routine());
@@ -237,6 +243,7 @@ public class GestureDetect : MonoBehaviour
         sphere.SetActive(false);
     }
 
+    //Starts the G3Routine when "Gesture 3" is recognised
     public void G3()
     {
         StartCoroutine(G3Routine());
@@ -244,7 +251,7 @@ public class GestureDetect : MonoBehaviour
 
     public IEnumerator G3Routine()
     {
-        //if current gesture is "Gesture 3", change cube color, and change cube to sphere 
+        //if current gesture is "Gesture 3", change cube color and change cube to sphere for 2 seconds
         cubeRenderer.material.color = newColour;
         cube2.SetActive(false);
         sphere.SetActive(true);
@@ -256,6 +263,7 @@ public class GestureDetect : MonoBehaviour
         sphere.SetActive(false);
     }
 
+    //Check if current hand gesture is a recorded gesture...
     Gesture? Recognize()
     {
         Gesture? currentGesture = null;
