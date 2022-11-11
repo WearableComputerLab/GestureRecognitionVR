@@ -83,8 +83,9 @@ public class GestureDetect : MonoBehaviour
         readGesturesFromJSON();
         gestureNames = new Dictionary<string, UnityAction>()
         {
-            { "Thumbs up", Thumbs },
-            { "Peace", Peace }
+            { "Gesture 1", G1 },
+            { "Gesture 2", G2 },
+            { "Gesture 3", G3 }
         };
 
         Vector3 currentPos = gestureNamerPosition.transform.position;
@@ -204,14 +205,14 @@ public class GestureDetect : MonoBehaviour
         }
     }
 
-    public void Thumbs()
+    public void G1()
     {
-        StartCoroutine(ThumbsRoutine());
+        StartCoroutine(G1Routine());
     }
 
-    public IEnumerator ThumbsRoutine()
+    public IEnumerator G1Routine()
     {
-        //If current gesture has name "Thumbs up", change cube color to green, any other gesture change to red
+        //If current gesture has name "Gesture 1", change cube color to green, any other gesture change to red
         cubeRenderer.material.color = newColour;
 
         yield return new WaitForSeconds(2);
@@ -219,19 +220,38 @@ public class GestureDetect : MonoBehaviour
         cubeRenderer.material.color = oldColour;
     }
 
-    public void Peace()
+    public void G2()
     {
-        StartCoroutine(PeaceRoutine());
+        StartCoroutine(G2Routine());
     }
 
-    public IEnumerator PeaceRoutine()
+    public IEnumerator G2Routine()
     {
-        //If current gesture has name "Peace", change cube to a sphere. After 2 seconds, it will change back.
+        //If current gesture has name "Gesture 2", change cube to a sphere. After 2 seconds, it will change back.
         cube2.SetActive(false);
         sphere.SetActive(true);
 
         yield return new WaitForSeconds(2);
 
+        cube2.SetActive(true);
+        sphere.SetActive(false);
+    }
+
+    public void G3()
+    {
+        StartCoroutine(G3Routine());
+    }
+
+    public IEnumerator G3Routine()
+    {
+        //if current gesture is "Gesture 3", change cube color, and change cube to sphere 
+        cubeRenderer.material.color = newColour;
+        cube2.SetActive(false);
+        sphere.SetActive(true);
+
+        yield return new WaitForSeconds(2);
+
+        cubeRenderer.material.color = oldColour;
         cube2.SetActive(true);
         sphere.SetActive(false);
     }
