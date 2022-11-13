@@ -55,7 +55,7 @@ public class GestureDetect : MonoBehaviour
     [SerializeField] private OVRSkeleton[] hands;
 
     //Create List for Gestures
-    [SerializeField] private SerializableList<Gesture> gestures;
+    private Dictionary<string, Gesture> gestures;
 
     // Record new gestures
     [Header("Recording")] [SerializeField] private OVRSkeleton handToRecord;
@@ -159,7 +159,7 @@ public class GestureDetect : MonoBehaviour
         g.onRecognized.AddListener(gestureNames[g.name]);
 
         //Add gesture to Gesture List
-        gestures.list.Add(g);
+        gestures[name] = g;
         print("Saved Gesture " + name);
     }
 
@@ -186,6 +186,7 @@ public class GestureDetect : MonoBehaviour
         File.WriteAllText(saveFile, json);
     }
 
+    /*
     private void OnValidate()
     {
         // update JSON if any changes to the gesture list have been made
@@ -194,6 +195,7 @@ public class GestureDetect : MonoBehaviour
             GesturesToJSON();
         }
     }
+    */
 
     //Read json data from existing json files, save in list 
     public void readGesturesFromJSON()
@@ -204,7 +206,7 @@ public class GestureDetect : MonoBehaviour
         if (File.Exists(saveFile))
         {
             string Contents = File.ReadAllText(saveFile);
-            gestures = JsonUtility.FromJson<SerializableList<Gesture>>(Contents);
+            gestures = JsonUtility.FromJson<Dictionary<string, Gesture>>(Contents);
         }
     }
 
@@ -269,14 +271,14 @@ public class GestureDetect : MonoBehaviour
         Gesture? currentGesture = null;
         float currentMin = Mathf.Infinity;
 
-        foreach (Gesture gesture in gestures.list)
+        foreach (KeyValuePair<string, Gesture> kvp in gestures)
         {
             float sumDistance = 0;
             bool discard = false;
             for (int i = 0; i < fingerBones.Count; i++)
             {
                 Vector3 currentData = handToRecord.transform.InverseTransformPoint(fingerBones[i].Transform.position);
-                float distance = Vector3.Distance(currentData, gesture.fingerDatas[i]);
+                float distance = Vector3.Distance(currentData, kvp.Value.fingerDatas[i]);
                 if (distance > detectionThreshold)
                 {
                     discard = true;
@@ -289,7 +291,7 @@ public class GestureDetect : MonoBehaviour
             if (!discard && sumDistance < currentMin)
             {
                 currentMin = sumDistance;
-                currentGesture = gesture;
+                currentGesture = kvp.Value;
             }
         }
 
