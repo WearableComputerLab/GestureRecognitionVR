@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Newtonsoft.Json;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
@@ -85,7 +86,7 @@ public class GestureDetect : MonoBehaviour
     {
         //Read any previously saved Gestures from existing json data
         readGesturesFromJSON();
-
+        
         //Set 3 default gestures at startup 
         gestureNames = new Dictionary<string, UnityAction>()
         {
@@ -166,7 +167,10 @@ public class GestureDetect : MonoBehaviour
     //Save gestures in Gesture List as JSON data
     public void GesturesToJSON()
     {
-        string json = JsonUtility.ToJson(gestures, true);
+        string json = JsonConvert.SerializeObject(gestures, Formatting.Indented, new JsonSerializerSettings() 
+        { 
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore 
+        });
         string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
         string saveFile = directory + "savedGestures.json";
 
@@ -203,10 +207,16 @@ public class GestureDetect : MonoBehaviour
         string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
         string saveFile = directory + "savedGestures.json";
 
+        
+        
         if (File.Exists(saveFile))
         {
             string Contents = File.ReadAllText(saveFile);
-            gestures = JsonUtility.FromJson<Dictionary<string, Gesture>>(Contents);
+            gestures = JsonConvert.DeserializeObject<Dictionary<string, Gesture>>(Contents);
+        }
+        else
+        {
+            gestures = new Dictionary<string, Gesture>();
         }
     }
 
