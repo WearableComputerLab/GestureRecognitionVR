@@ -119,19 +119,39 @@ public class GestureDetect : MonoBehaviour
 
     }
 
-    //If phrase "record" is recognized, record a gesture.
+    //variables for OnPhraseRecognized()
+    bool isRecording = false;
+    string gestureName = "";
+    //If spoken word is recognized, OnPhraseRecognized is triggered. NOTE: double check with user if name is correct.
     void OnPhraseRecognized(PhraseRecognizedEventArgs args)
     {
-        if (args.text == "record" || args.text == "save")
-        {
-            // RECORD A GESTURE, PROVIDE FEEDBACK TO USER
-            Debug.Log("Voice Recognized: Recording Gesture...");
-            //Could use Recognizer to ask user for gesture name?
+        //command holds the most recently spoken phrase
+        string command = args.text;
 
-            Save("voice_gesture");
+        //if user wants to record, ask to give gesture a name, set isRecording to true
+        if (command == "record" || command == "save")
+        {
+            Debug.Log("Please name your Gesture");
+            isRecording = true;
+            //The method exits, and command then becomes users next phrase (name of gesture)
         }
 
-        //add code for other phrases here...
+        //if user is currently recording a gesture, they have just said the gesture name.
+        //Use Save() function to save gesture, tell the user, reset variables.
+        else if (isRecording)
+        {
+            gestureName = command;
+            Save(gestureName);
+            Debug.Log("Gesture saved: " + gestureName);
+            gestureName = "";
+            isRecording = false;
+        }
+
+        //if other words are spoken while isRecording == false;
+        else
+        {
+            //e.g. Debug.Log("Unrecognized phrase: " + command);
+        }
 
     }
 
