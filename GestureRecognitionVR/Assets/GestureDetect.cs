@@ -119,6 +119,7 @@ public class GestureDetect : MonoBehaviour
 
     }
 
+    // VOICE RECOGNITION
     //variables for OnPhraseRecognized()
     bool isRecording = false;
     string gestureName = "";
