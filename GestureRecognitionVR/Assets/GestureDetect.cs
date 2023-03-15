@@ -113,7 +113,7 @@ public class GestureDetect : MonoBehaviour
         }
 
         //Voice Recognition: If keyword "record" is recognized, goto OnPhraseRecognized
-        recognizer = new KeywordRecognizer(new string[] { "record" });
+        recognizer = new KeywordRecognizer(new string[] { "record", "save" });
         recognizer.OnPhraseRecognized += OnPhraseRecognized;
         recognizer.Start();
 
@@ -122,12 +122,17 @@ public class GestureDetect : MonoBehaviour
     //If phrase "record" is recognized, record a gesture.
     void OnPhraseRecognized(PhraseRecognizedEventArgs args)
     {
-        if (args.text == "record")
+        if (args.text == "record" || args.text == "save")
         {
             // RECORD A GESTURE, PROVIDE FEEDBACK TO USER
             Debug.Log("Voice Recognized: Recording Gesture...");
+            //Could use Recognizer to ask user for gesture name?
 
+            Save("voice_gesture");
         }
+
+        //add code for other phrases here...
+
     }
 
     // Update is called once per frame
