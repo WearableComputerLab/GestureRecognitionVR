@@ -10,6 +10,7 @@ using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.UI;
+using UnityEngine.Windows.Speech;
 
 [System.Serializable]
 public struct Gesture
@@ -81,6 +82,9 @@ public class GestureDetect : MonoBehaviour
     public GameObject gestureNamerPrefab;
     public GameObject gestureNamerPosition;
 
+    //Create KeyWordRecognizer for Voice Recognition
+    private KeywordRecognizer recognizer;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -106,6 +110,22 @@ public class GestureDetect : MonoBehaviour
             buttonCube.transform.position = currentPos;
             
             currentPos.x += 0.2f;
+        }
+
+        //Voice Recognition: If keyword "record" is recognized, goto OnPhraseRecognized
+        recognizer = new KeywordRecognizer(new string[] { "record" });
+        recognizer.OnPhraseRecognized += OnPhraseRecognized;
+        recognizer.Start();
+
+    }
+
+    //If phrase "record" is recognized, record a gesture.
+    void OnPhraseRecognized(PhraseRecognizedEventArgs args)
+    {
+        if (args.text == "record")
+        {
+            // RECORD A GESTURE, PROVIDE FEEDBACK TO USER
+
         }
     }
 
