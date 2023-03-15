@@ -125,6 +125,7 @@ public class GestureDetect : MonoBehaviour
         if (args.text == "record")
         {
             // RECORD A GESTURE, PROVIDE FEEDBACK TO USER
+            Debug.Log("Voice Recognized: Recording Gesture...");
 
         }
     }
