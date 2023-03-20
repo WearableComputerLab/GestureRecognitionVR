@@ -145,12 +145,16 @@ public class GestureDetect : MonoBehaviour
 
     /// 
     /// Records a gesture when a Record Button is pressed within Scene
+    /// ## WORK ON ADDING DATA TO motionData ##
     /// 
     public void Save(string name)
     {
         Gesture g = new Gesture();
         g.name = name;
         List<Vector3> data = new List<Vector3>();
+        //CREATE WAY TO CAPTURE MOTION DATA IN motionData
+        // 2 WAYS: Record for x amount of frames, or get user input to stop recording?
+
 
         foreach (OVRBone bone in fingerBones)
         {
