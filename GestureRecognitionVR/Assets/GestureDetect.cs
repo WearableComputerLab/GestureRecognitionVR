@@ -112,7 +112,7 @@ public class GestureDetect : MonoBehaviour
             currentPos.x += 0.2f;
         }
 
-        //Voice Recognition: If keyword "record" is recognized, goto OnPhraseRecognized
+        //Voice Recognition: If keyword "record" is recognized, goto OnPhraseRecognized, begin continuously listening for commands.
         recognizer = new KeywordRecognizer(new string[] { "record", "save" });
         recognizer.OnPhraseRecognized += OnPhraseRecognized;
         recognizer.Start();
@@ -188,7 +188,7 @@ public class GestureDetect : MonoBehaviour
     }
 
     /// 
-    /// Records a gesture when a Record Button is pressed within Scene
+    /// Records a gesture when a Record Button is pressed within Scene, or when voice commands to record/save.
     /// 
     public void Save(string name)
     {
