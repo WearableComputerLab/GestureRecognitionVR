@@ -15,13 +15,16 @@ using UnityEngine.UI;
 public struct Gesture
 {
     public string name;
-    public List<Vector3> fingerDatas;
+    public List<Vector3> fingerData;
+    // motionData = finger data over time for moving gesture
+    public List<List<Vector3>> motionData;
     public UnityEvent onRecognized;
 
     public Gesture(UnityAction func)
     {
         name = "UNNAMED";
-        fingerDatas = null;
+        fingerData = null;
+        motionData = null;
 
         onRecognized = new UnityEvent();
         onRecognized.AddListener(func);
@@ -154,7 +157,7 @@ public class GestureDetect : MonoBehaviour
             data.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
         }
 
-        g.fingerDatas = data;
+        g.fingerData = data;
         g.onRecognized = new UnityEvent();
 
         g.onRecognized.AddListener(gestureNames[g.name]);
@@ -288,7 +291,7 @@ public class GestureDetect : MonoBehaviour
             for (int i = 0; i < fingerBones.Count; i++)
             {
                 Vector3 currentData = handToRecord.transform.InverseTransformPoint(fingerBones[i].Transform.position);
-                float distance = Vector3.Distance(currentData, kvp.Value.fingerDatas[i]);
+                float distance = Vector3.Distance(currentData, kvp.Value.fingerData[i]);
                 if (distance > detectionThreshold)
                 {
                     discard = true;
