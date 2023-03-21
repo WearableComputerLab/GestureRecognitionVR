@@ -152,16 +152,26 @@ public class GestureDetect : MonoBehaviour
         Gesture g = new Gesture();
         g.name = name;
         List<Vector3> fingerData = new List<Vector3>();
-        //CREATE WAY TO CAPTURE MOTION DATA IN motionData
-        // 2 WAYS: Record for x amount of frames, or get user input to stop recording?
+        
+        // 2 WAYS FOR MOTION CAPTURE: Record for x amount of frames/seconds, or get user input to stop recording?
         List<Vector3> motionData = new List<Vector3>();
 
-        foreach (OVRBone bone in fingerBones)
+        // Record for x amount of time/frames? or until user input to stop recording?
+        float recordingTime = 2f; // Set recording time to 2 seconds, finetune later 
+        float startTime = Time.time;
+
+        while (Time.time - startTime < recordingTime)
         {
-            fingerData.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
+            //Save each individual finger bone in fingerData, save whole hand position in motionData
+            foreach (OVRBone bone in fingerBones)
+            {
+                fingerData.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
+            }
+            motionData.Add(handToRecord.transform.InverseTransformPoint(handToRecord.transform.position));
         }
 
         g.fingerData = fingerData;
+        g.motionData = motionData;
         g.onRecognized = new UnityEvent();
 
         g.onRecognized.AddListener(gestureNames[g.name]);
