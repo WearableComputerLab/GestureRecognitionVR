@@ -16,8 +16,8 @@ public struct Gesture
 {
     public string name;
     public List<Vector3> fingerData;
-    // motionData = finger data over time for moving gesture
-    public List<List<Vector3>> motionData;
+    // motionData = List of hand position/rotation over time
+    public List<Vector3> motionData;
     public UnityEvent onRecognized;
 
     public Gesture(UnityAction func)
@@ -151,17 +151,17 @@ public class GestureDetect : MonoBehaviour
     {
         Gesture g = new Gesture();
         g.name = name;
-        List<Vector3> data = new List<Vector3>();
+        List<Vector3> fingerData = new List<Vector3>();
         //CREATE WAY TO CAPTURE MOTION DATA IN motionData
         // 2 WAYS: Record for x amount of frames, or get user input to stop recording?
-
+        List<Vector3> motionData = new List<Vector3>();
 
         foreach (OVRBone bone in fingerBones)
         {
-            data.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
+            fingerData.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
         }
 
-        g.fingerData = data;
+        g.fingerData = fingerData;
         g.onRecognized = new UnityEvent();
 
         g.onRecognized.AddListener(gestureNames[g.name]);
