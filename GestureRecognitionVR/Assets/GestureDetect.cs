@@ -302,6 +302,24 @@ public class GestureDetect : MonoBehaviour
         {
             float sumDistance = 0;
             bool discard = false;
+
+            // Create Lists to store Velocity and Direction of the motionData
+            List<Vector3> velocities = new List<Vector3>();
+            List<Vector3> directions = new List<Vector3>();
+
+            // Calculate velocity and direction of movement for each item in motionData list
+            for (int i = 0; i < kvp.Value.motionData.Count - 1; i++)
+            {
+                // velocity = displacement / time
+                Vector3 velocity = (kvp.Value.motionData[i+1] - kvp.Value.motionData[i]) / Time.deltaTime;
+                velocities.Add(velocity.normalized);
+
+                // Normalize velocity to store the direction the hand is moving
+                Vector3 direction = velocity.normalized;
+                directions.Add(direction);
+            }
+
+            // Comparing finger positions
             for (int i = 0; i < fingerBones.Count; i++)
             {
                 Vector3 currentData = handToRecord.transform.InverseTransformPoint(fingerBones[i].Transform.position);
