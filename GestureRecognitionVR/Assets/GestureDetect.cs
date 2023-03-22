@@ -305,14 +305,35 @@ public class GestureDetect : MonoBehaviour
             for (int i = 0; i < fingerBones.Count; i++)
             {
                 Vector3 currentData = handToRecord.transform.InverseTransformPoint(fingerBones[i].Transform.position);
-                float distance = Vector3.Distance(currentData, kvp.Value.fingerData[i]);
-                if (distance > detectionThreshold)
+                float fingerDistance = Vector3.Distance(currentData, kvp.Value.fingerData[i]);
+                if (fingerDistance > detectionThreshold)
                 {
                     discard = true;
                     break;
                 }
 
-                sumDistance += distance;
+                sumDistance += fingerDistance;
+            }
+
+            //If fingerData is not correct, skip checking motionData
+            if (discard)
+            {
+                continue;
+            }
+
+            // NOT TESTED. NEED TO ACCOUNT FOR SPEED/VELOCITY.
+            //For each hand position in motionData, calculate distance between current hand position and in that motionData
+            //If distance is smaller than the detectionThreshold for the entirety of the gesture, update sumDistance and set currentGesture.
+            foreach (Vector3 motionData in kvp.Value.motionData)
+            {
+                float motionDistance = Vector3.Distance(motionData, handToRecord.transform.position);
+                if (motionDistance > detectionThreshold)
+                {
+                    discard = true;
+                    break;
+                }
+
+                sumDistance += motionDistance;
             }
 
             if (!discard && sumDistance < currentMin)
