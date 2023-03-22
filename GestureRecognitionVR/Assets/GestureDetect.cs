@@ -292,7 +292,9 @@ public class GestureDetect : MonoBehaviour
         sphere.SetActive(false);
     }
 
-    //Check if current hand gesture is a recorded gesture...
+    //Check if current hand gesture is a recorded gesture. NOTE: NOT TESTED
+    // velocityWeight allows us to finetune how sensitive recognition is concerning speed of gesture performance, could use detectionThreshold instead?
+    private float velocityWeight = 0.5f;
     Gesture? Recognize()
     {
         Gesture? currentGesture = null;
@@ -303,7 +305,7 @@ public class GestureDetect : MonoBehaviour
             float sumDistance = 0;
             bool discard = false;
 
-            // Create Lists to store Velocity and Direction of the motionData
+            // Create Lists to store Velocity and Direction of the motionData (as Vector3s)
             List<Vector3> velocities = new List<Vector3>();
             List<Vector3> directions = new List<Vector3>();
 
@@ -311,12 +313,11 @@ public class GestureDetect : MonoBehaviour
             for (int i = 0; i < kvp.Value.motionData.Count - 1; i++)
             {
                 // velocity = displacement / time
-                Vector3 velocity = (kvp.Value.motionData[i+1] - kvp.Value.motionData[i]) / Time.deltaTime;
+                Vector3 displacement = kvp.Value.motionData[i + 1] - kvp.Value.motionData[i];
+                Vector3 velocity = displacement / Time.deltaTime;
                 velocities.Add(velocity.normalized);
-
-                // Normalize velocity to store the direction the hand is moving
-                Vector3 direction = velocity.normalized;
-                directions.Add(direction);
+                // Normalize displacement to store vector representing the direction the hand is moving
+                directions.Add(displacement.normalized);
             }
 
             // Comparing finger positions
@@ -339,19 +340,23 @@ public class GestureDetect : MonoBehaviour
                 continue;
             }
 
-            // NOT TESTED. NEED TO ACCOUNT FOR SPEED/VELOCITY.
-            //For each hand position in motionData, calculate distance between current hand position and in that motionData
-            //If distance is smaller than the detectionThreshold for the entirety of the gesture, update sumDistance and set currentGesture.
-            foreach (Vector3 motionData in kvp.Value.motionData)
+            // Compare velocity and direction vectors for motionData
+            for (int i = 0; i < directions.Count; i++)
             {
-                float motionDistance = Vector3.Distance(motionData, handToRecord.transform.position);
-                if (motionDistance > detectionThreshold)
+                // use handToRecord.transform.forward (a vector pointing in direction hand is currently facing) as a reference direction
+                // compare the distance of velocity and direction with current hand position
+                float directionDistance = Vector3.Distance(directions[i], handToRecord.transform.forward);
+                float velocityDistance = Vector3.Distance(velocities[i], handToRecord.transform.forward);
+                // by using velocityWeight(set to 0.5 by default), we can adjust how important the velocity of the gesture is
+                float combinedDistance = directionDistance + (velocityDistance * velocityWeight);
+
+                if (combinedDistance > detectionThreshold)
                 {
                     discard = true;
                     break;
                 }
 
-                sumDistance += motionDistance;
+                sumDistance += combinedDistance;
             }
 
             if (!discard && sumDistance < currentMin)
