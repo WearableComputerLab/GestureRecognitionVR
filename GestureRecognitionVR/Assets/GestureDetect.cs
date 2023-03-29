@@ -343,13 +343,11 @@ public class GestureDetect : MonoBehaviour
             // Compare velocity and direction vectors for motionData
             for (int i = 0; i < directions.Count; i++)
             {
-                //## NOTE: look into dot products and better ways of comparing velocity. Also Vector3.Angle for better comparison of direction vectors.
-                // use handToRecord.transform.forward (a vector pointing in direction hand is currently facing) as a reference direction
-                // compare the distance of velocity and direction with current hand position
-                float directionDistance = Vector3.Distance(directions[i], handToRecord.transform.forward);
-                float velocityDistance = Vector3.Distance(velocities[i], handToRecord.transform.forward);
-                // by using velocityWeight(set to 0.5 by default), we can adjust how important the velocity of the gesture is
-                float combinedDistance = directionDistance + (velocityDistance * velocityWeight);
+                // Use Dot Product of vectors to compare velocity, and Vector Angles to compare direction
+                float dotProduct = Vector3.Dot(velocities[i], handToRecord.transform.forward);
+                float angle = Vector3.Angle(velocities[i], handToRecord.transform.forward);
+                // Get combined 'distance' between vectors, using velocityWeight to determine importance of velocity in gesture
+                float combinedDistance = angle + (dotProduct * velocityWeight);
 
                 if (combinedDistance > detectionThreshold)
                 {
