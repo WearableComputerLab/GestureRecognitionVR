@@ -10,7 +10,7 @@ using System;
 using System.Net;
 using System.IO;
 
-namespace Facebook.WitAi
+namespace Meta.WitAi
 {
     public interface IRequest
     {
@@ -33,5 +33,6 @@ namespace Facebook.WitAi
         WebResponse EndGetResponse(IAsyncResult asyncResult);
 
         void Abort();
+        void Dispose();
     }
 }

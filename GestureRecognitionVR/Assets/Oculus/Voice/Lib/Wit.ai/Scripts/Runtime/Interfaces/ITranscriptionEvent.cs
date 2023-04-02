@@ -6,10 +6,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-using Facebook.WitAi.Events;
-using UnityEngine;
+using Meta.WitAi.Events;
 
-namespace Facebook.WitAi.Interfaces
+namespace Meta.WitAi.Interfaces
 {
     public interface ITranscriptionEvent
     {

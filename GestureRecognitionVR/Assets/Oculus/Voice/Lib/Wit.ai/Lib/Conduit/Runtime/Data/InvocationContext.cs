@@ -7,6 +7,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace Meta.Conduit
@@ -20,7 +21,7 @@ namespace Meta.Conduit
         /// The type that declares the method.
         /// </summary>
         public Type Type { get; set; }
-        
+
         /// <summary>
         /// The method information.
         /// </summary>
@@ -35,5 +36,17 @@ namespace Meta.Conduit
         /// The maximum confidence allowed to invoke this method.
         /// </summary>
         public float MaxConfidence { get; set; } = 1;
+
+        /// <summary>
+        /// Whether partial responses should be validated
+        /// </summary>
+        public bool ValidatePartial { get; set; } = false;
+
+        /// <summary>
+        /// If the invocation context is resolved, this will map formal parameter names to  actual (incoming) parameter
+        /// names if they are different. This may be empty if no mapping is required or the context is not resolved.
+        /// The key is the formal parameter name and value is the actual parameter name. 
+        /// </summary>
+        public Dictionary<string, string> ParameterMap { get; set; } = new Dictionary<string, string>();
     }
 }

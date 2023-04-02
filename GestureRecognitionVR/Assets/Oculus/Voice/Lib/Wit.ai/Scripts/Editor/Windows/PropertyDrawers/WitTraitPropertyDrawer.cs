@@ -7,11 +7,9 @@
  */
 
 using UnityEditor;
-using UnityEngine;
 using System.Reflection;
-using Facebook.WitAi.Data.Traits;
 
-namespace Facebook.WitAi.Windows
+namespace Meta.WitAi.Windows
 {
     public class WitTraitPropertyDrawer : WitPropertyDrawer
     {

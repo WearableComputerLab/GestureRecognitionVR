@@ -10,21 +10,30 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
-using Facebook.WitAi.Data.Configuration;
-using Facebook.WitAi.TTS.Data;
-using Facebook.WitAi.TTS.Events;
-using Facebook.WitAi.TTS.Interfaces;
-using Facebook.WitAi.TTS.Utilities;
+using Meta.WitAi.Data.Configuration;
+using Meta.WitAi.TTS.Data;
+using Meta.WitAi.TTS.Events;
+using Meta.WitAi.TTS.Interfaces;
+using Meta.WitAi.Requests;
 using UnityEngine.Serialization;
 
-namespace Facebook.WitAi.TTS.Integrations
+namespace Meta.WitAi.TTS.Integrations
 {
     [Serializable]
     public class TTSWitVoiceSettings : TTSVoiceSettings
     {
-        // Attributes
-        public string voice;
-        public string style;
+        // Default values
+        public const string DEFAULT_VOICE = "Charlie";
+        public const string DEFAULT_STYLE = "default";
+
+        /// <summary>
+        /// Unique voice name
+        /// </summary>
+        public string voice = DEFAULT_VOICE;
+        /// <summary>
+        /// Voice style (ex. formal, fast)
+        /// </summary>
+        public string style = DEFAULT_STYLE;
         [Range(50, 200)]
         public int speed = 100;
         [Range(25, 400)]
@@ -83,10 +92,28 @@ namespace Facebook.WitAi.TTS.Integrations
         public TTSStreamEvents WebStreamEvents { get; set; } = new TTSStreamEvents();
 
         // Requests bly clip id
-        private Dictionary<string, WitUnityRequest> _webStreams = new Dictionary<string, WitUnityRequest>();
+        private Dictionary<string, VRequest> _webStreams = new Dictionary<string, VRequest>();
 
+        // Whether TTSService is valid
+        public override string GetInvalidError()
+        {
+            string invalidError = base.GetInvalidError();
+            if (!string.IsNullOrEmpty(invalidError))
+            {
+                return invalidError;
+            }
+            if (RequestSettings.configuration == null)
+            {
+                return "No WitConfiguration Set";
+            }
+            if (string.IsNullOrEmpty(RequestSettings.configuration.GetClientAccessToken()))
+            {
+                return "No WitConfiguration Client Token";
+            }
+            return string.Empty;
+        }
         // Ensures text can be sent to wit web service
-        public string IsTextValid(string textToSpeak) => WitUnityRequest.IsTextValid(textToSpeak);
+        public string IsTextValid(string textToSpeak) => string.IsNullOrEmpty(textToSpeak) ? WitConstants.ENDPOINT_TTS_NO_TEXT : string.Empty;
 
         /// <summary>
         /// Method for performing a web load request
@@ -112,9 +139,8 @@ namespace Facebook.WitAi.TTS.Integrations
             }
 
             // Request tts
-            _webStreams[clipData.clipID] = WitUnityRequest.RequestTTSStream(RequestSettings.configuration,
-                clipData.textToSpeak, clipData.queryParameters,
-                (progress) => clipData.loadProgress = progress,
+            WitTTSVRequest request = new WitTTSVRequest(RequestSettings.configuration);
+            request.RequestStream(clipData.textToSpeak, clipData.queryParameters,
                 (clip, error) =>
                 {
                     _webStreams.Remove(clipData.clipID);
@@ -125,9 +151,18 @@ namespace Facebook.WitAi.TTS.Integrations
                     }
                     else
                     {
-                        WebStreamEvents?.OnStreamError?.Invoke(clipData, error);
+                        if (string.Equals(error, VRequest.CANCEL_ERROR, StringComparison.CurrentCultureIgnoreCase))
+                        {
+                            WebStreamEvents?.OnStreamCancel?.Invoke(clipData);
+                        }
+                        else
+                        {
+                            WebStreamEvents?.OnStreamError?.Invoke(clipData, error);
+                        }
                     }
-                });
+                },
+                (progress) => clipData.loadProgress = progress);
+            _webStreams[clipData.clipID] = request;
         }
         /// <summary>
         /// Cancel web stream
@@ -142,11 +177,12 @@ namespace Facebook.WitAi.TTS.Integrations
             }
 
             // Get request
-            WitUnityRequest request = _webStreams[clipData.clipID];
+            VRequest request = _webStreams[clipData.clipID];
             _webStreams.Remove(clipData.clipID);
 
             // Destroy immediately
-            request?.Unload();
+            request?.Cancel();
+            request = null;
 
             // Call delegate
             WebStreamEvents?.OnStreamCancel?.Invoke(clipData);
@@ -161,7 +197,7 @@ namespace Facebook.WitAi.TTS.Integrations
         public TTSDownloadEvents WebDownloadEvents { get; set; } = new TTSDownloadEvents();
 
         // Requests by clip id
-        private Dictionary<string, WitUnityRequest> _webDownloads = new Dictionary<string, WitUnityRequest>();
+        private Dictionary<string, WitVRequest> _webDownloads = new Dictionary<string, WitVRequest>();
 
         /// <summary>
         /// Method for performing a web load request
@@ -187,10 +223,9 @@ namespace Facebook.WitAi.TTS.Integrations
             }
 
             // Request tts
-            _webDownloads[clipData.clipID] = WitUnityRequest.RequestTTSDownload(downloadPath,
-                RequestSettings.configuration, clipData.textToSpeak, clipData.queryParameters,
-                (progress) => clipData.loadProgress = progress,
-                (error) =>
+            WitTTSVRequest request = new WitTTSVRequest(RequestSettings.configuration);
+            request.RequestDownload(downloadPath, clipData.textToSpeak, clipData.queryParameters,
+                (success, error) =>
                 {
                     _webDownloads.Remove(clipData.clipID);
                     if (string.IsNullOrEmpty(error))
@@ -201,7 +236,9 @@ namespace Facebook.WitAi.TTS.Integrations
                     {
                         WebDownloadEvents?.OnDownloadError?.Invoke(clipData, downloadPath, error);
                     }
-                });
+                },
+                (progress) => clipData.loadProgress = progress);
+            _webDownloads[clipData.clipID] = request;
         }
         /// <summary>
         /// Method for cancelling a running load request
@@ -216,11 +253,12 @@ namespace Facebook.WitAi.TTS.Integrations
             }
 
             // Get request
-            WitUnityRequest request = _webDownloads[clipData.clipID];
+            WitVRequest request = _webDownloads[clipData.clipID];
             _webDownloads.Remove(clipData.clipID);
 
             // Destroy immediately
-            request?.Unload();
+            request?.Cancel();
+            request = null;
 
             // Download cancelled
             WebDownloadEvents?.OnDownloadCancel?.Invoke(clipData, downloadPath);
@@ -233,6 +271,9 @@ namespace Facebook.WitAi.TTS.Integrations
         #region ITTSVoiceProvider
         // Preset voice settings
         [Header("Voice Settings")]
+        #if UNITY_2021_3_2 || UNITY_2021_3_3 || UNITY_2021_3_4 || UNITY_2021_3_5
+        [NonReorderable]
+        #endif
         [SerializeField] private TTSWitVoiceSettings[] _presetVoiceSettings;
         public TTSWitVoiceSettings[] PresetWitVoiceSettings => _presetVoiceSettings;
 
@@ -243,16 +284,7 @@ namespace Facebook.WitAi.TTS.Integrations
             {
                 if (_presetVoiceSettings == null || _presetVoiceSettings.Length == 0)
                 {
-                    _presetVoiceSettings = new TTSWitVoiceSettings[1];
-                    _presetVoiceSettings[0] = new TTSWitVoiceSettings
-                    {
-                        settingsID = "DEFAULT",
-                        voice = "Charlie",
-                        style = "default",
-                        speed = 100,
-                        pitch = 100,
-                        gain = 50
-                    };
+                    _presetVoiceSettings = new TTSWitVoiceSettings[] { new TTSWitVoiceSettings() };
                 }
                 return _presetVoiceSettings;
             }
@@ -260,7 +292,18 @@ namespace Facebook.WitAi.TTS.Integrations
         // Default voice setting uses the first voice in the list
         public TTSVoiceSettings VoiceDefaultSettings => PresetVoiceSettings[0];
 
+        #if UNITY_EDITOR
+        // Apply settings
+        public void SetVoiceSettings(TTSWitVoiceSettings[] newVoiceSettings)
+        {
+            _presetVoiceSettings = newVoiceSettings;
+        }
+        #endif
+
         // Convert voice settings into dictionary to be used with web requests
+        private const string SETTINGS_KEY = "settingsID";
+        private const string VOICE_KEY = "voice";
+        private const string STYLE_KEY = "style";
         public Dictionary<string, string> EncodeVoiceSettings(TTSVoiceSettings voiceSettings)
         {
             Dictionary<string, string> parameters = new Dictionary<string, string>();
@@ -268,7 +311,7 @@ namespace Facebook.WitAi.TTS.Integrations
             {
                 foreach (FieldInfo field in voiceSettings.GetType().GetFields())
                 {
-                    if (!string.Equals(field.Name, "settingsID", StringComparison.CurrentCultureIgnoreCase))
+                    if (!string.Equals(field.Name, SETTINGS_KEY, StringComparison.CurrentCultureIgnoreCase))
                     {
                         // Get field value
                         object fieldVal = field.GetValue(voiceSettings);
@@ -289,22 +332,33 @@ namespace Facebook.WitAi.TTS.Integrations
                         parameters[field.Name] = fieldVal.ToString();
                     }
                 }
+
+                // Set default if no voice is provided
+                if (!parameters.ContainsKey(VOICE_KEY) || string.IsNullOrEmpty(parameters[VOICE_KEY]))
+                {
+                    parameters[VOICE_KEY] = TTSWitVoiceSettings.DEFAULT_VOICE;
+                }
+                // Set default if no style is given
+                if (!parameters.ContainsKey(STYLE_KEY) || string.IsNullOrEmpty(parameters[STYLE_KEY]))
+                {
+                    parameters[STYLE_KEY] = TTSWitVoiceSettings.DEFAULT_STYLE;
+                }
             }
             return parameters;
         }
         // Returns an error if request is not valid
         private string IsRequestValid(TTSClipData clipData, WitConfiguration configuration)
         {
+            // Invalid tts
+            string invalidError = GetInvalidError();
+            if (!string.IsNullOrEmpty(invalidError))
+            {
+                return invalidError;
+            }
             // Invalid clip
             if (clipData == null)
             {
                 return "No clip data provided";
-            }
-            // Invalid configuration
-            if (RequestSettings.configuration == null ||
-                string.IsNullOrEmpty(RequestSettings.configuration.clientAccessToken))
-            {
-                return "No wit configuration provided";
             }
             // Success
             return string.Empty;

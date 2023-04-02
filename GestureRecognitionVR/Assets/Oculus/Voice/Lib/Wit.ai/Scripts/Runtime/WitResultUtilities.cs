@@ -6,63 +6,22 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-using System;
-using Facebook.WitAi.Data.Entities;
-using Facebook.WitAi.Data.Intents;
-using Facebook.WitAi.Lib;
+using Meta.WitAi.Data.Entities;
+using Meta.WitAi.Data.Intents;
+using Meta.WitAi.Json;
 
-namespace Facebook.WitAi
+namespace Meta.WitAi
 {
     public static class WitResultUtilities
     {
         // Keys
         public const string WIT_KEY_TRANSCRIPTION = "text";
+        public const string WIT_KEY_INTENTS = "intents";
+        public const string WIT_KEY_ENTITIES = "entities";
+        public const string WIT_KEY_TRAITS = "traits";
         public const string WIT_KEY_FINAL = "is_final";
 
-        /// <summary>
-        /// Handle a wit response by returning callbacks when applicable and returning true if final response
-        /// </summary>
-        /// <param name="witResponse">The parsed response</param>
-        /// <param name="onResponse">The response data callback that returns a WitResponseNode & a boolean representing whether it is a final response</param>
-        /// <param name="onTranscription">The transcription string callback that returns text & a boolean representing whether it is a final transcription</param>
-        public static bool HandleResponse(this WitResponseNode witResponse, Action<string, bool> onTranscription, Action<WitResponseNode, bool> onResponse)
-        {
-            // Failed if null
-            if (witResponse == null)
-            {
-                return false;
-            }
-
-            // Decode transcription
-            string transcription = witResponse.GetTranscription();
-
-            // Partial Transcription has no intents
-            if (!witResponse.AsObject.HasChild("intents"))
-            {
-                if (!string.IsNullOrEmpty(transcription))
-                {
-                    onTranscription?.Invoke(transcription, false);
-                }
-                return false;
-            }
-
-            // Check for final
-            bool final = witResponse.GetIsFinal();
-            if (final)
-            {
-                if (!string.IsNullOrEmpty(transcription))
-                {
-                    onTranscription?.Invoke(transcription, true);
-                }
-                onResponse?.Invoke(witResponse, true);
-                return true;
-            }
-
-            // Partial Response
-            onResponse?.Invoke(witResponse, false);
-            return false;
-        }
-
+        #region Base Response methods
         /// <summary>
         /// Get the transcription from a wit response node
         /// </summary>
@@ -76,11 +35,39 @@ namespace Facebook.WitAi
         /// <summary>
         /// Get whether this response is a 'final' response
         /// </summary>
+        public static bool HasResponse(this WitResponseNode witResponse) =>
+            null != witResponse
+            && witResponse.AsObject != null
+            && (witResponse.AsObject.HasChild(WIT_KEY_INTENTS)
+            || witResponse.AsObject.HasChild(WIT_KEY_ENTITIES)
+            || witResponse.AsObject.HasChild(WIT_KEY_TRAITS));
+
+        /// <summary>
+        /// Get whether this response is a 'final' response
+        /// </summary>
         public static bool GetIsFinal(this WitResponseNode witResponse) =>
             null != witResponse
             && witResponse.AsObject != null
             && witResponse.AsObject.HasChild(WIT_KEY_FINAL)
             && witResponse[WIT_KEY_FINAL].AsBool;
+
+        #endregion
+
+        #region Entity methods
+        /// <summary>
+        /// Converts wit response node into a wit entity
+        /// </summary>
+        public static WitEntityData AsWitEntity(this WitResponseNode witResponse) => new WitEntityData(witResponse);
+
+        /// <summary>
+        /// Converts wit response node into a float entity
+        /// </summary>
+        public static WitEntityFloatData AsWitFloatEntity(this WitResponseNode witResponse) => new WitEntityFloatData(witResponse);
+
+        /// <summary>
+        /// Converts wit response node into an int entity
+        /// </summary>
+        public static WitEntityIntData AsWitIntEntity(this WitResponseNode witResponse) => new WitEntityIntData(witResponse);
 
         /// <summary>
         /// Gets the string value of the first entity
@@ -90,7 +77,7 @@ namespace Facebook.WitAi
         /// <returns></returns>
         public static string GetFirstEntityValue(this WitResponseNode witResponse, string name)
         {
-            return witResponse?["entities"]?[name]?[0]?["value"]?.Value;
+            return witResponse?[WIT_KEY_ENTITIES]?[name]?[0]?["value"]?.Value;
         }
 
         /// <summary>
@@ -102,10 +89,10 @@ namespace Facebook.WitAi
         /// <returns></returns>
         public static string[] GetAllEntityValues(this WitResponseNode witResponse, string name)
         {
-            var values = new string[witResponse?["entities"]?[name]?.Count ?? 0];
-            for (var i = 0; i < witResponse?["entities"]?[name]?.Count; i++)
+            var values = new string[witResponse?[WIT_KEY_ENTITIES]?[name]?.Count ?? 0];
+            for (var i = 0; i < witResponse?[WIT_KEY_ENTITIES]?[name]?.Count; i++)
             {
-                values[i] = witResponse?["entities"]?[name]?[i]?["value"]?.Value;
+                values[i] = witResponse?[WIT_KEY_ENTITIES]?[name]?[i]?["value"]?.Value;
             }
             return values;
         }
@@ -118,7 +105,7 @@ namespace Facebook.WitAi
         /// <returns></returns>
         public static WitResponseNode GetFirstEntity(this WitResponseNode witResponse, string name)
         {
-            return witResponse?["entities"]?[name][0];
+            return witResponse?[WIT_KEY_ENTITIES]?[name][0];
         }
 
         /// <summary>
@@ -129,8 +116,8 @@ namespace Facebook.WitAi
         /// <returns></returns>
         public static WitEntityData GetFirstWitEntity(this WitResponseNode witResponse, string name)
         {
-            var array = witResponse?["entities"]?[name].AsArray;
-            return array?.Count > 0 ? array[0].AsWitEntity : null;
+            var array = witResponse?[WIT_KEY_ENTITIES]?[name].AsArray;
+            return array?.Count > 0 ? array[0].AsWitEntity() : null;
         }
 
         /// <summary>
@@ -142,8 +129,8 @@ namespace Facebook.WitAi
         public static WitEntityIntData GetFirstWitIntEntity(this WitResponseNode witResponse,
             string name)
         {
-            var array = witResponse?["entities"]?[name].AsArray;
-            return array?.Count > 0 ? array[0].AsWitIntEntity : null;
+            var array = witResponse?[WIT_KEY_ENTITIES]?[name].AsArray;
+            return array?.Count > 0 ? array[0].AsWitIntEntity() : null;
         }
 
         /// <summary>
@@ -155,10 +142,10 @@ namespace Facebook.WitAi
         public static int GetFirstWitIntValue(this WitResponseNode witResponse,
             string name, int defaultValue)
         {
-            var array = witResponse?["entities"]?[name].AsArray;
+            var array = witResponse?[WIT_KEY_ENTITIES]?[name].AsArray;
 
             if (null == array || array.Count == 0) return defaultValue;
-            return array[0].AsWitIntEntity.value;
+            return array[0].AsWitIntEntity().value;
         }
 
         /// <summary>
@@ -169,8 +156,8 @@ namespace Facebook.WitAi
         /// <returns></returns>
         public static WitEntityFloatData GetFirstWitFloatEntity(this WitResponseNode witResponse, string name)
         {
-            var array = witResponse?["entities"]?[name].AsArray;
-            return array?.Count > 0 ? array[0].AsWitFloatEntity : null;
+            var array = witResponse?[WIT_KEY_ENTITIES]?[name].AsArray;
+            return array?.Count > 0 ? array[0].AsWitFloatEntity() : null;
         }
 
         /// <summary>
@@ -182,58 +169,10 @@ namespace Facebook.WitAi
         public static float GetFirstWitFloatValue(this WitResponseNode witResponse,
             string name, float defaultValue)
         {
-            var array = witResponse?["entities"]?[name].AsArray;
+            var array = witResponse?[WIT_KEY_ENTITIES]?[name].AsArray;
 
             if (null == array || array.Count == 0) return defaultValue;
-            return array[0].AsWitFloatEntity.value;
-        }
-
-        /// <summary>
-        /// Gets the first intent's name
-        /// </summary>
-        /// <param name="witResponse"></param>
-        /// <returns></returns>
-        public static string GetIntentName(this WitResponseNode witResponse)
-        {
-            return witResponse?["intents"]?[0]?["name"]?.Value;
-        }
-
-        /// <summary>
-        /// Gets the first intent node
-        /// </summary>
-        /// <param name="witResponse"></param>
-        /// <returns></returns>
-        public static WitResponseNode GetFirstIntent(this WitResponseNode witResponse)
-        {
-            return witResponse?["intents"]?[0];
-        }
-
-        /// <summary>
-        /// Gets the first set of intent data
-        /// </summary>
-        /// <param name="witResponse"></param>
-        /// <returns>WitIntentData or null if no intents are found</returns>
-        public static WitIntentData GetFirstIntentData(this WitResponseNode witResponse)
-        {
-            var array = witResponse?["intents"]?.AsArray;
-            return array?.Count > 0 ? array[0].AsWitIntent : null;
-        }
-
-        /// <summary>
-        /// Gets all intents in the given response
-        /// </summary>
-        /// <param name="witResponse">The root response node of an VoiceService.events.OnResponse event</param>
-        /// <returns></returns>
-        public static WitIntentData[] GetIntents(this WitResponseNode witResponse)
-        {
-            var intentResponseArray = witResponse?["intents"].AsArray;
-            var intents = new WitIntentData[intentResponseArray?.Count ?? 0];
-            for (int i = 0; i < intents.Length; i++)
-            {
-                intents[i] = intentResponseArray[i].AsWitIntent;
-            }
-
-            return intents;
+            return array[0].AsWitFloatEntity().value;
         }
 
         /// <summary>
@@ -243,11 +182,11 @@ namespace Facebook.WitAi
         /// <returns></returns>
         public static WitEntityData[] GetEntities(this WitResponseNode witResponse, string name)
         {
-            var entityJsonArray = witResponse?["entities"]?[name].AsArray;
+            var entityJsonArray = witResponse?[WIT_KEY_ENTITIES]?[name].AsArray;
             var entities = new WitEntityData[entityJsonArray?.Count ?? 0];
             for (int i = 0; i < entities.Length; i++)
             {
-                entities[i] = entityJsonArray[i].AsWitEntity;
+                entities[i] = entityJsonArray[i].AsWitEntity();
             }
 
             return entities;
@@ -261,11 +200,11 @@ namespace Facebook.WitAi
         /// <returns></returns>
         public static WitEntityFloatData[] GetFloatEntities(this WitResponseNode witResponse, string name)
         {
-            var entityJsonArray = witResponse?["entities"]?[name].AsArray;
+            var entityJsonArray = witResponse?[WIT_KEY_ENTITIES]?[name].AsArray;
             var entities = new WitEntityFloatData[entityJsonArray?.Count ?? 0];
             for (int i = 0; i < entities.Length; i++)
             {
-                entities[i] = entityJsonArray[i].AsWitFloatEntity;
+                entities[i] = entityJsonArray[i].AsWitFloatEntity();
             }
 
             return entities;
@@ -279,16 +218,73 @@ namespace Facebook.WitAi
         /// <returns></returns>
         public static WitEntityIntData[] GetIntEntities(this WitResponseNode witResponse, string name)
         {
-            var entityJsonArray = witResponse?["entities"]?[name].AsArray;
+            var entityJsonArray = witResponse?[WIT_KEY_ENTITIES]?[name].AsArray;
             var entities = new WitEntityIntData[entityJsonArray?.Count ?? 0];
             for (int i = 0; i < entities.Length; i++)
             {
-                entities[i] = entityJsonArray[i].AsWitIntEntity;
+                entities[i] = entityJsonArray[i].AsWitIntEntity();
             }
 
             return entities;
         }
+        #endregion
 
+        #region Intent methods
+        /// <summary>
+        /// Converts wit response node into wit intent data
+        /// </summary>
+        public static WitIntentData AsWitIntent(this WitResponseNode witResponse) => new WitIntentData(witResponse);
+
+        /// <summary>
+        /// Gets the first intent's name
+        /// </summary>
+        /// <param name="witResponse"></param>
+        /// <returns></returns>
+        public static string GetIntentName(this WitResponseNode witResponse)
+        {
+            return witResponse?[WIT_KEY_INTENTS]?[0]?["name"]?.Value;
+        }
+
+        /// <summary>
+        /// Gets the first intent node
+        /// </summary>
+        /// <param name="witResponse"></param>
+        /// <returns></returns>
+        public static WitResponseNode GetFirstIntent(this WitResponseNode witResponse)
+        {
+            return witResponse?[WIT_KEY_INTENTS]?[0];
+        }
+
+        /// <summary>
+        /// Gets the first set of intent data
+        /// </summary>
+        /// <param name="witResponse"></param>
+        /// <returns>WitIntentData or null if no intents are found</returns>
+        public static WitIntentData GetFirstIntentData(this WitResponseNode witResponse)
+        {
+            var array = witResponse?[WIT_KEY_INTENTS]?.AsArray;
+            return array?.Count > 0 ? array[0].AsWitIntent() : null;
+        }
+
+        /// <summary>
+        /// Gets all intents in the given response
+        /// </summary>
+        /// <param name="witResponse">The root response node of an VoiceService.events.OnResponse event</param>
+        /// <returns></returns>
+        public static WitIntentData[] GetIntents(this WitResponseNode witResponse)
+        {
+            var intentResponseArray = witResponse?[WIT_KEY_INTENTS].AsArray;
+            var intents = new WitIntentData[intentResponseArray?.Count ?? 0];
+            for (int i = 0; i < intents.Length; i++)
+            {
+                intents[i] = intentResponseArray[i].AsWitIntent();
+            }
+
+            return intents;
+        }
+        #endregion
+
+        #region Misc. Helper Methods
         public static string GetPathValue(this WitResponseNode response, string path)
         {
 
@@ -376,8 +372,23 @@ namespace Facebook.WitAi
 
             return nodes;
         }
+        #endregion
+
+        #region Trait Methods
+        /// <summary>
+        /// Gets the string value of the first trait
+        /// </summary>
+        /// <param name="witResponse"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public static string GetTraitValue(this WitResponseNode witResponse, string name)
+        {
+            return witResponse?[WIT_KEY_TRAITS]?[name]?[0]?["value"]?.Value;
+        }
+        #endregion
     }
 
+    #region WitResponseReference Child Classes
     public class WitResponseReference
     {
         public WitResponseReference child;
@@ -468,4 +479,5 @@ namespace Facebook.WitAi
             return response[key].AsFloat;
         }
     }
+    #endregion
 }
