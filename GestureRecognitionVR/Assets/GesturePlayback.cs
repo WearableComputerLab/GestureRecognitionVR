@@ -4,14 +4,18 @@ using UnityEngine;
 
 public class GesturePlayback : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    private GestureDetect gestureDetect;
+    private Dictionary<string, Gesture> gestureList;
+    private int currentGestureIndex;
+    public GameObject handModel;
+
+    private void Start()
     {
-        
+        gestureDetect = GetComponent<GestureDetect>();
+        gestureList = GestureDetect.gestures;
     }
 
-    // Update is called once per frame
-    void Update()
+    private void Update()
     {
         
     }
