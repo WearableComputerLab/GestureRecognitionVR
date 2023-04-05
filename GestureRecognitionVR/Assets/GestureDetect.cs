@@ -118,6 +118,9 @@ public class GestureDetect : MonoBehaviour
             currentPos.x += 0.2f;
         }
 
+        //Assign NextButton and PrevButton in scene, add listeners
+        nextButton = GameObject.Find("NextButton").GetComponent<Button>();
+        prevButton = GameObject.Find("PrevButton").GetComponent<Button>();
         nextButton.onClick.AddListener(NextGesture);
         prevButton.onClick.AddListener(PrevGesture);
 
