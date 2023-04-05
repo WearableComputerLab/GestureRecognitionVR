@@ -52,6 +52,13 @@ public class SerializableList<T>
 
 public class GestureDetect : MonoBehaviour
 {
+
+    //Hand Model Menu
+    public GameObject handModel;
+    public Button nextButton;
+    public Button prevButton;
+    private int currentGestureIndex = 0;
+
     // Set detectionThreshold. Smaller threshold = more precise hand detection. Set to 0.5.
     [SerializeField] private float detectionThreshold = 0.5f;
 
@@ -110,6 +117,20 @@ public class GestureDetect : MonoBehaviour
             
             currentPos.x += 0.2f;
         }
+
+        nextButton.onClick.AddListener(NextGesture);
+        prevButton.onClick.AddListener(PrevGesture);
+
+    }
+
+    private void NextGesture()
+    {
+
+    }
+
+    private void PrevGesture()
+    {
+
     }
 
     // Update is called once per frame
