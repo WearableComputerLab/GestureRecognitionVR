@@ -44,7 +44,7 @@ public class GesturePlayback : MonoBehaviour
 
     private void PlayGesture()
     {
-        /*
+        /*  ERRORS  //
         if(currentGestureIndex >= gestureList.Count)
         {
             StopPlayback();
