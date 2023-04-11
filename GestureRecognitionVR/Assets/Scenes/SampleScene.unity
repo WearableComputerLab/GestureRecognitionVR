@@ -874,7 +874,7 @@ MonoBehaviour:
         m_Calls:
         - m_Target: {fileID: 1652884387}
           m_TargetAssemblyTypeName: GestureDetect, Assembly-CSharp
-          m_MethodName: set_test
+          m_MethodName: set_voiceRecog
           m_Mode: 5
           m_Arguments:
             m_ObjectArgument: {fileID: 0}
@@ -910,7 +910,7 @@ MonoBehaviour:
         m_Calls:
         - m_Target: {fileID: 1652884387}
           m_TargetAssemblyTypeName: GestureDetect, Assembly-CSharp
-          m_MethodName: set_test
+          m_MethodName: set_voiceRecog
           m_Mode: 0
           m_Arguments:
             m_ObjectArgument: {fileID: 0}
