@@ -10,7 +10,7 @@ using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.UI;
-using UnityEngine.Windows.Speech;
+using Oculus.Voice;
 
 [System.Serializable]
 public struct Gesture
@@ -41,6 +41,7 @@ public struct Gesture
         return base.Equals(obj);
     }
 }
+
 
 [System.Serializable]
 public class SerializableList<T>
@@ -82,8 +83,7 @@ public class GestureDetect : MonoBehaviour
     public GameObject gestureNamerPrefab;
     public GameObject gestureNamerPosition;
 
-    //Create KeyWordRecognizer for Voice Recognition
-    private KeywordRecognizer recognizer;
+    public AppVoiceExperience appVoiceExperience;
 
     // Start is called before the first frame update
     void Start()
@@ -111,57 +111,45 @@ public class GestureDetect : MonoBehaviour
             
             currentPos.x += 0.2f;
         }
-
-        //Voice Recognition: If keyword "record" is recognized, goto OnPhraseRecognized, begin continuously listening for commands.
-        recognizer = new KeywordRecognizer(new string[] { "record", "save" });
-        recognizer.OnPhraseRecognized += OnPhraseRecognized;
-        recognizer.Start();
-
     }
-
-    // VOICE RECOGNITION
-    //variables for OnPhraseRecognized()
-    bool isRecording = false;
-    string gestureName = "";
-    //If spoken word is recognized, OnPhraseRecognized is triggered. NOTE: double check with user if name is correct.
-    void OnPhraseRecognized(PhraseRecognizedEventArgs args)
+    /// <summary>
+    /// Creates Strings for Voice Recognition Status
+    /// </summary>
+    public string voiceRecog
     {
-        //command holds the most recently spoken phrase
-        string command = args.text;
-
-        //if user wants to record, ask to give gesture a name, set isRecording to true
-        if (command == "record" || command == "save")
+        get { return _voiceRecog;}
+        set
         {
-            Debug.Log("Please name your Gesture");
-            isRecording = true;
-            //The method exits, and command then becomes users next phrase (name of gesture)
+            _voiceRecog = value;
+            Debug.Log("In Set");
+            Debug.Log(value);
         }
-
-        //if user is currently recording a gesture, they have just said the gesture name.
-        //Use Save() function to save gesture, tell the user, reset variables.
-        else if (isRecording)
-        {
-            gestureName = command;
-            Save(gestureName);
-            Debug.Log("Gesture saved: " + gestureName);
-            gestureName = "";
-            isRecording = false;
-        }
-
-        //if other words are spoken while isRecording == false;
-        else
-        {
-            //e.g. Debug.Log("Unrecognized phrase: " + command);
-        }
-
     }
+    private string _voiceRecog;
 
+    /// <summary>
+    /// Function to view parsed output of transcript (i.e. time specified)
+    /// </summary>
+    /// <param name="values">A list containing a time and a unit</param>
+    public void TranscriptParsed(string[] values)
+    {
+        Debug.Log("in Function");
+        foreach (string value in values)
+        {
+            Debug.Log(value);
+        }
+    }
     // Update is called once per frame
     void Update()
     {
         //Search for user Hands
         hands = FindObjectsOfType<OVRSkeleton>();
         findHandtoRecord();
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            appVoiceExperience.Activate();
+        }
 
         //Check for Recognition (returns recognised Gesture if hand is in correct position)
         currentGesture = Recognize();

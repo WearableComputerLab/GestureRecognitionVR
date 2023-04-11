@@ -19,12 +19,30 @@ MonoBehaviour:
     lang: en
     isPrivate: 1
     createdAt: 2023-04-02T20:21:52-0700
-    trainingStatus: 1
-    lastTrainDuration: 0
-    lastTrainedAt: 1969-12-31T16:00:00-0800
-    nextTrainAt: 1969-12-31T16:00:00-0800
-    intents: []
-    entities: []
+    trainingStatus: 3
+    lastTrainDuration: 49
+    lastTrainedAt: 2023-04-11T04:34:54-0700
+    nextTrainAt: 2023-04-11T04:38:32-0700
+    intents:
+    - id: 2194186004100849
+      name: record
+      entities:
+      - name: wit$duration:duration
+        id: 187603800750873
+    - id: 173296548954049
+      name: wit$confirmation
+      entities: []
+    - id: 764963288479608
+      name: wit$negation
+      entities: []
+    entities:
+    - name: wit$duration
+      id: 535a80fb-4be9-4991-a48e-8b2ca4ef6e54
+      lookups: []
+      roles:
+      - name: duration
+        id: 187603800750873
+      keywords: []
     traits: []
     voices:
     - name: Charlie
@@ -67,7 +85,7 @@ MonoBehaviour:
       - formal
       - fast
       - projected
-  _configurationId: 
+  _configurationId: ad0a973c-da54-481d-9a43-eafa3a4170fd
   timeoutMS: 10000
   endpointConfiguration:
     uriScheme: 
