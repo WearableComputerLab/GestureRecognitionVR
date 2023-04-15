@@ -834,11 +834,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   events:
-    _overriddenCallbacks:
-    - OnStartListening
-    - OnResponse
-    - onFullTranscription
-    - onPartialTranscription
+    _overriddenCallbacks: []
     OnResponse:
       m_PersistentCalls:
         m_Calls:
