@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.64907485, g: 0.6911994, b: 0.68366766, a: 1}
+  m_IndirectSpecularColor: {r: 0.22659913, g: 0.39423037, b: 0.5251641, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -841,7 +841,19 @@ MonoBehaviour:
     - onPartialTranscription
     OnResponse:
       m_PersistentCalls:
-        m_Calls: []
+        m_Calls:
+        - m_Target: {fileID: 1652884387}
+          m_TargetAssemblyTypeName: GestureDetect, Assembly-CSharp
+          m_MethodName: TranscriptParsed
+          m_Mode: 0
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 1
     OnPartialResponse:
       m_PersistentCalls:
         m_Calls: []
@@ -907,19 +919,7 @@ MonoBehaviour:
         m_Calls: []
     onFullTranscription:
       m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 1652884387}
-          m_TargetAssemblyTypeName: GestureDetect, Assembly-CSharp
-          m_MethodName: set_voiceRecog
-          m_Mode: 0
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 1
+        m_Calls: []
     OnByteDataReady:
       m_PersistentCalls:
         m_Calls: []
@@ -931,7 +931,7 @@ MonoBehaviour:
     minKeepAliveVolume: 0.0005
     minKeepAliveTimeInSeconds: 2
     minTranscriptionKeepAliveTimeInSeconds: 1
-    maxRecordingTime: 20
+    maxRecordingTime: 5
     soundWakeThreshold: 0.0005
     sampleLengthInMs: 10
     micBufferLengthInSeconds: 1

@@ -2,14 +2,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Meta.WitAi;
+using Meta.WitAi.Json;
 using Newtonsoft.Json;
-using Unity.VisualScripting;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.Utilities;
-using UnityEngine.UI;
 using Oculus.Voice;
 
 [System.Serializable]
@@ -61,7 +58,7 @@ public class GestureDetect : MonoBehaviour
     private Dictionary<string, Gesture> gestures;
 
     // Record new gestures
-    [Header("Recording")] [SerializeField] private OVRSkeleton handToRecord;
+    [Header("Recording")][SerializeField] private OVRSkeleton handToRecord;
     private List<OVRBone> fingerBones = new List<OVRBone>();
 
     //Keep track of which Gesture was most recently recognized
@@ -90,7 +87,7 @@ public class GestureDetect : MonoBehaviour
     {
         //Read any previously saved Gestures from existing json data
         readGesturesFromJSON();
-        
+
         //Set 3 default gestures at startup 
         gestureNames = new Dictionary<string, UnityAction>()
         {
@@ -108,16 +105,17 @@ public class GestureDetect : MonoBehaviour
             gn.gestName = keyValuePair.Key;
             gn.gestureDetection = this;
             buttonCube.transform.position = currentPos;
-            
+
             currentPos.x += 0.2f;
         }
     }
+
     /// <summary>
     /// Creates Strings for Voice Recognition Status
     /// </summary>
     public string voiceRecog
     {
-        get { return _voiceRecog;}
+        get { return _voiceRecog; }
         set
         {
             _voiceRecog = value;
@@ -125,20 +123,32 @@ public class GestureDetect : MonoBehaviour
             Debug.Log(value);
         }
     }
-    private string _voiceRecog;
-
+    private string _voiceRecog; 
+    
     /// <summary>
-    /// Function to view parsed output of transcript (i.e. time specified)
-    /// </summary>
-    /// <param name="values">A list containing a time and a unit</param>
-    public void TranscriptParsed(string[] values)
+   /// Function to view parsed output of transcript (i.e. time specified)
+   /// </summary>
+   /// <param name="response">Response being listened to by the Voice Recognition</param>
+    public void TranscriptParsed(WitResponseNode response)
     {
         Debug.Log("in Function");
-        foreach (string value in values)
+        string intent = response.GetIntentName();
+        if (intent == "record")
         {
-            Debug.Log(value);
+            int timeNorm;
+            try
+            { 
+                timeNorm = int.Parse(response["entities"]["wit$duration:duration"][0]["normalized"]["value"]);
+            }
+            catch (Exception e)
+            {
+                timeNorm = -1;
+            }
+            Debug.Log(timeNorm);
         }
     }
+    
+    
     // Update is called once per frame
     void Update()
     {
@@ -146,7 +156,7 @@ public class GestureDetect : MonoBehaviour
         hands = FindObjectsOfType<OVRSkeleton>();
         findHandtoRecord();
 
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (!appVoiceExperience.Active)
         {
             appVoiceExperience.Activate();
         }
@@ -202,9 +212,9 @@ public class GestureDetect : MonoBehaviour
     //Save gestures in Gesture List as JSON data
     public void GesturesToJSON()
     {
-        string json = JsonConvert.SerializeObject(gestures, Formatting.Indented, new JsonSerializerSettings() 
-        { 
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore 
+        string json = JsonConvert.SerializeObject(gestures, Formatting.Indented, new JsonSerializerSettings()
+        {
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
         });
         string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
         string saveFile = directory + "savedGestures.json";
@@ -242,8 +252,8 @@ public class GestureDetect : MonoBehaviour
         string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
         string saveFile = directory + "savedGestures.json";
 
-        
-        
+
+
         if (File.Exists(saveFile))
         {
             string Contents = File.ReadAllText(saveFile);
