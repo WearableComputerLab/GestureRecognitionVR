@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Events;
 using Oculus.Voice;
+using JsonConvert = Newtonsoft.Json.JsonConvert;
 
 [System.Serializable]
 public struct Gesture
@@ -139,10 +140,12 @@ public class GestureDetect : MonoBehaviour
             try
             { 
                 timeNorm = int.Parse(response["entities"]["wit$duration:duration"][0]["normalized"]["value"]);
+                
             }
             catch (Exception e)
             {
                 timeNorm = -1;
+                //Save("Gesture Name 1");
             }
             Debug.Log(timeNorm);
         }
