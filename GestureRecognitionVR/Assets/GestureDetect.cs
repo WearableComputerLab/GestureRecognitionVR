@@ -10,6 +10,7 @@ using UnityEngine.Events;
 using Oculus.Voice;
 using JsonConvert = Newtonsoft.Json.JsonConvert;
 
+
 [System.Serializable]
 public struct Gesture
 {
@@ -54,6 +55,7 @@ public class GestureDetect : MonoBehaviour
 
     // Hands to record
     [SerializeField] private OVRSkeleton[] hands;
+    //[SerializeField] private 
 
     //Create List for Gestures
     private Dictionary<string, Gesture> gestures;
