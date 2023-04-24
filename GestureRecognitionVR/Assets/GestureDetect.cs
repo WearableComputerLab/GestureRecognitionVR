@@ -175,11 +175,16 @@ public class GestureDetect : MonoBehaviour
         Debug.Log("Saved Gesture " + name);
     }
 
-    /// 
+    public void Save(string name)
+    {
+        StartCoroutine(SaveMotion(name));
+    }
+
+    /// OLD SAVE FUNCTION, caused Unity to crash
     /// Records a gesture when a Record Button is pressed within Scene
     /// ## WORK ON ADDING DATA TO motionData ##
     /// ## NEEDS To be in coroutine ##
-    /// 
+    /* 
     public void Save(string name)
     {
         Gesture g = new Gesture();
@@ -213,6 +218,7 @@ public class GestureDetect : MonoBehaviour
         gestures[name] = g;
         print("Saved Gesture " + name);
     }
+    */
 
     //Save gestures in Gesture List as JSON data
     public void GesturesToJSON()
