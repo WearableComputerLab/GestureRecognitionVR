@@ -21,6 +21,7 @@ public class GesturePlayback : MonoBehaviour
     private void Start()
     {        
         gestureDict = GestureDetect.gestures;
+
         // fill gesture list with gestures from dict
         foreach(KeyValuePair<string, Gesture> kvp in gestureDict)
         {
@@ -46,7 +47,7 @@ public class GesturePlayback : MonoBehaviour
         isPlaying=false;
         currentGestureIndex = 0;
         currentGestureTime = 0.0f;
-        //reset position
+        //reset hand model position here
     }
 
     public void PlayGesture()
@@ -57,7 +58,7 @@ public class GesturePlayback : MonoBehaviour
             StopPlayback();
             return;
         }
-        // commented out errors, seems disparaty between Gesture object and List<string, Gesture> gestureList
+       
         Gesture currentGesture = gestureList[currentGestureIndex];
         currentGestureTime += Time.deltaTime;
 
@@ -65,7 +66,7 @@ public class GesturePlayback : MonoBehaviour
         {
             currentGestureTime -= gestureDuration;
             currentGestureIndex++;
-            //currentGesture = gestureList[currentGestureIndex];
+            currentGesture = gestureList[currentGestureIndex];
         }
 
         float t = currentGestureTime / gestureDuration;
@@ -82,3 +83,28 @@ public class GesturePlayback : MonoBehaviour
         
     }
 }
+
+/*  OR SOMETHING LIKE THIS?
+        // Get the current gesture and frame
+        Gesture currentGesture = gestureList[currentGestureIndex];
+        Gesture.Frame currentFrame = currentGesture.frames[currentFrameIndex];
+
+        // Update the finger positions of the hand model
+        for (int i = 0; i < handModel.transform.childCount; i++)
+        {
+            Transform finger = handModel.transform.GetChild(i);
+            finger.position = currentFrame.fingerPositions[i];
+        }
+
+        // Move to the next frame of the gesture
+        currentFrameIndex++;
+        if (currentFrameIndex >= currentGesture.frames.Count)
+        {
+            currentFrameIndex = 0;
+            currentGestureIndex++;
+            if (currentGestureIndex >= gestureList.Count)
+            {
+                currentGestureIndex = 0;
+            }
+        }
+*/ 
