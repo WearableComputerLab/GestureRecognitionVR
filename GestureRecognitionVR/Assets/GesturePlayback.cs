@@ -5,7 +5,9 @@ using UnityEngine;
 public class GesturePlayback : MonoBehaviour
 {
     private GestureDetect gestureDetect;
-    private Dictionary<string, Gesture> gestureList;
+    //gestureList needs to be list of Gesture objects?
+    public Dictionary<string, Gesture> gestureDict;
+    public List<Gesture> gestureList;
     // Not using Animator for now..
     public GameObject handModel;
 
@@ -18,7 +20,12 @@ public class GesturePlayback : MonoBehaviour
 
     private void Start()
     {        
-        gestureList = GestureDetect.gestures;
+        gestureDict = GestureDetect.gestures;
+        // fill gesture list with gestures from dict
+        foreach(KeyValuePair<string, Gesture> kvp in gestureDict)
+        {
+            gestureList.Add(kvp.Value);
+        }
     }
 
     private void Update()
@@ -39,12 +46,12 @@ public class GesturePlayback : MonoBehaviour
         isPlaying=false;
         currentGestureIndex = 0;
         currentGestureTime = 0.0f;
-
+        //reset position
     }
 
-    private void PlayGesture()
+    public void PlayGesture()
     {
-        /*  ERRORS  //
+        
         if(currentGestureIndex >= gestureList.Count)
         {
             StopPlayback();
@@ -72,6 +79,6 @@ public class GesturePlayback : MonoBehaviour
             //fingerTransform.position = Vector3.Lerp(currentGesture.fingerDatas[i].startPosition, currentGesture.fingerDatas[i].endPosition, t);
             //fingerTransform.rotation = Quaternion.Slerp(currentGesture.fingerDatas[i].startRotation, currentGesture.fingerDatas[i].endRotation, t);
         }
-        */
+        
     }
 }

@@ -58,6 +58,7 @@ public class GestureDetect : MonoBehaviour
     public Button nextButton;
     public Button prevButton;
     private int currentGestureIndex = 0;
+    public GesturePlayback gesturePlayback;
 
     // Set detectionThreshold. Smaller threshold = more precise hand detection. Set to 0.5.
     [SerializeField] private float detectionThreshold = 0.5f;
@@ -128,12 +129,22 @@ public class GestureDetect : MonoBehaviour
 
     private void NextGesture()
     {
-
+        currentGestureIndex++;
+        if (currentGestureIndex >= gesturePlayback.gestureList.Count)
+        {
+            currentGestureIndex = 0;
+        }
+        gesturePlayback.PlayGesture();
     }
 
     private void PrevGesture()
     {
-
+        currentGestureIndex--;
+        if (currentGestureIndex < 0)
+        {
+            currentGestureIndex = gesturePlayback.gestureList.Count - 1;
+        }
+        gesturePlayback.PlayGesture();
     }
 
     // Update is called once per frame
