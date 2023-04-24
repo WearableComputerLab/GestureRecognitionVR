@@ -143,9 +143,42 @@ public class GestureDetect : MonoBehaviour
         }
     }
 
+    // Save coroutine for motion gestures
+    public IEnumerator SaveMotion(string name)
+    {
+        Gesture g = new Gesture();
+        g.name = name;
+        List<Vector3> fingerData = new List<Vector3>();
+        List<Vector3> motionData = new List<Vector3>();
+
+        float recordingTime = 2f; // Set recording time to 2 seconds, finetune later 
+        float startTime = Time.time;
+
+        while (Time.time - startTime < recordingTime)
+        {
+            //Save each individual finger bone in fingerData, save whole hand position in motionData
+            foreach (OVRBone bone in fingerBones)
+            {
+                fingerData.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
+            }
+            motionData.Add(handToRecord.transform.InverseTransformPoint(handToRecord.transform.position));
+            yield return null;
+        }
+
+        g.fingerData = fingerData;
+        g.motionData = motionData;
+        g.onRecognized = new UnityEvent();
+        g.onRecognized.AddListener(gestureNames[g.name]);
+
+        //Add gesture to Gesture List
+        gestures[name] = g;
+        Debug.Log("Saved Gesture " + name);
+    }
+
     /// 
     /// Records a gesture when a Record Button is pressed within Scene
     /// ## WORK ON ADDING DATA TO motionData ##
+    /// ## NEEDS To be in coroutine ##
     /// 
     public void Save(string name)
     {
