@@ -12,7 +12,7 @@ using UnityEngine.InputSystem.Utilities;
 using UnityEngine.UI;
 using Microsoft.MixedReality.Toolkit.UI;
 using Microsoft.MixedReality.Toolkit.Input;
-
+using System.Linq;
 
 [System.Serializable]
 public struct Gesture
@@ -129,22 +129,32 @@ public class GestureDetect : MonoBehaviour
 
     private void NextGesture()
     {
+        // currentGestureIndex is used to cycle through recorded gestures
         currentGestureIndex++;
-        if (currentGestureIndex >= gesturePlayback.gestureList.Count)
+        //If end of gesture list is reached, start from the start
+        if (currentGestureIndex >= gestureNames.Count)
         {
             currentGestureIndex = 0;
         }
-        gesturePlayback.PlayGesture();
+        //Get current gesture name, playback the gesture
+        Gesture currentGesture = gestures.Values.ElementAt(currentGestureIndex);
+        string gestureName = currentGesture.name;
+        gesturePlayback.PlayGesture(gestureName);
     }
 
     private void PrevGesture()
     {
+        // currentGestureIndex is used to cycle through recorded gestures
         currentGestureIndex--;
+        //If user goes back past first gesture, goto end of gesture list
         if (currentGestureIndex < 0)
         {
-            currentGestureIndex = gesturePlayback.gestureList.Count - 1;
+            currentGestureIndex = gesturePlayback.gestures.Count - 1;
         }
-        gesturePlayback.PlayGesture();
+        //Get current gesture name, playback the gesture
+        Gesture currentGesture = gestures.Values.ElementAt(currentGestureIndex);
+        string gestureName = currentGesture.name;
+        gesturePlayback.PlayGesture(gestureName);
     }
 
     // Update is called once per frame
