@@ -15,13 +15,16 @@ using UnityEngine.UI;
 public struct Gesture
 {
     public string name;
-    public List<Vector3> fingerDatas;
+    public List<Vector3> fingerData;
+    // motionData = List of hand position/rotation over time
+    public List<Vector3> motionData;
     public UnityEvent onRecognized;
 
     public Gesture(UnityAction func)
     {
         name = "UNNAMED";
-        fingerDatas = null;
+        fingerData = null;
+        motionData = null;
 
         onRecognized = new UnityEvent();
         onRecognized.AddListener(func);
@@ -140,21 +143,73 @@ public class GestureDetect : MonoBehaviour
         }
     }
 
-    /// 
+    // Save coroutine for motion gestures
+    public IEnumerator SaveMotion(string name)
+    {
+        Gesture g = new Gesture();
+        g.name = name;
+        List<Vector3> fingerData = new List<Vector3>();
+        List<Vector3> motionData = new List<Vector3>();
+
+        float recordingTime = 2f; // Set recording time to 2 seconds, finetune later 
+        float startTime = Time.time;
+
+        while (Time.time - startTime < recordingTime)
+        {
+            //Save each individual finger bone in fingerData, save whole hand position in motionData
+            foreach (OVRBone bone in fingerBones)
+            {
+                fingerData.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
+            }
+            motionData.Add(handToRecord.transform.InverseTransformPoint(handToRecord.transform.position));
+            yield return null;
+        }
+
+        g.fingerData = fingerData;
+        g.motionData = motionData;
+        g.onRecognized = new UnityEvent();
+        g.onRecognized.AddListener(gestureNames[g.name]);
+
+        //Add gesture to Gesture List
+        gestures[name] = g;
+        Debug.Log("Saved Gesture " + name);
+    }
+
+    public void Save(string name)
+    {
+        StartCoroutine(SaveMotion(name));
+    }
+
+    /// OLD SAVE FUNCTION, caused Unity to crash
     /// Records a gesture when a Record Button is pressed within Scene
-    /// 
+    /// ## WORK ON ADDING DATA TO motionData ##
+    /// ## NEEDS To be in coroutine ##
+    /* 
     public void Save(string name)
     {
         Gesture g = new Gesture();
         g.name = name;
-        List<Vector3> data = new List<Vector3>();
+        List<Vector3> fingerData = new List<Vector3>();
+        
+        // 2 WAYS FOR MOTION CAPTURE: Record for x amount of frames/seconds, or get user input to stop recording?
+        List<Vector3> motionData = new List<Vector3>();
 
-        foreach (OVRBone bone in fingerBones)
+        // Record for x amount of time/frames? or until user input to stop recording?
+        float recordingTime = 2f; // Set recording time to 2 seconds, finetune later 
+        float startTime = Time.time;
+
+        while (Time.time - startTime < recordingTime)
         {
-            data.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
+            //Save each individual finger bone in fingerData, save whole hand position in motionData
+            foreach (OVRBone bone in fingerBones)
+            {
+                fingerData.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
+            }
+            motionData.Add(handToRecord.transform.InverseTransformPoint(handToRecord.transform.position));
         }
 
-        g.fingerDatas = data;
+        g.fingerData = fingerData;
+        g.motionData = motionData;
         g.onRecognized = new UnityEvent();
 
         g.onRecognized.AddListener(gestureNames[g.name]);
@@ -163,6 +218,7 @@ public class GestureDetect : MonoBehaviour
         gestures[name] = g;
         print("Saved Gesture " + name);
     }
+    */
 
     //Save gestures in Gesture List as JSON data
     public void GesturesToJSON()
@@ -275,7 +331,9 @@ public class GestureDetect : MonoBehaviour
         sphere.SetActive(false);
     }
 
-    //Check if current hand gesture is a recorded gesture...
+    //Check if current hand gesture is a recorded gesture. NOTE: NOT TESTED
+    // velocityWeight allows us to finetune how sensitive recognition is concerning speed of gesture performance, could use detectionThreshold instead?
+    private float velocityWeight = 0.5f;
     Gesture? Recognize()
     {
         Gesture? currentGesture = null;
@@ -285,17 +343,58 @@ public class GestureDetect : MonoBehaviour
         {
             float sumDistance = 0;
             bool discard = false;
+
+            // Create Lists to store Velocity and Direction of the motionData (as Vector3s)
+            List<Vector3> velocities = new List<Vector3>();
+            List<Vector3> directions = new List<Vector3>();
+
+            // Calculate velocity and direction of movement for each item in motionData list
+            for (int i = 0; i < kvp.Value.motionData.Count - 1; i++)
+            {
+                // velocity = displacement / time
+                Vector3 displacement = kvp.Value.motionData[i + 1] - kvp.Value.motionData[i];
+                Vector3 velocity = displacement / Time.deltaTime;
+                velocities.Add(velocity.normalized);
+                // Normalize displacement to store vector representing the direction the hand is moving
+                directions.Add(displacement.normalized);
+            }
+
+            // Comparing finger positions
             for (int i = 0; i < fingerBones.Count; i++)
             {
                 Vector3 currentData = handToRecord.transform.InverseTransformPoint(fingerBones[i].Transform.position);
-                float distance = Vector3.Distance(currentData, kvp.Value.fingerDatas[i]);
-                if (distance > detectionThreshold)
+                float fingerDistance = Vector3.Distance(currentData, kvp.Value.fingerData[i]);
+                if (fingerDistance > detectionThreshold)
                 {
                     discard = true;
                     break;
                 }
 
-                sumDistance += distance;
+                sumDistance += fingerDistance;
+            }
+
+            //If fingerData is not correct, skip checking motionData
+            if (discard)
+            {
+                continue;
+            }
+
+            // Compare velocity and direction vectors for motionData
+            for (int i = 0; i < directions.Count; i++)
+            {
+                // Use Dot Product of vectors to compare velocity, and Vector Angles to compare direction
+                float dotProduct = Vector3.Dot(velocities[i], handToRecord.transform.forward);
+                float angle = Vector3.Angle(velocities[i], handToRecord.transform.forward);
+                // Get combined 'distance' between vectors, using velocityWeight to determine importance of velocity in gesture
+                float combinedDistance = angle + (dotProduct * velocityWeight);
+
+                if (combinedDistance > detectionThreshold)
+                {
+                    discard = true;
+                    break;
+                }
+
+                sumDistance += combinedDistance;
             }
 
             if (!discard && sumDistance < currentMin)
