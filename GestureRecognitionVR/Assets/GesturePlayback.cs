@@ -9,6 +9,8 @@ public class GesturePlayback : MonoBehaviour
     public GestureDetect gestureDetect;
     public Dictionary<string, Gesture> gestures;
 
+
+
     private void Start()
     {
         // Load gestures from gesture list
@@ -22,6 +24,11 @@ public class GesturePlayback : MonoBehaviour
         {
             Gesture currentGesture = gestures[gestureName];
 
+            // check if gesture is motion or static
+            bool isMotionGesture = currentGesture.fingerDatas.Count > 1;
+
+
+
             for (int i = 0; i < handModel.transform.childCount; i++)
             {
                 Transform finger = handModel.transform.GetChild(i);
@@ -33,7 +40,7 @@ public class GesturePlayback : MonoBehaviour
 }
 
 
-
+// Check if gesture only has one frame to determine motion vs static
 /* Using Coroutine for motion gestures
  * 
  * public void PlayGesture(Dictionary<string, List<Vector3>> gestures, string gestureName)
