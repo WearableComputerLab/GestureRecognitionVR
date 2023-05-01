@@ -24,11 +24,6 @@ public class GesturePlayback : MonoBehaviour
         {
             Gesture currentGesture = gestures[gestureName];
 
-            // check if gesture is motion or static
-            bool isMotionGesture = currentGesture.fingerDatas.Count > 1;
-
-
-
             for (int i = 0; i < handModel.transform.childCount; i++)
             {
                 Transform finger = handModel.transform.GetChild(i);
