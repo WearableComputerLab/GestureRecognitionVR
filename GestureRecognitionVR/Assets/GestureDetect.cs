@@ -64,6 +64,7 @@ public class GestureDetect : MonoBehaviour
     // Record new gestures
     [Header("Recording")] [SerializeField] private OVRSkeleton handToRecord;
     private List<OVRBone> fingerBones = new List<OVRBone>();
+    private float recordingTime = 0.01f; //set recording time default to 0.01 second (user should be able to change this)
 
     //Keep track of which Gesture was most recently recognized
     private Gesture? currentGesture;
@@ -144,14 +145,13 @@ public class GestureDetect : MonoBehaviour
     }
 
     // Save coroutine for motion gestures
-    public IEnumerator SaveMotion(string name)
+    public IEnumerator SaveGesture(string name, float recordingTime)
     {
         Gesture g = new Gesture();
         g.name = name;
         List<Vector3> fingerData = new List<Vector3>();
         List<Vector3> motionData = new List<Vector3>();
 
-        float recordingTime = 2f; // Set recording time to 2 seconds, finetune later 
         float startTime = Time.time;
 
         while (Time.time - startTime < recordingTime)
@@ -170,14 +170,22 @@ public class GestureDetect : MonoBehaviour
         g.onRecognized = new UnityEvent();
         g.onRecognized.AddListener(gestureNames[g.name]);
 
-        //Add gesture to Gesture List
+        // Check if gesture is a static gesture (dont think this if statement is needed)
+        // if static, motionData should have length of 1.
+        if (motionData.Count == 1)
+        {
+            g.fingerData = fingerData;
+        }
+
+        // Add gesture to Gesture List
         gestures[name] = g;
         Debug.Log("Saved Gesture " + name);
     }
 
+
     public void Save(string name)
     {
-        StartCoroutine(SaveMotion(name));
+        StartCoroutine(SaveGesture(name,recordingTime));
     }
 
     /// STATIC SAVE FUNCTION
