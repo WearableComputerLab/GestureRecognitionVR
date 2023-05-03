@@ -24,7 +24,7 @@ public class GesturePlayback : MonoBehaviour
             Gesture currentGesture = gestures[gestureName];
 
             // check if gesture is motion or static
-            if(currentGesture.motionData != null)
+            if(currentGesture.motionData.Count > 1)
             {
                 // its a motion gesture...
                 List<Vector3> frames = currentGesture.motionData;
