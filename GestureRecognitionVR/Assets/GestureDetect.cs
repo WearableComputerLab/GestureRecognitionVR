@@ -8,7 +8,9 @@ using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Events;
 using Oculus.Voice;
+using Unity.VisualScripting;
 using JsonConvert = Newtonsoft.Json.JsonConvert;
+using System.Linq;
 
 [System.Serializable]
 public struct Gesture
@@ -54,48 +56,69 @@ public class SerializableList<T>
 
 public class GestureDetect : MonoBehaviour
 {
-    // Set detectionThreshold. Smaller threshold = more precise hand detection. Set to 0.5.
+    /// <summary>
+    /// Set detectionThreshold. Smaller threshold = more precise hand detection. Set to 0.5.
+    /// </summary>
     [SerializeField] private float detectionThreshold = 0.5f;
 
-    // Hands to record
+    /// <summary>
+    /// Hands to record
+    /// </summary>
     [SerializeField] private OVRSkeleton[] hands;
 
-    //Create List for Gestures
+    /// <summary>
+    /// Create List for Gestures
+    /// </summary>
     private Dictionary<string, Gesture> gestures;
 
-    // Record new gestures
+    /// <summary>
+    /// Finds hand used to record gestures
+    /// </summary>
     [Header("Recording")] [SerializeField] private OVRSkeleton handToRecord;
     private List<OVRBone> fingerBones = new List<OVRBone>();
 
-    private float
-        recordingTime = 0.01f; //set recording time default to 0.01 second (user should be able to change this)
+    /// <summary>
+    /// Set recording time default to 0.01 second (user should be able to change this)
+    /// </summary>
+    private const float recordingTime = 0.01f; 
 
-    //Keep track of which Gesture was most recently recognized
+    /// <summary>
+    /// Keep track of which Gesture was most recently recognized
+    /// </summary>
     private Gesture? currentGesture;
     private Gesture? previousGesture;
 
-    //Create cube object and renderer to change color when G1 is recognised (G1Routine). 
+    /// <summary>
+    /// Creates cube object and renderer to change color when G1 is recognised (G1Routine). 
+    /// </summary>
     [SerializeField] public GameObject cube;
     public Renderer cubeRenderer;
     public Color newColour;
     public Color oldColour;
 
-    //Create second cube, which will be transformed to sphere when G2 is recognised (G2Routine).
+    /// <summary>
+    /// Create second cube, which will be transformed to sphere when G2 is recognised (G2Routine).
+    /// </summary>
     [SerializeField] public GameObject cube2;
     public GameObject sphere;
 
-    //Create Dictionary to store Gestures
+    /// <summary>
+    /// Create Dictionary to store Gestures
+    /// </summary>
     Dictionary<string, UnityAction> gestureNames;
     public GameObject gestureNamerPrefab;
     public GameObject gestureNamerPosition;
 
     public AppVoiceExperience appVoiceExperience;
 
-    // Start is called before the first frame update
+    /// <summary>
+    /// Start is called before the first frame update. Calls readGesturesFromJSON() and sets 3 default gestures.
+    /// Creates cube button for each gesture.
+    /// </summary>
     void Start()
     {
         //Read any previously saved Gestures from existing json data
-        readGesturesFromJSON();
+        ReadGesturesFromJSON();
 
         //Set 3 default gestures at startup 
         gestureNames = new Dictionary<string, UnityAction>()
@@ -125,14 +148,12 @@ public class GestureDetect : MonoBehaviour
     public string voiceRecog
     {
         get { return _voiceRecog; }
-        set
-        {
-            _voiceRecog = value;
-            Debug.Log("In Set");
-            Debug.Log(value);
-        }
+        set { _voiceRecog = value; }
     }
 
+    /// <summary>
+    /// String for Voice Recognition Status
+    /// </summary>
     private string _voiceRecog;
 
     /// <summary>
@@ -141,33 +162,38 @@ public class GestureDetect : MonoBehaviour
     /// <param name="response">Response being listened to by the Voice Recognition</param>
     public void TranscriptParsed(WitResponseNode response)
     {
-        Debug.Log("in Function");
-        string intent = response.GetIntentName();
-        if (intent == "record")
+        //If the intent is to record and the confidence is high enough, save the gesture
+        if (response["intents"][0]["name"].Value == "record" &&
+            float.Parse(response["intents"][0]["confidence"]) > 0.95f)
         {
-            int timeNorm;
+            //setting default time to 0.01f as instantiated.
+            float timeNorm = recordingTime;
             try
             {
-                timeNorm = int.Parse(response["entities"]["wit$duration:duration"][0]["normalized"]["value"]);
+                //If the time is specified, set the time to the specified time.
+                //Clamps the time to be between 0.01 and 10 seconds to prevent errors/overclocking system.
+                timeNorm = Mathf.Clamp(
+                    int.Parse(response["entities"]["wit$duration:duration"][0]["normalized"]["value"]),
+                    recordingTime, 10);
             }
-            catch (Exception e)
+            catch
             {
-                timeNorm = -1;
-                //Save("Gesture Name 1");
+                // ignored
             }
-
-            Debug.Log(timeNorm);
+            Save("gesture", timeNorm);
         }
     }
-
-
-    // Update is called once per frame
+    
+    /// <summary>
+    /// Update is called once per frame. Finds hand to record, checks for recognition, logs recognised gesture.
+    /// </summary>
     void Update()
     {
         //Search for user Hands
         hands = FindObjectsOfType<OVRSkeleton>();
-        findHandtoRecord();
+        FindHandToRecord();
 
+        //If the voice experience is not active, activate it.
         if (!appVoiceExperience.Active)
         {
             appVoiceExperience.Activate();
@@ -185,10 +211,11 @@ public class GestureDetect : MonoBehaviour
         }
     }
 
-    /// 
-    /// Find a hand to record 
-    /// Set finger bones for hand
-    private void findHandtoRecord()
+   
+    /// <summary>
+    /// Find a hand to record and set finger bones for the hand
+    /// </summary>
+    private void FindHandToRecord()
     {
         if (hands.Length > 0)
         {
@@ -197,8 +224,13 @@ public class GestureDetect : MonoBehaviour
         }
     }
 
-
-    // Save coroutine for motion gestures
+    // TODO - LEWIS FILL IN YOUR SUMMARY COMMENT PLEASE
+    /// <summary>
+    /// Save coroutine for motion gestures
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="recordingTime"></param>
+    /// <returns></returns>
     public IEnumerator SaveGesture(string name, float recordingTime)
     {
         Gesture g = new Gesture();
@@ -215,7 +247,6 @@ public class GestureDetect : MonoBehaviour
             {
                 fingerData.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
             }
-
             motionData.Add(handToRecord.transform.InverseTransformPoint(handToRecord.transform.position));
             yield return new WaitForEndOfFrame();
         }
@@ -237,13 +268,14 @@ public class GestureDetect : MonoBehaviour
         Debug.Log("Saved Gesture " + name);
     }
 
-
-    /// 
-    /// Records a gesture when a Record Button is pressed within Scene, or when voice commands to record/save.
-    /// 
-    public void Save(string name)
+    /// <summary>
+    /// Calls upon SaveGesture coroutine to save a gesture.
+    /// </summary>
+    /// <param name="name">Name of Gesture</param>
+    /// <param name="customTime">Time to recording gesture for, defaults to recordingTime (0.01f)</param>
+    public void Save(string name, float customTime = recordingTime)
     {
-        StartCoroutine(SaveGesture(name, recordingTime));
+        StartCoroutine(SaveGesture(name, customTime));
     }
 
     /// STATIC SAVE FUNCTION
@@ -272,7 +304,9 @@ public class GestureDetect : MonoBehaviour
     }
     */
 
-    //Save gestures in Gesture List as JSON data
+    /// <summary>
+    /// Save gestures in Dictionary as JSON data for future use
+    /// </summary>
     public void GesturesToJSON()
     {
         string json = JsonConvert.SerializeObject(gestures, Formatting.Indented, new JsonSerializerSettings()
@@ -309,8 +343,10 @@ public class GestureDetect : MonoBehaviour
     }
     */
 
-    //Read json data from existing json files, save in list 
-    public void readGesturesFromJSON()
+    /// <summary>
+    /// Reads json data from existing json files, saves in gesture dictionary
+    /// </summary>
+    public void ReadGesturesFromJSON()
     {
         string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
         string saveFile = directory + "savedGestures.json";
@@ -318,8 +354,8 @@ public class GestureDetect : MonoBehaviour
 
         if (File.Exists(saveFile))
         {
-            string Contents = File.ReadAllText(saveFile);
-            gestures = JsonConvert.DeserializeObject<Dictionary<string, Gesture>>(Contents);
+            string contents = File.ReadAllText(saveFile);
+            gestures = JsonConvert.DeserializeObject<Dictionary<string, Gesture>>(contents);
         }
         else
         {
@@ -327,13 +363,18 @@ public class GestureDetect : MonoBehaviour
         }
     }
 
-    //Starts the G1Routine when "Gesture 1" is recognised
+    /// <summary>
+    /// Starts the G1Routine when "Gesture 1" is recognised
+    /// </summary>
     public void G1()
     {
         StartCoroutine(G1Routine());
     }
 
-    //When "Gesture 1" is recognised...
+    /// <summary>
+    /// When "Gesture 1" is recognised, change cube color to green for 2 seconds, then back to red.
+    /// </summary>
+    /// <returns>Returns a WaitForSeconds for 2 seconds</returns>
     public IEnumerator G1Routine()
     {
         //If current gesture has name "Gesture 1", change cube color to green for 2 seconds, then back to red.
@@ -344,12 +385,18 @@ public class GestureDetect : MonoBehaviour
         cubeRenderer.material.color = oldColour;
     }
 
-    //Starts the G2Routine when "Gesture 2" is recognised 
+    /// <summary>
+    /// Starts the G2Routine when "Gesture 2" is recognised
+    /// </summary>
     public void G2()
     {
         StartCoroutine(G2Routine());
     }
 
+    /// <summary>
+    /// When "Gesture 2" is recognised, change cube to a sphere for 2 seconds, then back to cube.
+    /// </summary>
+    /// <returns>Returns a WaitForSeconds for 2 seconds</returns>
     public IEnumerator G2Routine()
     {
         //If current gesture has name "Gesture 2", change cube to a sphere. After 2 seconds, it will change back.
@@ -362,12 +409,18 @@ public class GestureDetect : MonoBehaviour
         sphere.SetActive(false);
     }
 
-    //Starts the G3Routine when "Gesture 3" is recognised
+    /// <summary>
+    /// Starts the G3Routine when "Gesture 3" is recognised
+    /// </summary>
     public void G3()
     {
         StartCoroutine(G3Routine());
     }
 
+    /// <summary>
+    /// When "Gesture 3" is recognized, change cube color and change cube to sphere for 2 seconds, then back to original color and cube.
+    /// </summary>
+    /// <returns>Returns a WaitForSeconds for 2 seconds</returns>
     public IEnumerator G3Routine()
     {
         //if current gesture is "Gesture 3", change cube color and change cube to sphere for 2 seconds
@@ -383,9 +436,13 @@ public class GestureDetect : MonoBehaviour
     }
 
     //Check if current hand gesture is a recorded gesture. NOTE: NOT TESTED
-    // velocityWeight allows us to finetune how sensitive recognition is concerning speed of gesture performance, could use detectionThreshold instead?
+    //velocityWeight allows us to finetune how sensitive recognition is concerning speed of gesture performance, could use detectionThreshold instead?
     private float velocityWeight = 0.5f;
 
+    /// <summary>
+    /// TODO - LEWIS, COMMENT THIS CODE PLEASE
+    /// </summary>
+    /// <returns></returns>
     Gesture? Recognize()
     {
         Gesture? currentGesture = null;
@@ -459,23 +516,3 @@ public class GestureDetect : MonoBehaviour
         return currentGesture;
     }
 }
-
-//Inspector Record Button, no longer used.
-/*#if UNITY_EDITOR
-[CustomEditor(typeof(GestureDetect))]
-public class GestureInspector : Editor
-{
-    public override void OnInspectorGUI()
-    {
-        DrawDefaultInspector();
-
-        GestureDetect gestureDetect = (GestureDetect)target;
-
-        if (GUILayout.Button("Record a Gesture"))
-        {
-            gestureDetect.Save();
-            gestureDetect.GesturesToJSON();
-        }
-    }
-}
-#endif*/
