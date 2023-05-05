@@ -75,7 +75,7 @@ public class GestureDetect : MonoBehaviour
     // Record new gestures
     [Header("Recording")] [SerializeField] private OVRSkeleton handToRecord;
     private List<OVRBone> fingerBones = new List<OVRBone>();
-    private float recordingTime = 0.01f; //set recording time default to 0.01 second (user should be able to change this)
+    private float recordingTime = 0.01f; //set recording time default to 0.01 second (one frame, user should be able to change this)
 
     //Keep track of which Gesture was most recently recognized
     private Gesture? currentGesture;
