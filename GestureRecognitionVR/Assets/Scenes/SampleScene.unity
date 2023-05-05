@@ -1091,7 +1091,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   handModel: {fileID: 956627329}
-  gestureDetect: {fileID: 0}
+  gestureDetect: {fileID: 1652884387}
 --- !u!4 &805709333
 Transform:
   m_ObjectHideFlags: 0
@@ -1987,7 +1987,7 @@ MonoBehaviour:
   handModel: {fileID: 956627329}
   nextButton: {fileID: 1610353575}
   prevButton: {fileID: 950576321}
-  gesturePlayback: {fileID: 0}
+  gesturePlayback: {fileID: 805709332}
   detectionThreshold: 0.05
   hands: []
   handToRecord: {fileID: 328062953}
