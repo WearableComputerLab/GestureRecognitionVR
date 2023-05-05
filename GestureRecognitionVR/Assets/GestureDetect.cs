@@ -56,10 +56,10 @@ public class SerializableList<T>
 public class GestureDetect : MonoBehaviour
 {
 
-    //Hand Model Menu
+    // Hand Model Menu
     public GameObject handModel;
-    public Button nextButton;
-    public Button prevButton;
+    public Microsoft.MixedReality.Toolkit.UI.Interactable nextButton;
+    public Microsoft.MixedReality.Toolkit.UI.Interactable prevButton;
     private int currentGestureIndex = 0;
     public GesturePlayback gesturePlayback;
 
@@ -123,11 +123,9 @@ public class GestureDetect : MonoBehaviour
             currentPos.x += 0.2f;
         }
 
-        //Assign NextButton and PrevButton in scene, add listeners
-        nextButton = GameObject.Find("NextButton").GetComponent<Button>();
-        prevButton = GameObject.Find("PrevButton").GetComponent<Button>();
-        nextButton.onClick.AddListener(NextGesture);
-        prevButton.onClick.AddListener(PrevGesture);
+        //Add listeners to the Next and Previous MRTK buttons
+        nextButton.OnClick.AddListener(NextGesture);
+        prevButton.OnClick.AddListener(PrevGesture);
 
     }
 
