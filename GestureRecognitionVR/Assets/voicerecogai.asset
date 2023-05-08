@@ -180,7 +180,7 @@ MonoBehaviour:
     message: 
     dictation: 
   isDemoOnly: 0
-  useConduit: 1
+  useConduit: 0
   _manifestLocalPath: ConduitManifest-534f5d54-45cd-4491-960b-abd8967482c0.json
   excludedAssemblies: []
   relaxedResolution: 1

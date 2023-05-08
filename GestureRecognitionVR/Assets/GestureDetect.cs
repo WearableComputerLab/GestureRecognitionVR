@@ -166,6 +166,7 @@ public class GestureDetect : MonoBehaviour
         if (response["intents"][0]["name"].Value == "record" &&
             float.Parse(response["intents"][0]["confidence"]) > 0.95f)
         {
+            Debug.Log("Voice Activated: Record");
             //setting default time to 0.01f as instantiated.
             float timeNorm = recordingTime;
             try
@@ -175,14 +176,15 @@ public class GestureDetect : MonoBehaviour
                 timeNorm = Mathf.Clamp(
                     int.Parse(response["entities"]["wit$duration:duration"][0]["normalized"]["value"]),
                     recordingTime, 10);
+                Debug.Log(timeNorm);
             }
             catch
             {
                 // ignored
             }
-            Save("gesture", timeNorm);
+            Save("Gesture 1", timeNorm);
         }
-    }
+     }
     
     /// <summary>
     /// Update is called once per frame. Finds hand to record, checks for recognition, logs recognised gesture.
