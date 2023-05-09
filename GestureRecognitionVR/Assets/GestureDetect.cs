@@ -10,6 +10,9 @@ using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.UI;
+using Microsoft.MixedReality.Toolkit.UI;
+using Microsoft.MixedReality.Toolkit.Input;
+using System.Linq;
 
 [System.Serializable]
 public struct Gesture
@@ -52,6 +55,14 @@ public class SerializableList<T>
 
 public class GestureDetect : MonoBehaviour
 {
+
+    // Hand Model Menu
+    public GameObject handModel;
+    public Microsoft.MixedReality.Toolkit.UI.Interactable nextButton;
+    public Microsoft.MixedReality.Toolkit.UI.Interactable prevButton;
+    private int currentGestureIndex = 0;
+    public GesturePlayback gesturePlayback;
+
     // Set detectionThreshold. Smaller threshold = more precise hand detection. Set to 0.5.
     [SerializeField] private float detectionThreshold = 0.5f;
 
@@ -64,7 +75,7 @@ public class GestureDetect : MonoBehaviour
     // Record new gestures
     [Header("Recording")] [SerializeField] private OVRSkeleton handToRecord;
     private List<OVRBone> fingerBones = new List<OVRBone>();
-    private float recordingTime = 0.01f; //set recording time default to 0.01 second (user should be able to change this)
+    private float recordingTime = 0.01f; //set recording time default to 0.01 second (one frame, user should be able to change this)
 
     //Keep track of which Gesture was most recently recognized
     private Gesture? currentGesture;
@@ -111,6 +122,41 @@ public class GestureDetect : MonoBehaviour
             
             currentPos.x += 0.2f;
         }
+
+        //Add listeners to the Next and Previous MRTK buttons
+        nextButton.OnClick.AddListener(NextGesture);
+        prevButton.OnClick.AddListener(PrevGesture);
+
+    }
+
+    private void NextGesture()
+    {
+        // currentGestureIndex is used to cycle through recorded gestures
+        currentGestureIndex++;
+        //If end of gesture list is reached, start from the start
+        if (currentGestureIndex >= gestureNames.Count)
+        {
+            currentGestureIndex = 0;
+        }
+        //Get current gesture name, playback the gesture
+        Gesture currentGesture = gestures.Values.ElementAt(currentGestureIndex);
+        string gestureName = currentGesture.name;
+        gesturePlayback.PlayGesture(gestureName);
+    }
+
+    private void PrevGesture()
+    {
+        // currentGestureIndex is used to cycle through recorded gestures
+        currentGestureIndex--;
+        //If user goes back past first gesture, goto end of gesture list
+        if (currentGestureIndex < 0)
+        {
+            currentGestureIndex = gesturePlayback.gestures.Count - 1;
+        }
+        //Get current gesture name, playback the gesture
+        Gesture currentGesture = gestures.Values.ElementAt(currentGestureIndex);
+        string gestureName = currentGesture.name;
+        gesturePlayback.PlayGesture(gestureName);
     }
 
     // Update is called once per frame

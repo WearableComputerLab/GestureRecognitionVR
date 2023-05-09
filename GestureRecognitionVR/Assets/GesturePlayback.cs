@@ -27,8 +27,7 @@ public class GesturePlayback : MonoBehaviour
             if(currentGesture.motionData.Count > 1)
             {
                 // its a motion gesture...
-                List<Vector3> frames = currentGesture.motionData;
-                StartCoroutine(PlayGestureCoroutine(frames));
+                StartCoroutine(PlayGestureCoroutine(currentGesture.fingerData, currentGesture.motionData));
 
             } else
             {
@@ -43,15 +42,18 @@ public class GesturePlayback : MonoBehaviour
         }
     }
 
-    IEnumerator PlayGestureCoroutine(List<Vector3> frames)
+    IEnumerator PlayGestureCoroutine(List<List<Vector3>> fingerDataFrames, List<Vector3> motionDataFrames)
     {
-        foreach (Vector3 fingerPositions in frames)
+        for (int i = 0; i < fingerDataFrames.Count; i++)
         {
-            for (int i = 0; i < handModel.transform.childCount; i++)
+            // set hand position
+            handModel.transform.position = motionDataFrames[i];
+
+            // set finger positions
+            for (int j = 0; j < handModel.transform.childCount; j++)
             {
-                Transform finger = handModel.transform.GetChild(i);
-                finger.position = new Vector3(fingerPositions[i], finger.position.y, finger.position.z);
             }
+
             yield return new WaitForSeconds(0.02f);
         }
     }
