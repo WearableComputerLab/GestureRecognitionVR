@@ -42,22 +42,23 @@ public class GesturePlayback : MonoBehaviour
         }
     }
 
-    IEnumerator PlayGestureCoroutine(List<List<Vector3>> fingerDataFrames, List<Vector3> motionDataFrames)
+    IEnumerator PlayGestureCoroutine(List<List<Vector3>> fingerDataFrames, List<Vector3> handMotionFrames)
     {
         for (int i = 0; i < fingerDataFrames.Count; i++)
         {
             // set hand position
-            handModel.transform.position = motionDataFrames[i];
+            handModel.transform.position = handMotionFrames[i];
 
             // set finger positions
             for (int j = 0; j < handModel.transform.childCount; j++)
             {
+                Transform finger = handModel.transform.GetChild(j);
+                Vector3 fingerPosition = fingerDataFrames[i][j];
+                finger.position = new Vector3(fingerPosition.x, finger.position.y, finger.position.z);
             }
 
             yield return new WaitForSeconds(0.02f);
         }
     }
+
 }
-
-
-//
