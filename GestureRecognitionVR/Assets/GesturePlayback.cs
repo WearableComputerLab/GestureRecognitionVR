@@ -6,13 +6,14 @@ public class GesturePlayback : MonoBehaviour
 {
     
     public GameObject handModel;
+    public GestureDetect gestureDetect;
     public Dictionary<string, Gesture> gestures;
 
 
     private void Start()
     {
         // Load gestures from gesture list
-        gestures = GestureDetect.gestures;
+        gestures = gestureDetect.gestures;
     }
 
     public void PlayGesture(string gestureName)
