@@ -59,7 +59,7 @@ public class GestureDetect : MonoBehaviour
     [SerializeField] private OVRSkeleton[] hands;
 
     //Create List for Gestures
-    private Dictionary<string, Gesture> gestures;
+    public Dictionary<string, Gesture> gestures;
 
     // Record new gestures
     [Header("Recording")] [SerializeField] private OVRSkeleton handToRecord;
