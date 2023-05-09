@@ -15,7 +15,7 @@ using UnityEngine.UI;
 public struct Gesture
 {
     public string name;
-    public List<Vector3> fingerData;
+    public List<List<Vector3>> fingerData;
     // motionData = List of hand position/rotation over time
     public List<Vector3> motionData;
     public UnityEvent onRecognized;
@@ -149,33 +149,31 @@ public class GestureDetect : MonoBehaviour
     {
         Gesture g = new Gesture();
         g.name = name;
-        List<Vector3> fingerData = new List<Vector3>();
-        List<Vector3> motionData = new List<Vector3>();
+        g.fingerData = new List<List<Vector3>>();
+        g.motionData = new List<Vector3>();
 
         float startTime = Time.time;
 
         while (Time.time - startTime < recordingTime)
         {
+            List<Vector3> currentFrame = new List<Vector3>();
+
             //Save each individual finger bone in fingerData, save whole hand position in motionData
             foreach (OVRBone bone in fingerBones)
             {
-                fingerData.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
+                currentFrame.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
             }
-            motionData.Add(handToRecord.transform.InverseTransformPoint(handToRecord.transform.position));
+
+            // if static, motionData should have length of 1.
+            g.fingerData.Add(currentFrame);
+            g.motionData.Add(handToRecord.transform.InverseTransformPoint(handToRecord.transform.position));
             yield return null;
         }
 
-        g.fingerData = fingerData;
-        g.motionData = motionData;
+        
         g.onRecognized = new UnityEvent();
         g.onRecognized.AddListener(gestureNames[g.name]);
 
-        // Check if gesture is a static gesture (dont think this if statement is needed)
-        // if static, motionData should have length of 1.
-        if (motionData.Count == 1)
-        {
-            g.fingerData = fingerData;
-        }
 
         // Add gesture to Gesture List
         gestures[name] = g;
@@ -353,18 +351,26 @@ public class GestureDetect : MonoBehaviour
                 directions.Add(displacement.normalized);
             }
 
-            // Comparing finger positions
-            for (int i = 0; i < fingerBones.Count; i++)
+            // Compare finger positions for each frame in fingerData
+            for (int i = 0; i < kvp.Value.fingerData.Count; i++)
             {
-                Vector3 currentData = handToRecord.transform.InverseTransformPoint(fingerBones[i].Transform.position);
-                float fingerDistance = Vector3.Distance(currentData, kvp.Value.fingerData[i]);
-                if (fingerDistance > detectionThreshold)
+                for (int j = 0; j < fingerBones.Count; j++)
                 {
-                    discard = true;
-                    break;
+                    Vector3 currentData = handToRecord.transform.InverseTransformPoint(fingerBones[j].Transform.position);
+                    float fingerDistance = Vector3.Distance(currentData, kvp.Value.fingerData[i][j]);
+                    if (fingerDistance > detectionThreshold)
+                    {
+                        discard = true;
+                        break;
+                    }
+
+                    sumDistance += fingerDistance;
                 }
 
-                sumDistance += fingerDistance;
+                if (discard)
+                {
+                    break;
+                }
             }
 
             //If fingerData is not correct, skip checking motionData
