@@ -35,7 +35,7 @@ public class GesturePlayback : MonoBehaviour
                 for (int i = 0; i < handModel.transform.childCount; i++)
                 {
                     Transform finger = handModel.transform.GetChild(i);
-                    Vector3 fingerPosition = currentGesture.fingerData[i];
+                    Vector3 fingerPosition = currentGesture.fingerData[0][i];
                     finger.position = new Vector3(fingerPosition.x, finger.position.y, finger.position.z);
                 }
             }            
