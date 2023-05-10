@@ -75,7 +75,12 @@ public class GestureDetect : MonoBehaviour
     // Record new gestures
     [Header("Recording")] [SerializeField] private OVRSkeleton handToRecord;
     private List<OVRBone> fingerBones = new List<OVRBone>();
-    private float recordingTime = 0.01f; //set recording time default to 0.01 second (one frame, user should be able to change this)
+    // set recording time default to 0.01 second (one frame, user should be able to change this)
+    private float recordingTime = 0.01f; 
+    // lastRecordingTime, isRecording, and delay are used to ensure a gesture isnt recognised as soon as it is recorded.
+    private float lastRecordTime = 0f;
+    private float delay = 1.0f; //delay of one second after recording before gesture can be recognized
+    private bool isRecording = false;
 
     //Keep track of which Gesture was most recently recognized
     private Gesture? currentGesture;
@@ -193,6 +198,8 @@ public class GestureDetect : MonoBehaviour
     // Save coroutine for motion gestures
     public IEnumerator SaveGesture(string name, float recordingTime)
     {
+        isRecording = true;
+
         Gesture g = new Gesture();
         g.name = name;
         g.fingerData = new List<List<Vector3>>();
@@ -224,6 +231,10 @@ public class GestureDetect : MonoBehaviour
         // Add gesture to Gesture List
         gestures[name] = g;
         Debug.Log("Saved Gesture " + name);
+
+        // set time when gesture was recorded, set isRecording to false
+        lastRecordTime = Time.time;
+        isRecording = false;
     }
 
 
@@ -375,78 +386,83 @@ public class GestureDetect : MonoBehaviour
     Gesture? Recognize()
     {
         Gesture? currentGesture = null;
-        float currentMin = Mathf.Infinity;
 
-        foreach (KeyValuePair<string, Gesture> kvp in gestures)
+        // Check that gesture is not currently being recorded, and that one second (delay) has passed from when gesture was recorded.
+        if (!isRecording && Time.time > lastRecordTime + delay)
         {
-            float sumDistance = 0;
-            bool discard = false;
+            float currentMin = Mathf.Infinity;
 
-            // Create Lists to store Velocity and Direction of the motionData (as Vector3s)
-            List<Vector3> velocities = new List<Vector3>();
-            List<Vector3> directions = new List<Vector3>();
-
-            // Calculate velocity and direction of movement for each item in motionData list
-            for (int i = 0; i < kvp.Value.motionData.Count - 1; i++)
+            foreach (KeyValuePair<string, Gesture> kvp in gestures)
             {
-                // velocity = displacement / time
-                Vector3 displacement = kvp.Value.motionData[i + 1] - kvp.Value.motionData[i];
-                Vector3 velocity = displacement / Time.deltaTime;
-                velocities.Add(velocity.normalized);
-                // Normalize displacement to store vector representing the direction the hand is moving
-                directions.Add(displacement.normalized);
-            }
+                float sumDistance = 0;
+                bool discard = false;
 
-            // Compare finger positions for each frame in fingerData
-            for (int i = 0; i < kvp.Value.fingerData.Count; i++)
-            {
-                for (int j = 0; j < fingerBones.Count; j++)
+                // Create Lists to store Velocity and Direction of the motionData (as Vector3s)
+                List<Vector3> velocities = new List<Vector3>();
+                List<Vector3> directions = new List<Vector3>();
+
+                // Calculate velocity and direction of movement for each item in motionData list
+                for (int i = 0; i < kvp.Value.motionData.Count - 1; i++)
                 {
-                    Vector3 currentData = handToRecord.transform.InverseTransformPoint(fingerBones[j].Transform.position);
-                    float fingerDistance = Vector3.Distance(currentData, kvp.Value.fingerData[i][j]);
-                    if (fingerDistance > detectionThreshold)
+                    // velocity = displacement / time
+                    Vector3 displacement = kvp.Value.motionData[i + 1] - kvp.Value.motionData[i];
+                    Vector3 velocity = displacement / Time.deltaTime;
+                    velocities.Add(velocity.normalized);
+                    // Normalize displacement to store vector representing the direction the hand is moving
+                    directions.Add(displacement.normalized);
+                }
+
+                // Compare finger positions for each frame in fingerData
+                for (int i = 0; i < kvp.Value.fingerData.Count; i++)
+                {
+                    for (int j = 0; j < fingerBones.Count; j++)
+                    {
+                        Vector3 currentData = handToRecord.transform.InverseTransformPoint(fingerBones[j].Transform.position);
+                        float fingerDistance = Vector3.Distance(currentData, kvp.Value.fingerData[i][j]);
+                        if (fingerDistance > detectionThreshold)
+                        {
+                            discard = true;
+                            break;
+                        }
+
+                        sumDistance += fingerDistance;
+                    }
+
+                    if (discard)
+                    {
+                        break;
+                    }
+                }
+
+                //If fingerData is not correct, skip checking motionData
+                if (discard)
+                {
+                    continue;
+                }
+
+                // Compare velocity and direction vectors for motionData
+                for (int i = 0; i < directions.Count; i++)
+                {
+                    // Use Dot Product of vectors to compare velocity, and Vector Angles to compare direction
+                    float dotProduct = Vector3.Dot(velocities[i], handToRecord.transform.forward);
+                    float angle = Vector3.Angle(velocities[i], handToRecord.transform.forward);
+                    // Get combined 'distance' between vectors, using velocityWeight to determine importance of velocity in gesture
+                    float combinedDistance = angle + (dotProduct * velocityWeight);
+
+                    if (combinedDistance > detectionThreshold)
                     {
                         discard = true;
                         break;
                     }
 
-                    sumDistance += fingerDistance;
+                    sumDistance += combinedDistance;
                 }
 
-                if (discard)
+                if (!discard && sumDistance < currentMin)
                 {
-                    break;
+                    currentMin = sumDistance;
+                    currentGesture = kvp.Value;
                 }
-            }
-
-            //If fingerData is not correct, skip checking motionData
-            if (discard)
-            {
-                continue;
-            }
-
-            // Compare velocity and direction vectors for motionData
-            for (int i = 0; i < directions.Count; i++)
-            {
-                // Use Dot Product of vectors to compare velocity, and Vector Angles to compare direction
-                float dotProduct = Vector3.Dot(velocities[i], handToRecord.transform.forward);
-                float angle = Vector3.Angle(velocities[i], handToRecord.transform.forward);
-                // Get combined 'distance' between vectors, using velocityWeight to determine importance of velocity in gesture
-                float combinedDistance = angle + (dotProduct * velocityWeight);
-
-                if (combinedDistance > detectionThreshold)
-                {
-                    discard = true;
-                    break;
-                }
-
-                sumDistance += combinedDistance;
-            }
-
-            if (!discard && sumDistance < currentMin)
-            {
-                currentMin = sumDistance;
-                currentGesture = kvp.Value;
             }
         }
 
