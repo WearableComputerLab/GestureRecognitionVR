@@ -387,7 +387,7 @@ public class GestureDetect : MonoBehaviour
     {
         Gesture? currentGesture = null;
 
-        // Check that gesture is not currently being recorded, and that one second (delay) has passed from when gesture was recorded.
+        // Check that a gesture is not currently being recorded, and that at least one second (delay) has passed from when last gesture was recorded.
         if (!isRecording && Time.time > lastRecordTime + delay)
         {
             float currentMin = Mathf.Infinity;
