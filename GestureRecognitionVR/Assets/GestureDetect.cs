@@ -200,6 +200,7 @@ public class GestureDetect : MonoBehaviour
     {
         isRecording = true;
         float startTime = Time.time;
+        float frameTime = 1f / 20f; // Capture 20 frames per second
 
         Gesture g = new Gesture();
         g.name = name;
@@ -235,14 +236,11 @@ public class GestureDetect : MonoBehaviour
                 }
             }
             
-
-            yield return null;
+            yield return new WaitForSeconds(frameTime);
         }
-
-        
+                
         g.onRecognized = new UnityEvent();
         g.onRecognized.AddListener(gestureNames[g.name]);
-
 
         // Add gesture to Gesture List
         gestures[name] = g;
@@ -259,31 +257,6 @@ public class GestureDetect : MonoBehaviour
         StartCoroutine(SaveGesture(name,recordingTime));
     }
 
-    /// STATIC SAVE FUNCTION
-    /// Records a static gesture when a Record Button is pressed within Scene
-    /// Combine with SaveMotion
-    /* 
-       public void Save(string name)
-    {
-        Gesture g = new Gesture();
-        g.name = name;
-        List<Vector3> data = new List<Vector3>();
-
-        foreach (OVRBone bone in fingerBones)
-        {
-            data.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
-        }
-
-        g.fingerDatas = data;
-        g.onRecognized = new UnityEvent();
-
-        g.onRecognized.AddListener(gestureNames[g.name]);
-
-        //Add gesture to Gesture List
-        gestures[name] = g;
-        print("Saved Gesture " + name);
-    }
-    */
 
     //Save gestures in Gesture List as JSON data
     public void GesturesToJSON()
