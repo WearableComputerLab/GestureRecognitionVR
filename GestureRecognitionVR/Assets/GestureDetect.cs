@@ -199,13 +199,15 @@ public class GestureDetect : MonoBehaviour
     public IEnumerator SaveGesture(string name, float recordingTime)
     {
         isRecording = true;
+        float startTime = Time.time;
 
         Gesture g = new Gesture();
         g.name = name;
         g.fingerData = new List<List<Vector3>>();
         g.motionData = new List<Vector3>();
+        int lastSecondDisplayed = Mathf.FloorToInt(startTime);
 
-        float startTime = Time.time;
+        
 
         while (Time.time - startTime < recordingTime)
         {
@@ -216,10 +218,24 @@ public class GestureDetect : MonoBehaviour
             {
                 currentFrame.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
             }
-
+            
             // if static, motionData should have length of 1.
             g.fingerData.Add(currentFrame);
             g.motionData.Add(handToRecord.transform.InverseTransformPoint(handToRecord.transform.position));
+
+            // Update count down every second (if motion gesture)
+            if (recordingTime > 0.01)
+            {
+                int currentSecond = Mathf.FloorToInt(Time.time);
+                if (currentSecond > lastSecondDisplayed)
+                {
+                    float remainingTime = recordingTime - (Time.time - startTime);
+                    Debug.Log("Recording " + name + "... Time remaining: " + Mathf.FloorToInt(remainingTime).ToString() + " seconds");
+                    lastSecondDisplayed = currentSecond;
+                }
+            }
+            
+
             yield return null;
         }
 
