@@ -164,6 +164,8 @@ public class GestureDetect : MonoBehaviour
         gesturePlayback.PlayGesture(gestureName);
     }
 
+    public float UpdateFrequency = 0.05f; // 20 times per second (fine-tune along with frameTime in SaveGesture())
+    private float lastUpdateTime;
     // Update is called once per frame
     void Update()
     {
@@ -171,8 +173,15 @@ public class GestureDetect : MonoBehaviour
         hands = FindObjectsOfType<OVRSkeleton>();
         findHandtoRecord();
 
-        //Check for Recognition (returns recognised Gesture if hand is in correct position)
-        currentGesture = Recognize();
+        //Check for Recognition 20 times a second, same as captured data (returns recognised Gesture if hand is in correct position)
+        //NOTE: possible for recognise() to miss start of gesture (fine-tune frequency)
+        if (Time.time > lastUpdateTime + UpdateFrequency)
+        {
+            currentGesture = Recognize();
+            lastUpdateTime = Time.time;
+        }
+        // currentGesture = Recognize();
+
         bool hasRecognized = currentGesture.HasValue;
         //Check if gesture is recognisable and new, log recognised gesture
         if (hasRecognized && (!previousGesture.HasValue || !currentGesture.Value.Equals(previousGesture.Value)))
@@ -200,15 +209,13 @@ public class GestureDetect : MonoBehaviour
     {
         isRecording = true;
         float startTime = Time.time;
-        float frameTime = 1f / 20f; // Capture 20 frames per second
+        float frameTime = 1f / 20f; // Capture 20 frames per second (fine-tune along with Update() updateFrequency)
 
         Gesture g = new Gesture();
         g.name = name;
         g.fingerData = new List<List<Vector3>>();
         g.motionData = new List<Vector3>();
         int lastSecondDisplayed = Mathf.FloorToInt(startTime);
-
-        
 
         while (Time.time - startTime < recordingTime)
         {
@@ -236,6 +243,7 @@ public class GestureDetect : MonoBehaviour
                 }
             }
             
+            // Save Motion Gestures at 20fps to save resources (fine-tune this)
             yield return new WaitForSeconds(frameTime);
         }
                 
