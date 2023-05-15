@@ -175,12 +175,12 @@ public class GestureDetect : MonoBehaviour
 
         //Check for Recognition 20 times a second, same as captured data (returns recognised Gesture if hand is in correct position)
         //NOTE: possible for recognise() to miss start of gesture (fine-tune frequency)
-        if (Time.time > lastUpdateTime + UpdateFrequency)
-        {
-            currentGesture = Recognize();
-            lastUpdateTime = Time.time;
-        }
-        // currentGesture = Recognize();
+        // if (Time.time > lastUpdateTime + UpdateFrequency)
+        // {
+        //     currentGesture = Recognize();
+        //     lastUpdateTime = Time.time;
+        // }
+        currentGesture = Recognize();
 
         bool hasRecognized = currentGesture.HasValue;
         //Check if gesture is recognisable and new, log recognised gesture
@@ -385,8 +385,8 @@ public class GestureDetect : MonoBehaviour
         Gesture? currentGesture = null;
 
         // Check that a gesture is not currently being recorded, and that at least one second (delay) has passed from when last gesture was recorded.
-        if (!isRecording && Time.time > lastRecordTime + delay)
-        {
+        // if (!isRecording && Time.time > lastRecordTime + delay)
+        // {
             float currentMin = Mathf.Infinity;
 
             foreach (KeyValuePair<string, Gesture> kvp in gestures)
@@ -461,7 +461,7 @@ public class GestureDetect : MonoBehaviour
                     currentGesture = kvp.Value;
                 }
             }
-        }
+        //}
 
         return currentGesture;
     }
