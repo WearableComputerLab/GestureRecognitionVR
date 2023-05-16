@@ -53,7 +53,7 @@ public class GestureGame : MonoBehaviour
     void Start()
     {
         //Read any previously saved Gestures from existing json data
-        readGesturesFromJSON();
+        GlobalManager.Instance.GestureDetect.readGesturesFromJSON();
 
         //Set 3 default gestures at startup 
         gestureNames = new Dictionary<string, UnityAction>()
@@ -80,7 +80,8 @@ public class GestureGame : MonoBehaviour
         //     currentGesture = Recognize();
         //     lastUpdateTime = Time.time;
         // }
-        currentGesture = Recognize();
+
+        GlobalManager.Instance.GestureDetect.Recognize();
 
         bool hasRecognized = currentGesture.HasValue;
         //Check if gesture is recognisable and new, log recognised gesture
@@ -104,124 +105,7 @@ public class GestureGame : MonoBehaviour
         }
     }
 
-    // Save coroutine for motion gestures
-    public IEnumerator SaveGesture(string name, float recordingTime)
-    {
-        isRecording = true;
-        float startTime = Time.time;
-        float frameTime = 1f / 20f; // Capture 20 frames per second (fine-tune along with Update() updateFrequency)
-
-        Gesture g = new Gesture();
-        g.name = name;
-        g.fingerData = new List<List<Vector3>>();
-        g.motionData = new List<Vector3>();
-        int lastSecondDisplayed = Mathf.FloorToInt(startTime);
-
-        while (Time.time - startTime < recordingTime)
-        {
-            List<Vector3> currentFrame = new List<Vector3>();
-
-            //Save each individual finger bone in fingerData, save whole hand position in motionData
-            foreach (OVRBone bone in fingerBones)
-            {
-                currentFrame.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
-            }
-
-            // if static, motionData should have length of 1.
-            g.fingerData.Add(currentFrame);
-            g.motionData.Add(handToRecord.transform.InverseTransformPoint(handToRecord.transform.position));
-
-            // Update count down every second (if motion gesture)
-            if (recordingTime > 0.01)
-            {
-                int currentSecond = Mathf.FloorToInt(Time.time);
-                if (currentSecond > lastSecondDisplayed)
-                {
-                    float remainingTime = recordingTime - (Time.time - startTime);
-                    Debug.Log("Recording " + name + "... Time remaining: " + Mathf.FloorToInt(remainingTime).ToString() + " seconds");
-                    lastSecondDisplayed = currentSecond;
-                }
-            }
-
-            // Save Motion Gestures at 20fps to save resources (fine-tune this)
-            yield return new WaitForSeconds(frameTime);
-        }
-
-        g.onRecognized = new UnityEvent();
-        g.onRecognized.AddListener(gestureNames[g.name]);
-
-        // Add gesture to Gesture List
-        gestures[name] = g;
-        Debug.Log("Saved Gesture " + name);
-
-        // set time when gesture was recorded, set isRecording to false
-        lastRecordTime = Time.time;
-        isRecording = false;
-    }
-
-
-    public void Save(string name)
-    {
-        StartCoroutine(SaveGesture(name, recordingTime));
-    }
-
-
-    //Save gestures in Gesture List as JSON data
-    public void GesturesToJSON()
-    {
-        string json = JsonConvert.SerializeObject(gestures, Formatting.Indented, new JsonSerializerSettings()
-        {
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-        });
-        string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
-        string saveFile = directory + "savedGestures.json";
-
-        //If json directory does not exist, create it
-        if (!Directory.Exists(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        //If a previous saveFile exists, delete
-        if (File.Exists(saveFile))
-        {
-            File.Delete(saveFile);
-        }
-
-        //Save json data to new file
-        File.WriteAllText(saveFile, json);
-    }
-
-    /*
-    private void OnValidate()
-    {
-        // update JSON if any changes to the gesture list have been made
-        if (gestures.list.Count > 0)
-        {
-            GesturesToJSON();
-        }
-    }
-    */
-
-    //Read json data from existing json files, save in list 
-    public void readGesturesFromJSON()
-    {
-        string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
-        string saveFile = directory + "savedGestures.json";
-
-
-
-        if (File.Exists(saveFile))
-        {
-            string Contents = File.ReadAllText(saveFile);
-            gestures = JsonConvert.DeserializeObject<Dictionary<string, Gesture>>(Contents);
-        }
-        else
-        {
-            gestures = new Dictionary<string, Gesture>();
-        }
-    }
-
+   
     //Starts the G1Routine when "Gesture 1" is recognised
     public void G1()
     {
@@ -265,112 +149,4 @@ public class GestureGame : MonoBehaviour
 
     }
 
-    // Check if current hand gesture is a recorded gesture. NOTE: NOT TESTED
-    // velocityWeight allows us to finetune how sensitive recognition is concerning speed of gesture performance, could use detectionThreshold instead?
-    private float velocityWeight = 0.5f;
-    Gesture? Recognize()
-    {
-        Gesture? currentGesture = null;
-
-        // Check that a gesture is not currently being recorded, and that at least one second (delay) has passed from when last gesture was recorded.
-        // if (!isRecording && Time.time > lastRecordTime + delay)
-        // {
-        float currentMin = Mathf.Infinity;
-
-        foreach (KeyValuePair<string, Gesture> kvp in gestures)
-        {
-            float sumDistance = 0;
-            bool discard = false;
-
-            // Create Lists to store Velocity and Direction of the motionData (as Vector3s)
-            List<Vector3> velocities = new List<Vector3>();
-            List<Vector3> directions = new List<Vector3>();
-
-            // Calculate velocity and direction of movement for each item in motionData list
-            for (int i = 0; i < kvp.Value.motionData.Count - 1; i++)
-            {
-                // velocity = displacement / time
-                Vector3 displacement = kvp.Value.motionData[i + 1] - kvp.Value.motionData[i];
-                Vector3 velocity = displacement / Time.deltaTime;
-                velocities.Add(velocity.normalized);
-                // Normalize displacement to store vector representing the direction the hand is moving
-                directions.Add(displacement.normalized);
-            }
-
-            // Compare finger positions for each frame in fingerData
-            for (int i = 0; i < kvp.Value.fingerData.Count; i++)
-            {
-                for (int j = 0; j < fingerBones.Count; j++)
-                {
-                    Vector3 currentData = handToRecord.transform.InverseTransformPoint(fingerBones[j].Transform.position);
-                    float fingerDistance = Vector3.Distance(currentData, kvp.Value.fingerData[i][j]);
-                    if (fingerDistance > detectionThreshold)
-                    {
-                        discard = true;
-                        break;
-                    }
-
-                    sumDistance += fingerDistance;
-                }
-
-                if (discard)
-                {
-                    break;
-                }
-            }
-
-            //If fingerData is not correct, skip checking motionData
-            if (discard)
-            {
-                continue;
-            }
-
-            // Compare velocity and direction vectors for motionData
-            for (int i = 0; i < directions.Count; i++)
-            {
-                // Use Dot Product of vectors to compare velocity, and Vector Angles to compare direction
-                float dotProduct = Vector3.Dot(velocities[i], handToRecord.transform.forward);
-                float angle = Vector3.Angle(velocities[i], handToRecord.transform.forward);
-                // Get combined 'distance' between vectors, using velocityWeight to determine importance of velocity in gesture
-                float combinedDistance = angle + (dotProduct * velocityWeight);
-
-                if (combinedDistance > detectionThreshold)
-                {
-                    discard = true;
-                    break;
-                }
-
-                sumDistance += combinedDistance;
-            }
-
-            if (!discard && sumDistance < currentMin)
-            {
-                currentMin = sumDistance;
-                currentGesture = kvp.Value;
-            }
-        }
-        //}
-
-        return currentGesture;
-    }
 }
-
-//Inspector Record Button, no longer used.
-/*#if UNITY_EDITOR
-[CustomEditor(typeof(GestureDetect))]
-public class GestureInspector : Editor
-{
-    public override void OnInspectorGUI()
-    {
-        DrawDefaultInspector();
-
-        GestureDetect gestureDetect = (GestureDetect)target;
-
-        if (GUILayout.Button("Record a Gesture"))
-        {
-            gestureDetect.Save();
-            gestureDetect.GesturesToJSON();
-        }
-    }
-}
-#endif*/
