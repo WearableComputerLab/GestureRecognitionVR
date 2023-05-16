@@ -21,24 +21,19 @@ public class GestureGame : MonoBehaviour
     // Hand Model 
     public GameObject handModel;
 
+    // Create List for Gestures to load from JSON
+    public Dictionary<string, Gesture> gestures;
+
     // Set detectionThreshold. Smaller threshold = more precise hand detection. Set to 0.5.
     [SerializeField] private float detectionThreshold = 0.5f;
 
     // Hands to record
     [SerializeField] private OVRSkeleton[] hands;
 
-    //Create List for Gestures
-    public Dictionary<string, Gesture> gestures;
-
     // Record new gestures
     [Header("Recording")][SerializeField] private OVRSkeleton handToRecord;
     private List<OVRBone> fingerBones = new List<OVRBone>();
-    // set recording time default to 0.01 second (one frame, user should be able to change this)
-    private float recordingTime = 0.01f;
-    // lastRecordingTime, isRecording, and delay are used to ensure a gesture isnt recognised as soon as it is recorded.
-    private float lastRecordTime = 0f;
-    private float delay = 1.0f; //delay of one second after recording before gesture can be recognized
-    private bool isRecording = false;
+   
 
     //Keep track of which Gesture was most recently recognized
     private Gesture? currentGesture;
@@ -53,7 +48,7 @@ public class GestureGame : MonoBehaviour
     void Start()
     {
         //Read any previously saved Gestures from existing json data
-        GlobalManager.Instance.GestureDetect.readGesturesFromJSON();
+        gestures = GlobalManager.Instance.GetGestures();
 
         //Set 3 default gestures at startup 
         gestureNames = new Dictionary<string, UnityAction>()
@@ -62,6 +57,7 @@ public class GestureGame : MonoBehaviour
             { "Gesture 2", G2 },
             { "Gesture 3", G3 }
         };
+
     }
 
     public float UpdateFrequency = 0.05f; // 20 times per second (fine-tune along with frameTime in SaveGesture())
@@ -69,10 +65,7 @@ public class GestureGame : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //Search for user Hands
-        hands = FindObjectsOfType<OVRSkeleton>();
-        findHandtoRecord();
-
+        
         //Check for Recognition 20 times a second, same as captured data (returns recognised Gesture if hand is in correct position)
         //NOTE: possible for recognise() to miss start of gesture (fine-tune frequency)
         // if (Time.time > lastUpdateTime + UpdateFrequency)

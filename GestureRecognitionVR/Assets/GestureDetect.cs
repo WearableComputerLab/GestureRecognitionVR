@@ -303,18 +303,20 @@ public class GestureDetect : MonoBehaviour
     }
     */
 
+
     //Read json data from existing json files, save in list 
     public void readGesturesFromJSON()
     {
         string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
         string saveFile = directory + "savedGestures.json";
 
-        
-        
         if (File.Exists(saveFile))
         {
             string Contents = File.ReadAllText(saveFile);
             gestures = JsonConvert.DeserializeObject<Dictionary<string, Gesture>>(Contents);
+
+            // set loaded Gestures in GlobalManager, to be used in other scenes
+            GlobalManager.Instance.SetGestures(gestures);
         }
         else
         {
@@ -380,7 +382,7 @@ public class GestureDetect : MonoBehaviour
     //Check if current hand gesture is a recorded gesture. NOTE: NOT TESTED
     // velocityWeight allows us to finetune how sensitive recognition is concerning speed of gesture performance, could use detectionThreshold instead?
     private float velocityWeight = 0.5f;
-    Gesture? Recognize()
+    public Gesture? Recognize()
     {
         Gesture? currentGesture = null;
 
