@@ -14,7 +14,7 @@ using Microsoft.MixedReality.Toolkit.UI;
 using Microsoft.MixedReality.Toolkit.Input;
 using System.Linq;
 
-
+// This class contains all game (rock, paper, scissor) logic 
 public class GestureGame : MonoBehaviour
 {
 
@@ -23,9 +23,6 @@ public class GestureGame : MonoBehaviour
 
     // Create List for Gestures to load from JSON
     public Dictionary<string, Gesture> gestures;
-
-    // Set detectionThreshold. Smaller threshold = more precise hand detection. Set to 0.5.
-    [SerializeField] private float detectionThreshold = 0.5f;
 
     // Hands to record
     [SerializeField] private OVRSkeleton[] hands;
@@ -39,7 +36,7 @@ public class GestureGame : MonoBehaviour
     private Gesture? currentGesture;
     private Gesture? previousGesture;
 
-    //Create Dictionary to store Gestures
+    //Create Dictionary to store Gestures (use this for specific gesture actions)
     Dictionary<string, UnityAction> gestureNames;
     public GameObject gestureNamerPrefab;
     public GameObject gestureNamerPosition;
@@ -74,7 +71,7 @@ public class GestureGame : MonoBehaviour
         //     lastUpdateTime = Time.time;
         // }
 
-        GlobalManager.Instance.GestureDetect.Recognize();
+        currentGesture = GlobalManager.Instance.GestureDetect.Recognize();
 
         bool hasRecognized = currentGesture.HasValue;
         //Check if gesture is recognisable and new, log recognised gesture

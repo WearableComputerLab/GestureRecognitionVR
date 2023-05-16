@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+// This class is persistant across all scenes, and allows us to use methods from GestureDetect, 
+// as well as access the Gesture data from the JSON.
 public class GlobalManager : MonoBehaviour
 {
     // Singleton instance
@@ -8,6 +10,7 @@ public class GlobalManager : MonoBehaviour
 
     // Find and assign GestureDetect script 
     public GestureDetect GestureDetect { get; private set; }
+    public GesturePlayback GesturePlayback { get; private set; }
 
     // Initialise Dictionary to hold gestures
     private Dictionary<string, Gesture> gestures;
