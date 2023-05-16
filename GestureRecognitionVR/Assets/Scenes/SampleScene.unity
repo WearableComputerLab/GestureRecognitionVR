@@ -969,6 +969,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: NextButton
       objectReference: {fileID: 0}
+    - target: {fileID: 1795626731574084, guid: d5e0e8cc740eb134789fd1f6bb5bb80a, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4607159678781596, guid: d5e0e8cc740eb134789fd1f6bb5bb80a, type: 3}
       propertyPath: m_RootOrder
       value: 2
@@ -1379,6 +1383,10 @@ PrefabInstance:
     - target: {fileID: 1795626731574084, guid: d5e0e8cc740eb134789fd1f6bb5bb80a, type: 3}
       propertyPath: m_Name
       value: PrevButton
+      objectReference: {fileID: 0}
+    - target: {fileID: 1795626731574084, guid: d5e0e8cc740eb134789fd1f6bb5bb80a, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4607159678781596, guid: d5e0e8cc740eb134789fd1f6bb5bb80a, type: 3}
       propertyPath: m_RootOrder
