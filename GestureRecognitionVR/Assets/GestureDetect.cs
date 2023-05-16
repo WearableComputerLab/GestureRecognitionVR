@@ -162,11 +162,12 @@ public class GestureDetect : MonoBehaviour
     /// <param name="response">Response being listened to by the Voice Recognition</param>
     public void TranscriptParsed(WitResponseNode response)
     {
+        Debug.Log($"Voice Input: {response["text"]}");
         //If the intent is to record and the confidence is high enough, save the gesture
         if (response["intents"][0]["name"].Value == "record" &&
             float.Parse(response["intents"][0]["confidence"]) > 0.95f)
         {
-            Debug.Log("Voice Activated: Record");
+            Debug.Log("Command Recognised: Record");
             //setting default time to 0.01f as instantiated.
             float timeNorm = recordingTime;
             try
@@ -176,7 +177,7 @@ public class GestureDetect : MonoBehaviour
                 timeNorm = Mathf.Clamp(
                     int.Parse(response["entities"]["wit$duration:duration"][0]["normalized"]["value"]),
                     recordingTime, 10);
-                Debug.Log(timeNorm);
+                //Debug.Log(timeNorm);
             }
             catch
             {
