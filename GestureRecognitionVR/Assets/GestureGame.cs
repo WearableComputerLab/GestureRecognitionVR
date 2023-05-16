@@ -17,6 +17,9 @@ using System.Linq;
 // This class contains all game (rock, paper, scissor) logic 
 public class GestureGame : MonoBehaviour
 {
+    // Variables for player and computer gestures
+    private string playerGesture;
+    private string computerGesture;
 
     // Hand Model 
     public GameObject handModel;
@@ -47,6 +50,10 @@ public class GestureGame : MonoBehaviour
         //Read any previously saved Gestures from existing json data
         gestures = GlobalManager.Instance.GetGestures();
 
+        // Set gestures to empty by default
+        playerGesture = string.Empty;
+        computerGesture = string.Empty;
+
         //Set 3 default gestures at startup 
         gestureNames = new Dictionary<string, UnityAction>()
         {
@@ -62,12 +69,12 @@ public class GestureGame : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+
         //Check for Recognition 20 times a second, same as captured data (returns recognised Gesture if hand is in correct position)
         //NOTE: possible for recognise() to miss start of gesture (fine-tune frequency)
         // if (Time.time > lastUpdateTime + UpdateFrequency)
         // {
-        //     currentGesture = Recognize();
+        //     currentGesture = GlobalManager.Instance.GestureDetect.Recognize();
         //     lastUpdateTime = Time.time;
         // }
 
