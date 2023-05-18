@@ -23,6 +23,7 @@ public class GestureGame : MonoBehaviour
 
     // Hand Model 
     public GameObject handModel;
+    
 
     // Create List for Gestures to load from JSON
     public Dictionary<string, Gesture> gestures;
@@ -49,6 +50,11 @@ public class GestureGame : MonoBehaviour
     {
         //Read any previously saved Gestures from existing json data
         gestures = GlobalManager.Instance.GetGestures();
+
+        // Retrieve the GesturePlayback component from the HandModel GameObject (to animate computer gestures)
+        GesturePlayback computerGesturePlayback = handModel.GetComponent<GesturePlayback>();
+        // Play back the computer's gesture 
+        // computerGesturePlayback.PlayGesture(computerGesture);
 
         // Set gestures to empty by default
         playerGesture = string.Empty;
@@ -102,7 +108,6 @@ public class GestureGame : MonoBehaviour
         }
     }
 
-   
     //Starts the G1Routine when "Gesture 1" is recognised
     public void G1()
     {
@@ -145,5 +150,45 @@ public class GestureGame : MonoBehaviour
         yield return new WaitForSeconds(2);
 
     }
+
+    private void GenerateComputerGesture()
+    {
+        // Randomly select a gesture for the computer
+        List<string> gestureKeys = new List<string>(gestureNames.Keys);
+        int randomIndex = UnityEngine.Random.Range(0, gestureKeys.Count);
+        computerGesture = gestureKeys[randomIndex];
+    }
+
+    
+    private void DetermineWinner()
+    {
+        // 'out' is used to retrieve the Gesture object associated with the playerGesture key from the gestures dictionary
+        // and store it in the playerGestureData variable.
+        if (gestures.TryGetValue(playerGesture, out Gesture playerGestureData) &&
+            gestures.TryGetValue(computerGesture, out Gesture computerGestureData))
+        {
+            // Compare player's and computer's gestures to determine the winner
+            if (playerGestureData.name == computerGestureData.name)
+            {
+                Debug.Log("It's a tie!");
+            }
+            // Rock Paper Scissor Logic
+            else if ((playerGestureData.name == "Rock" && computerGestureData.name == "Scissors") ||
+                     (playerGestureData.name == "Scissors" && computerGestureData.name == "Paper") ||
+                     (playerGestureData.name == "Paper" && computerGestureData.name == "Rock"))
+            {
+                Debug.Log("Player wins!");
+            }
+            else
+            {
+                Debug.Log("Computer wins!");
+            }
+        }
+        else
+        {
+            Debug.Log("Invalid gestures selected!");
+        }
+    }
+
 
 }
