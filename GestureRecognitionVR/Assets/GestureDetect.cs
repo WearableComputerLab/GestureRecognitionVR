@@ -30,6 +30,11 @@ public struct Gesture
         onRecognized.AddListener(func);
     }
 
+    /// <summary>
+    /// TODO
+    /// </summary>
+    /// <param name="obj"></param>
+    /// <returns></returns>
     public override bool Equals(object obj)
     {
         Vector3 test1 = Vector3.zero;
@@ -53,7 +58,7 @@ public class SerializableList<T>
 
 public class GestureDetect : MonoBehaviour
 {
-    // Hand Model Menu
+    // TODO
     public GameObject handModel;
     public Microsoft.MixedReality.Toolkit.UI.Interactable nextButton;
     public Microsoft.MixedReality.Toolkit.UI.Interactable prevButton;
@@ -73,7 +78,7 @@ public class GestureDetect : MonoBehaviour
     /// <summary>
     /// Create List for Gestures
     /// </summary>
-    private Dictionary<string, Gesture> gestures;
+    public Dictionary<string, Gesture> gestures;
 
     /// <summary>
     /// Finds hand used to record gestures

@@ -20,10 +20,16 @@ MonoBehaviour:
     isPrivate: 1
     createdAt: 2023-04-02T20:21:52-0700
     trainingStatus: 1
-    lastTrainDuration: 25
-    lastTrainedAt: 2023-05-03T03:46:08-0700
-    nextTrainAt: 2023-05-03T03:45:43-0700
+    lastTrainDuration: 47
+    lastTrainedAt: 2023-05-17T21:33:45-0700
+    nextTrainAt: 2023-05-17T21:32:58-0700
     intents:
+    - id: 913217826570276
+      name: next
+      entities: []
+    - id: 1290486315173193
+      name: previous
+      entities: []
     - id: 969831814453487
       name: record
       entities:

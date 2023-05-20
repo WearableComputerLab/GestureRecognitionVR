@@ -4,44 +4,54 @@ using UnityEngine;
 
 public class GesturePlayback : MonoBehaviour
 {
-    
     public GameObject handModel;
     public GestureDetect gestureDetect;
     public Dictionary<string, Gesture> gestures;
 
 
+    /// <summary>
+    /// TODO
+    /// </summary>
     private void Start()
     {
         // Load gestures from gesture list
         gestures = gestureDetect.gestures;
     }
 
+    /// <summary>
+    /// TODO
+    /// </summary>
+    /// <param name="gestureName"></param>
     public void PlayGesture(string gestureName)
     {
         // if gesture name matches, change hand model finger positions to match gesture fingerData
-        if (gestures.ContainsKey(gestureName))
+        if (gestures.TryGetValue(gestureName, out Gesture gesture))
         {
-            Gesture currentGesture = gestures[gestureName];
-
             // check if gesture is motion or static
-            if(currentGesture.motionData.Count > 1)
+            if (gesture.motionData.Count > 1)
             {
                 // its a motion gesture...
-                StartCoroutine(PlayGestureCoroutine(currentGesture.fingerData, currentGesture.motionData));
-
-            } else
+                StartCoroutine(PlayGestureCoroutine(gesture.fingerData, gesture.motionData));
+            }
+            else
             {
                 //its a static gesture...
                 for (int i = 0; i < handModel.transform.childCount; i++)
                 {
                     Transform finger = handModel.transform.GetChild(i);
-                    Vector3 fingerPosition = currentGesture.fingerData[0][i];
+                    Vector3 fingerPosition = gesture.fingerData[0][i];
                     finger.position = new Vector3(fingerPosition.x, finger.position.y, finger.position.z);
                 }
-            }            
+            }
         }
     }
 
+    /// <summary>
+    /// TODO
+    /// </summary>
+    /// <param name="fingerDataFrames"></param>
+    /// <param name="handMotionFrames"></param>
+    /// <returns></returns>
     IEnumerator PlayGestureCoroutine(List<List<Vector3>> fingerDataFrames, List<Vector3> handMotionFrames)
     {
         for (int i = 0; i < fingerDataFrames.Count; i++)
@@ -60,5 +70,4 @@ public class GesturePlayback : MonoBehaviour
             yield return new WaitForSeconds(0.02f);
         }
     }
-
 }
