@@ -142,6 +142,7 @@ public class GestureDetect : MonoBehaviour
     /// TODO
     /// </summary>
     public GameObject gestureNamerPrefab;
+
     public GameObject gestureNamerPosition;
 
     /// <summary>
@@ -204,31 +205,77 @@ public class GestureDetect : MonoBehaviour
     /// <param name="response">Response being listened to by the Voice Recognition</param>
     public void TranscriptParsed(WitResponseNode response)
     {
-        Debug.Log($"Voice Input: {response["text"]}");
-        //If the intent is to record and the confidence is high enough, save the gesture
-        if (response["intents"][0]["name"].Value == "record" &&
-            float.Parse(response["intents"][0]["confidence"]) > 0.95f)
-        {
-            Debug.Log("Command Recognised: Record");
-            //setting default time to 0.01f as instantiated.
-            float timeNorm = recordingTime;
-            try
+        /*Debug.Log($"Voice Input: {response["text"]}");
+            //If the intent is to record and the confidence is high enough, save the gesture
+            if (response["intents"][0]["name"].Value == "record" &&
+                float.Parse(response["intents"][0]["confidence"]) > 0.95f)
             {
-                //If the time is specified, set the time to the specified time.
-                //Clamps the time to be between 0.01 and 10 seconds to prevent errors/overclocking system.
-                timeNorm = Mathf.Clamp(
-                    int.Parse(response["entities"]["wit$duration:duration"][0]["normalized"]["value"]),
-                    recordingTime, 10);
-                //Debug.Log(timeNorm);
-            }
-            catch
-            {
-                // ignored
-            }
+                Debug.Log("Command Recognised: Record");
+                //setting default time to 0.01f as instantiated.
+                float timeNorm = recordingTime;
+                try
+                {
+                    //If the time is specified, set the time to the specified time.
+                    //Clamps the time to be between 0.01 and 10 seconds to prevent errors/overclocking system.
+                    timeNorm = Mathf.Clamp(
+                        int.Parse(response["entities"]["wit$duration:duration"][0]["normalized"]["value"]),
+                        recordingTime, 10);
+                    //Debug.Log(timeNorm);
+                }
+                catch
+                {
+                    // ignored
+                }
+                Save("Gesture 1", timeNorm);
+            }*/
 
-            Save("Gesture 1", timeNorm);
+        Debug.Log($"Voice Input: {response["text"]}");
+        //If the confidence is high
+        if (float.Parse(response["intents"][0]["confidence"]) > 0.95f)
+        {
+            //Switch for Intents
+            switch (response["intents"][0]["name"].Value)
+            {
+                //If "Record" is recognised, call Save function with specified time
+                case "record":
+                    Debug.Log("Command Recognised: Record");
+                    //setting default time to 0.01f as instantiated.
+                    float timeNorm = recordingTime;
+                    try
+                    {
+                        //If the time is specified, set the time to the specified time.
+                        //Clamps the time to be between 0.01 and 10 seconds to prevent errors/overclocking system.
+                        timeNorm = Mathf.Clamp(
+                            int.Parse(response["entities"]["wit$duration:duration"][0]["normalized"]["value"]),
+                            recordingTime, 10);
+                        Debug.Log($"Length Specified: {timeNorm} seconds");
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+
+                    Save("Gesture 1", timeNorm);
+
+                    break;
+                //If "Next" is recognised, call NextGesture function
+                case "next":
+                    NextGesture();
+                    break;
+
+                //If "Previous" is recognised, call PrevGesture function
+                case "previous":
+                    PrevGesture();
+                    break;
+
+                //If no command is recognised, log that the command is not recognised.
+                default:
+                    Debug.Log("Command not recognised");
+                    break;
+            }
         }
     }
+
 
     /// <summary>
     /// TODO
@@ -272,6 +319,7 @@ public class GestureDetect : MonoBehaviour
     /// TODO
     /// </summary>
     public float UpdateFrequency = 0.05f; // 20 times per second (fine-tune along with frameTime in SaveGesture())
+
     /// <summary>
     /// TODO
     /// </summary>
