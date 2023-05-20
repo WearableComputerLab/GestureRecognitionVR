@@ -204,27 +204,40 @@ public class GestureDetect : MonoBehaviour
         {
             List<Vector3> currentFrame = new List<Vector3>();
 
-            //Save each individual finger bone in fingerData, save whole hand position in motionData
+            // Save each individual finger bone in fingerData
             foreach (OVRBone bone in fingerBones)
             {
                 currentFrame.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
             }
 
-            // if static, motionData should have length of 1.
+            // Add the frame to fingerData
             g.fingerData.Add(currentFrame);
-            g.motionData.Add(handToRecord.transform.InverseTransformPoint(handToRecord.transform.position));
+
+            // Record hand motion data if it's a motion gesture
+            if (recordingTime > 0.01f)
+            {
+                g.motionData.Add(handToRecord.transform.InverseTransformPoint(handToRecord.transform.position));
+            }
+
             yield return null;
         }
 
-        
         g.onRecognized = new UnityEvent();
         g.onRecognized.AddListener(gestureNames[g.name]);
 
-
         // Add gesture to Gesture List
         gestures[name] = g;
-        Debug.Log("Saved Gesture " + name);
+
+        if (recordingTime > 0.01f)
+        {
+            Debug.Log("Saved Motion Gesture: " + name);
+        }
+        else
+        {
+            Debug.Log("Saved Static Gesture: " + name);
+        }
     }
+
 
 
     public void Save(string name)
