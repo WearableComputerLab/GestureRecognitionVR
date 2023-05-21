@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -18,16 +19,14 @@ public struct Gesture
 
     // motionData = List of hand position/rotation over time
     public List<Vector3> motionData;
-    public UnityEvent onRecognized;
+    public Response response;
 
-    public Gesture(UnityAction func)
+    public Gesture(string name)
     {
-        name = "UNNAMED";
+        this.name = name;
         fingerData = null;
         motionData = null;
-
-        onRecognized = new UnityEvent();
-        onRecognized.AddListener(func);
+        response = null;
     }
 
     /// <summary>
@@ -58,11 +57,13 @@ public class SerializableList<T>
 
 public class GestureDetect : MonoBehaviour
 {
+    public static GestureDetect Instance;
+
     // TODO
     public GameObject handModel;
     public Microsoft.MixedReality.Toolkit.UI.Interactable nextButton;
     public Microsoft.MixedReality.Toolkit.UI.Interactable prevButton;
-    private int currentGestureIndex = 0;
+    public int currentGestureIndex = 0;
     public GesturePlayback gesturePlayback;
 
     /// <summary>
@@ -74,12 +75,12 @@ public class GestureDetect : MonoBehaviour
     /// <summary>
     /// Set detectionThreshold. Smaller threshold = more precise hand detection. Set to 0.5.
     /// </summary>
-    [SerializeField] private float detectionThreshold = 0.5f;
+    [SerializeField] public float detectionThreshold = 0.5f;
 
     /// <summary>
     /// Hands to record
     /// </summary>
-    [SerializeField] private OVRSkeleton[] hands;
+    [SerializeField] public OVRSkeleton[] hands;
 
     /// <summary>
     /// Create List for Gestures
@@ -89,36 +90,38 @@ public class GestureDetect : MonoBehaviour
     /// <summary>
     /// Finds hand used to record gestures
     /// </summary>
-    [Header("Recording")] [SerializeField] private OVRSkeleton handToRecord;
+    [Header("Recording")] [SerializeField] public OVRSkeleton handToRecord;
 
-    private List<OVRBone> fingerBones = new List<OVRBone>();
+    public List<OVRBone> fingerBones = new List<OVRBone>();
 
     /// <summary>
     /// lastRecordingTime is used to ensure a gesture isnt recognised as soon as it is recorded.
     /// </summary>
-    private float lastRecordTime = 0f;
+    public float lastRecordTime = 0f;
 
     /// <summary>
     /// delay of one second after recording before gesture can be recognized
     /// </summary>
-    private float delay = 1.0f;
+    public float delay = 1.0f;
 
     /// <summary>
     /// isRecording is used to ensure a gesture isnt recognised as soon as it is recorded.
     /// </summary>
-    private bool isRecording = false;
+    public bool isRecording = false;
 
     /// <summary>
     /// Set recording time default to 0.01 second (user should be able to change this)
     /// </summary>
-    private const float recordingTime = 0.01f;
+    public const float recordingTime = 0.01f;
+
+    public float selectedRecordingTime = float.MinValue;
 
     /// <summary>
     /// Keep track of which Gesture was most recently recognized
     /// </summary>
-    private Gesture? currentGesture;
+    public Gesture? currentGesture;
 
-    private Gesture? previousGesture;
+    public Gesture? previousGesture;
 
     /// <summary>
     /// Creates cube object and renderer to change color when G1 is recognised (G1Routine). 
@@ -142,7 +145,7 @@ public class GestureDetect : MonoBehaviour
     /// <summary>
     /// Create Dictionary to store Gestures
     /// </summary>
-    Dictionary<string, UnityAction> gestureNames;
+    public List<Response> responses;
 
     /// <summary>
     /// TODO
@@ -156,39 +159,16 @@ public class GestureDetect : MonoBehaviour
     /// </summary>
     public AppVoiceExperience appVoiceExperience;
 
-    /// <summary>
-    /// Start is called before the first frame update. Calls readGesturesFromJSON() and sets 3 default gestures.
-    /// Creates cube button for each gesture.
-    /// </summary>
-    void Start()
+    public void Awake()
     {
-        //Read any previously saved Gestures from existing json data
-        ReadGesturesFromJSON();
-
-        //Set 3 default gestures at startup 
-        gestureNames = new Dictionary<string, UnityAction>()
+        if (Instance == null)
         {
-            { "Gesture 1", G1 },
-            { "Gesture 2", G2 },
-            { "Gesture 3", G3 }
-        };
-
-        //For each Gesture in Dictionary, create cube button on table for recording that Gesture.
-        Vector3 currentPos = gestureNamerPosition.transform.position;
-        foreach (KeyValuePair<string, UnityAction> keyValuePair in gestureNames)
-        {
-            GameObject buttonCube = Instantiate(gestureNamerPrefab);
-            GestureName gn = buttonCube.GetComponent<GestureName>();
-            gn.gestName = keyValuePair.Key;
-            gn.gestureDetection = this;
-            buttonCube.transform.position = currentPos;
-
-            currentPos.x += 0.2f;
+            Instance = this;
         }
-
-        //Add listeners to the Next and Previous MRTK buttons
-        nextButton.OnClick.AddListener(NextGesture);
-        prevButton.OnClick.AddListener(PrevGesture);
+        else
+        {
+            Destroy(this);
+        }
     }
 
     /// <summary>
@@ -203,7 +183,10 @@ public class GestureDetect : MonoBehaviour
     /// <summary>
     /// String for Voice Recognition Status
     /// </summary>
-    private string _voiceRecog;
+    public string _voiceRecog;
+
+    public Waiting.InputAction currentAction = Waiting.InputAction.None;
+
 
     /// <summary>
     /// Function to view parsed output of transcript (i.e. time specified)
@@ -211,30 +194,6 @@ public class GestureDetect : MonoBehaviour
     /// <param name="response">Response being listened to by the Voice Recognition</param>
     public void TranscriptParsed(WitResponseNode response)
     {
-        /*Debug.Log($"Voice Input: {response["text"]}");
-            //If the intent is to record and the confidence is high enough, save the gesture
-            if (response["intents"][0]["name"].Value == "record" &&
-                float.Parse(response["intents"][0]["confidence"]) > 0.95f)
-            {
-                Debug.Log("Command Recognised: Record");
-                //setting default time to 0.01f as instantiated.
-                float timeNorm = recordingTime;
-                try
-                {
-                    //If the time is specified, set the time to the specified time.
-                    //Clamps the time to be between 0.01 and 10 seconds to prevent errors/overclocking system.
-                    timeNorm = Mathf.Clamp(
-                        int.Parse(response["entities"]["wit$duration:duration"][0]["normalized"]["value"]),
-                        recordingTime, 10);
-                    //Debug.Log(timeNorm);
-                }
-                catch
-                {
-                    // ignored
-                }
-                Save("Gesture 1", timeNorm);
-            }*/
-
         Debug.Log($"Voice Input: {response["text"]}");
         //If the confidence exists and is higher than threshold
         if (float.TryParse(response["intents"][0]["confidence"], out float conf) && conf >= confidence)
@@ -262,7 +221,10 @@ public class GestureDetect : MonoBehaviour
                         // ignored
                     }
 
-                    Save("Gesture 1", timeNorm);
+                    currentAction = Waiting.InputAction.Record;
+                    selectedRecordingTime = timeNorm;
+
+                    // Save("Gesture 1", timeNorm);
 
                     break;
                 //If "Next" is recognised, call NextGesture function
@@ -287,12 +249,12 @@ public class GestureDetect : MonoBehaviour
     /// <summary>
     /// TODO
     /// </summary>
-    private void NextGesture()
+    public void NextGesture()
     {
         // currentGestureIndex is used to cycle through recorded gestures
         currentGestureIndex++;
         //If end of gesture list is reached, start from the start
-        if (currentGestureIndex >= gestureNames.Count)
+        if (currentGestureIndex >= responses.Count)
         {
             currentGestureIndex = 0;
         }
@@ -306,7 +268,7 @@ public class GestureDetect : MonoBehaviour
     /// <summary>
     /// TODO 
     /// </summary>
-    private void PrevGesture()
+    public void PrevGesture()
     {
         // currentGestureIndex is used to cycle through recorded gestures
         currentGestureIndex--;
@@ -330,47 +292,13 @@ public class GestureDetect : MonoBehaviour
     /// <summary>
     /// TODO
     /// </summary>
-    private float lastUpdateTime;
-
-    /// <summary>
-    /// Update is called once per frame. Finds hand to record, checks for recognition, logs recognised gesture.
-    /// </summary>
-    void Update()
-    {
-        //Search for user Hands
-        hands = FindObjectsOfType<OVRSkeleton>();
-        FindHandToRecord();
-
-        //If the voice experience is not active, activate it.
-        if (!appVoiceExperience.Active)
-        {
-            appVoiceExperience.Activate();
-        }
-
-        //Check for Recognition 20 times a second, same as captured data (returns recognised Gesture if hand is in correct position)
-        //NOTE: possible for recognise() to miss start of gesture (fine-tune frequency)
-        // if (Time.time > lastUpdateTime + UpdateFrequency)
-        // {
-        //     currentGesture = Recognize();
-        //     lastUpdateTime = Time.time;
-        // }
-        currentGesture = Recognize();
-
-        bool hasRecognized = currentGesture.HasValue;
-        //Check if gesture is recognisable and new, log recognised gesture
-        if (hasRecognized && (!previousGesture.HasValue || !currentGesture.Value.Equals(previousGesture.Value)))
-        {
-            Debug.Log("Gesture Recognized: " + currentGesture.Value.name);
-            previousGesture = currentGesture;
-            currentGesture.Value.onRecognized.Invoke();
-        }
-    }
+    public float lastUpdateTime;
 
 
     /// <summary>
     /// Find a hand to record and set finger bones for the hand
     /// </summary>
-    private void FindHandToRecord()
+    public void FindHandToRecord()
     {
         if (hands.Length > 0)
         {
@@ -390,12 +318,14 @@ public class GestureDetect : MonoBehaviour
     {
         isRecording = true;
         float startTime = Time.time;
-        float frameTime = 1f / 20f; // Capture 20 frames per second (fine-tune along with Update() updateFrequency)
+        // Capture 20 frames per second (fine-tune along with Update() updateFrequency)
+        const float frameTime = 1f / 20f;
 
-        Gesture g = new Gesture();
-        g.name = name;
-        g.fingerData = new List<List<Vector3>>();
-        g.motionData = new List<Vector3>();
+        Gesture g = new Gesture(name)
+        {
+            fingerData = new List<List<Vector3>>(),
+            motionData = new List<Vector3>()
+        };
         int lastSecondDisplayed = Mathf.FloorToInt(startTime);
 
         while (Time.time - startTime < recordingTime)
@@ -429,9 +359,8 @@ public class GestureDetect : MonoBehaviour
             // Save Motion Gestures at 20fps to save resources (fine-tune this)
             yield return new WaitForSeconds(frameTime);
         }
-
-        g.onRecognized = new UnityEvent();
-        g.onRecognized.AddListener(gestureNames[g.name]);
+        
+        g.response = responses.First(res => res.Name() == g.name);
 
         // Add gesture to Gesture List
         gestures[name] = g;
@@ -482,7 +411,7 @@ public class GestureDetect : MonoBehaviour
     }
 
     /*
-    private void OnValidate()
+    public void OnValidate()
     {
         // update JSON if any changes to the gesture list have been made
         if (gestures.list.Count > 0)
@@ -512,87 +441,15 @@ public class GestureDetect : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Starts the G1Routine when "Gesture 1" is recognised
-    /// </summary>
-    public void G1()
-    {
-        StartCoroutine(G1Routine());
-    }
-
-    /// <summary>
-    /// When "Gesture 1" is recognised, change cube color to green for 2 seconds, then back to red.
-    /// </summary>
-    /// <returns>Returns a WaitForSeconds for 2 seconds</returns>
-    public IEnumerator G1Routine()
-    {
-        //If current gesture has name "Gesture 1", change cube color to green for 2 seconds, then back to red.
-        cubeRenderer.material.color = newColour;
-
-        yield return new WaitForSeconds(2);
-
-        cubeRenderer.material.color = oldColour;
-    }
-
-    /// <summary>
-    /// Starts the G2Routine when "Gesture 2" is recognised
-    /// </summary>
-    public void G2()
-    {
-        StartCoroutine(G2Routine());
-    }
-
-    /// <summary>
-    /// When "Gesture 2" is recognised, change cube to a sphere for 2 seconds, then back to cube.
-    /// </summary>
-    /// <returns>Returns a WaitForSeconds for 2 seconds</returns>
-    public IEnumerator G2Routine()
-    {
-        //If current gesture has name "Gesture 2", change cube to a sphere. After 2 seconds, it will change back.
-        cube2.SetActive(false);
-        sphere.SetActive(true);
-
-        yield return new WaitForSeconds(2);
-
-        cube2.SetActive(true);
-        sphere.SetActive(false);
-    }
-
-    /// <summary>
-    /// Starts the G3Routine when "Gesture 3" is recognised
-    /// </summary>
-    public void G3()
-    {
-        StartCoroutine(G3Routine());
-    }
-
-    /// <summary>
-    /// When "Gesture 3" is recognized, change cube color and change cube to sphere for 2 seconds, then back to original color and cube.
-    /// </summary>
-    /// <returns>Returns a WaitForSeconds for 2 seconds</returns>
-    public IEnumerator G3Routine()
-    {
-        //if current gesture is "Gesture 3", change cube color and change cube to sphere for 2 seconds
-        cubeRenderer.material.color = newColour;
-        cube2.SetActive(false);
-        sphere.SetActive(true);
-
-        yield return new WaitForSeconds(2);
-
-        cubeRenderer.material.color = oldColour;
-        cube2.SetActive(true);
-        sphere.SetActive(false);
-    }
-
     //Check if current hand gesture is a recorded gesture. NOTE: NOT TESTED
     //velocityWeight allows us to finetune how sensitive recognition is concerning speed of gesture performance, could use detectionThreshold instead?
-    private float velocityWeight = 0.5f;
+    public float velocityWeight = 0.5f;
 
     /// <summary>
     /// TODO - LEWIS, COMMENT THIS CODE PLEASE
     /// </summary>
     /// <returns></returns>
-    Gesture? Recognize()
+    public Gesture? Recognize()
     {
         Gesture? currentGesture = null;
 

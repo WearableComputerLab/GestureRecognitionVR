@@ -5,7 +5,6 @@ using UnityEngine;
 public class GesturePlayback : MonoBehaviour
 {
     public GameObject handModel;
-    public GestureDetect gestureDetect;
     public Dictionary<string, Gesture> gestures;
 
 
@@ -15,7 +14,7 @@ public class GesturePlayback : MonoBehaviour
     private void Start()
     {
         // Load gestures from gesture list
-        gestures = gestureDetect.gestures;
+        gestures = GestureDetect.Instance.gestures;
     }
 
     /// <summary>

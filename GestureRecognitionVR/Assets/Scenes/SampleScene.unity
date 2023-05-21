@@ -1179,7 +1179,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   handModel: {fileID: 956627329}
-  gestureDetect: {fileID: 1652884387}
 --- !u!4 &805709333
 Transform:
   m_ObjectHideFlags: 0
@@ -2123,11 +2122,16 @@ MonoBehaviour:
   handModel: {fileID: 956627329}
   nextButton: {fileID: 1610353575}
   prevButton: {fileID: 950576321}
+  currentGestureIndex: 0
   gesturePlayback: {fileID: 805709332}
   confidence: 0.9
   detectionThreshold: 0.05
   hands: []
   handToRecord: {fileID: 328062953}
+  lastRecordTime: 0
+  delay: 1
+  isRecording: 0
+  selectedRecordingTime: -1
   cube: {fileID: 4969057824542013875}
   cubeRenderer: {fileID: 4969057824542013876}
   newColour: {r: 0, g: 0.16586089, b: 1, a: 0}
@@ -2137,7 +2141,11 @@ MonoBehaviour:
   gestureNamerPrefab: {fileID: 3096827926484273709, guid: 0cd17ed099fd68e44a7656fcd1b96419, type: 3}
   gestureNamerPosition: {fileID: 264655905}
   appVoiceExperience: {fileID: 5355204754980795285}
+  _voiceRecog: 
+  currentAction: 0
   UpdateFrequency: 0.05
+  lastUpdateTime: 0
+  velocityWeight: 0.5
 --- !u!4 &1652884388
 Transform:
   m_ObjectHideFlags: 0
@@ -2153,6 +2161,66 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 8
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1839567784
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1839567786}
+  - component: {fileID: 1839567785}
+  - component: {fileID: 1839567787}
+  m_Layer: 0
+  m_Name: StateMachine
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1839567785
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1839567784}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a4890a5866ff4e29bdb729e69142b43a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &1839567786
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1839567784}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.67262745, y: 0.5666163, z: 0.6101163}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 22
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1839567787
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1839567784}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e741851cba3ad425c91ecf922cc6b379, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _data:
+    _json: '{"declarations":{"Kind":"Object","collection":{"$content":[],"$version":"A"},"$version":"A"}}'
+    _objectReferences: []
 --- !u!1 &1947831461
 GameObject:
   m_ObjectHideFlags: 0
