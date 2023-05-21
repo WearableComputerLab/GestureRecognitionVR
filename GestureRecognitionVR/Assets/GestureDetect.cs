@@ -66,6 +66,12 @@ public class GestureDetect : MonoBehaviour
     public GesturePlayback gesturePlayback;
 
     /// <summary>
+    /// TODO: Set confidence back to 0.95f
+    /// Confidence required for a voice command to be recognised
+    /// </summary>
+    public float confidence = 0.9f;
+
+    /// <summary>
     /// Set detectionThreshold. Smaller threshold = more precise hand detection. Set to 0.5.
     /// </summary>
     [SerializeField] private float detectionThreshold = 0.5f;
@@ -230,9 +236,10 @@ public class GestureDetect : MonoBehaviour
             }*/
 
         Debug.Log($"Voice Input: {response["text"]}");
-        //If the confidence is high
-        if (float.Parse(response["intents"][0]["confidence"]) > 0.95f)
+        //If the confidence exists and is higher than threshold
+        if (float.TryParse(response["intents"][0]["confidence"], out float conf) && conf >= confidence)
         {
+            Debug.Log(response["intents"][0]["name"].Value);
             //Switch for Intents
             switch (response["intents"][0]["name"].Value)
             {
