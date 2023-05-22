@@ -14,80 +14,51 @@ public class GesturePlayback : MonoBehaviour
         gestures = new Dictionary<string, Gesture>(gestureDetect.gestures);
     }
 
-    private void Start()
-    {
-        UpdateGestures();
-
-        // Ensure that gestureDetect is not null and contains gestures
-        if (gestureDetect != null && gestureDetect.gestures != null)
-        {
-            // Assign gestures from gestureDetect
-            // gestures = new Dictionary<string, Gesture>(gestureDetect.gestures);
-            Debug.Log("gestures list isnt null");
-        }
-        else
-        {
-            // Handle the case where gestureDetect or gestureDetect.gestures is null
-            Debug.LogWarning("GestureDetect or GestureDetect.gestures is not properly initialized.");
-        }
-    }
 
     public void PlayGesture(string gestureName)
     {
         UpdateGestures();
 
-        // Ensure that gestureDetect is not null and contains gestures
-        if (gestureDetect != null && gestureDetect.gestures != null)
-        {
-            Debug.Log("GestureDetect and gestures list are not null");
-        }
-        else
-        {
-            // Handle the case where gestureDetect or gestureDetect.gestures is null
-            Debug.LogWarning("GestureDetect or GestureDetect.gestures is not properly initialized.");
-            return;
-        }
-
-        // Check if gestures dictionary is null
+        // Check if the gestures dictionary is not null and contains the specified gesture
         if (gestures != null && gestures.ContainsKey(gestureName))
         {
-            // Get the gesture from the dictionary
             Gesture currentGesture = gestures[gestureName];
             Debug.Log("Current gesture name: " + currentGesture.name);
 
-            // Check if gesture is motion or static
+            // Check if it's a motion gesture
             if (currentGesture.motionData.Count > 1)
             {
-                // It's a motion gesture...
+                // It's a motion gesture
                 Debug.Log("It's a motion gesture");
                 StartCoroutine(PlayGestureCoroutine(currentGesture.fingerData, currentGesture.motionData));
             }
             else
             {
-                // It's a static gesture...
+                // It's a static gesture
                 Debug.Log("It's a static gesture");
 
-                // Find the "hand_R" object in the hand model
+                // Find the hand object in the hand model hierarchy
                 Transform handObject = handModel.transform.Find("m_ca01_skeleton/hand_R");
 
                 if (handObject != null)
                 {
                     int fingerCount = handObject.childCount;
 
-                    // Check if the gesture has enough finger data frames
+                    // Check if the gesture has finger data frames
                     if (currentGesture.fingerData.Count > 0)
                     {
-                        // Check if the number of finger data frames matches the number of fingers
-                        if (currentGesture.fingerData.Count == fingerCount)
+                        // Iterate over each finger in the gesture data
+                        foreach (KeyValuePair<string, List<Vector3>> kvp in currentGesture.fingerData)
                         {
-                            // Update the finger bone positions in the hand object
-                            for (int fingerIndex = 0; fingerIndex < fingerCount; fingerIndex++)
+                            string fingerName = kvp.Key;
+                            List<Vector3> fingerPositions = kvp.Value;
+
+                            // Find the finger transform in the hand model hierarchy
+                            Transform finger = handObject.Find(fingerName);
+
+                            if (finger != null)
                             {
-                                Transform finger = handObject.GetChild(fingerIndex);
-
-                                List<Vector3> fingerPositions = currentGesture.fingerData[fingerIndex];
-
-                                // Check if the finger has the expected number of positions
+                                // Check if the number of positions matches the number of finger bones
                                 if (fingerPositions.Count == finger.childCount)
                                 {
                                     // Update the finger bone positions
@@ -101,13 +72,13 @@ public class GesturePlayback : MonoBehaviour
                                 }
                                 else
                                 {
-                                    Debug.LogWarning("Incorrect number of finger positions in the current gesture frame for finger index " + fingerIndex + ". Expected: " + finger.childCount + ", Actual: " + fingerPositions.Count);
+                                    Debug.LogWarning("Incorrect number of finger positions in the current gesture frame for finger '" + fingerName + "'. Expected: " + finger.childCount + ", Actual: " + fingerPositions.Count);
                                 }
                             }
-                        }
-                        else
-                        {
-                            Debug.LogWarning("Incorrect number of finger data frames in the current gesture. Expected: " + fingerCount + ", Actual: " + currentGesture.fingerData.Count);
+                            else
+                            {
+                                Debug.LogWarning("Finger '" + fingerName + "' not found in the hand model hierarchy.");
+                            }
                         }
                     }
                     else
@@ -129,33 +100,47 @@ public class GesturePlayback : MonoBehaviour
 
 
 
-
-
-
-
-
-
-
-
-
-
-    IEnumerator PlayGestureCoroutine(List<List<Vector3>> fingerDataFrames, List<Vector3> handMotionFrames)
+    IEnumerator PlayGestureCoroutine(Dictionary<string, List<Vector3>> fingerDataFrames, List<Vector3> handMotionFrames)
     {
-        for (int i = 0; i < fingerDataFrames.Count; i++)
+        foreach (KeyValuePair<string, List<Vector3>> kvp in fingerDataFrames)
         {
-            // set hand position
-            handModel.transform.position = handMotionFrames[i];
+            // Retrieve the finger name directly from the dictionary
+            string fingerName = kvp.Key;
 
-            // set finger positions
-            for (int j = 0; j < handModel.transform.childCount; j++)
+            // Find the finger transform in the hand model
+            Transform finger = handModel.transform.Find(fingerName); 
+
+            if (finger != null)
             {
-                Transform finger = handModel.transform.GetChild(j);
-                Vector3 fingerPosition = fingerDataFrames[i][j];
-                finger.position = new Vector3(fingerPosition.x, finger.position.y, finger.position.z);
+                // Retrieve the finger positions from the dictionary
+                List<Vector3> fingerPositions = kvp.Value;
+
+                // Check if the number of finger positions matches the number of finger bones
+                if (fingerPositions.Count == finger.childCount) 
+                {
+                    // Update the finger bone positions
+                    for (int boneIndex = 0; boneIndex < finger.childCount; boneIndex++)
+                    {
+                        Transform bone = finger.GetChild(boneIndex);
+                        Vector3 bonePosition = fingerPositions[boneIndex];
+                        // Set the local position of the finger bone
+                        bone.localPosition = bonePosition; 
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning("Incorrect number of finger positions in the current gesture frame for finger: " + fingerName);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Unable to find finger: " + fingerName);
             }
 
-            yield return new WaitForSeconds(0.02f);
+            // Wait for a short duration before proceeding to the next frame
+            yield return new WaitForSeconds(0.02f); 
         }
     }
+
 
 }

@@ -18,7 +18,10 @@ using System.Linq;
 public struct Gesture
 {
     public string name;
-    public List<List<Vector3>> fingerData;
+    //public List<List<Vector3>> fingerData;
+    // string is finger name and list is data over time
+    public Dictionary<string, List<Vector3>> fingerData;
+
     // motionData = List of hand position/rotation over time
     public List<Vector3> motionData;
     public UnityEvent onRecognized;
@@ -74,6 +77,7 @@ public class GestureDetect : MonoBehaviour
 
     // Record new gestures
     [Header("Recording")] [SerializeField] private OVRSkeleton handToRecord;
+    // NOTE: fingerBones is currently including all 24 bones in the hand
     private List<OVRBone> fingerBones = new List<OVRBone>();
     private float recordingTime = 0.01f; //set recording time default to 0.01 second (one frame, user should be able to change this)
 
@@ -99,6 +103,7 @@ public class GestureDetect : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        
         //Read any previously saved Gestures from existing json data
         readGesturesFromJSON();
         
@@ -186,8 +191,36 @@ public class GestureDetect : MonoBehaviour
         if (hands.Length > 0)
         {
             handToRecord = hands[0];
-            fingerBones = new List<OVRBone>(handToRecord.Bones);
+            //NOTE: this gets all 24 bones in the hand
+            // fingerBones = new List<OVRBone>(handToRecord.Bones);
+            // This gets only bones in fingers
+            fingerBones = new List<OVRBone>
+                {
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Thumb0],
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Thumb1],
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Thumb2],
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Thumb3],
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Index1],
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Index2],
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Index3],
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Middle1],
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Middle2],
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Middle3],
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Ring1],
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Ring2],
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Ring3],
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Pinky0],
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Pinky1],
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Pinky2],
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Pinky3]
+                };
+
         }
+    }
+
+    public void Save(string name)
+    {
+        StartCoroutine(SaveGesture(name, recordingTime));
     }
 
     // Save coroutine for motion gestures
@@ -195,23 +228,28 @@ public class GestureDetect : MonoBehaviour
     {
         Gesture g = new Gesture();
         g.name = name;
-        g.fingerData = new List<List<Vector3>>();
+        g.fingerData = new Dictionary<string, List<Vector3>>();
         g.motionData = new List<Vector3>();
 
         float startTime = Time.time;
 
         while (Time.time - startTime < recordingTime)
         {
-            List<Vector3> currentFrame = new List<Vector3>();
-
             // Save each individual finger bone in fingerData
             foreach (OVRBone bone in fingerBones)
             {
-                currentFrame.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
-            }
+                // Get the finger name based on the bone ID
+                string fingerName = GetFingerName(bone.Id); 
 
-            // Add the frame to fingerData
-            g.fingerData.Add(currentFrame);
+                if (!g.fingerData.ContainsKey(fingerName))
+                {
+                    // Create a new list for the finger if it doesn't exist
+                    g.fingerData[fingerName] = new List<Vector3>(); 
+                }
+
+                // Add the position to the list of the corresponding finger
+                g.fingerData[fingerName].Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
+            }
 
             // Record hand motion data if it's a motion gesture
             if (recordingTime > 0.01f)
@@ -238,38 +276,36 @@ public class GestureDetect : MonoBehaviour
         }
     }
 
-
-
-    public void Save(string name)
+    private string GetFingerName(OVRSkeleton.BoneId boneId)
     {
-        StartCoroutine(SaveGesture(name,recordingTime));
-    }
-
-    /// STATIC SAVE FUNCTION
-    /// Records a static gesture when a Record Button is pressed within Scene
-    /// Combine with SaveMotion
-    /* 
-       public void Save(string name)
+        Dictionary<OVRSkeleton.BoneId, string> boneToFingerMap = new Dictionary<OVRSkeleton.BoneId, string>()
     {
-        Gesture g = new Gesture();
-        g.name = name;
-        List<Vector3> data = new List<Vector3>();
+        { OVRSkeleton.BoneId.Hand_Thumb0, "Thumb" },
+        { OVRSkeleton.BoneId.Hand_Thumb1, "Thumb" },
+        { OVRSkeleton.BoneId.Hand_Thumb2, "Thumb" },
+        { OVRSkeleton.BoneId.Hand_Thumb3, "Thumb" },
+        { OVRSkeleton.BoneId.Hand_Index1, "Index" },
+        { OVRSkeleton.BoneId.Hand_Index2, "Index" },
+        { OVRSkeleton.BoneId.Hand_Index3, "Index" },
+        { OVRSkeleton.BoneId.Hand_Middle1, "Middle" },
+        { OVRSkeleton.BoneId.Hand_Middle2, "Middle" },
+        { OVRSkeleton.BoneId.Hand_Middle3, "Middle" },
+        { OVRSkeleton.BoneId.Hand_Ring1, "Ring" },
+        { OVRSkeleton.BoneId.Hand_Ring2, "Ring" },
+        { OVRSkeleton.BoneId.Hand_Ring3, "Ring" },
+        { OVRSkeleton.BoneId.Hand_Pinky0, "Pinky" },
+        { OVRSkeleton.BoneId.Hand_Pinky1, "Pinky" },
+        { OVRSkeleton.BoneId.Hand_Pinky2, "Pinky" },
+        { OVRSkeleton.BoneId.Hand_Pinky3, "Pinky" }
+    };
 
-        foreach (OVRBone bone in fingerBones)
+        if (boneToFingerMap.ContainsKey(boneId))
         {
-            data.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
+            return boneToFingerMap[boneId];
         }
 
-        g.fingerDatas = data;
-        g.onRecognized = new UnityEvent();
-
-        g.onRecognized.AddListener(gestureNames[g.name]);
-
-        //Add gesture to Gesture List
-        gestures[name] = g;
-        print("Saved Gesture " + name);
+        return "Unknown";
     }
-    */
 
     //Save gestures in Gesture List as JSON data
     public void GesturesToJSON()
@@ -395,34 +431,36 @@ public class GestureDetect : MonoBehaviour
             float sumDistance = 0;
             bool discard = false;
 
-            // Create Lists to store Velocity and Direction of the motionData (as Vector3s)
-            List<Vector3> velocities = new List<Vector3>();
-            List<Vector3> directions = new List<Vector3>();
-
-            // Calculate velocity and direction of movement for each item in motionData list
-            for (int i = 0; i < kvp.Value.motionData.Count - 1; i++)
-            {
-                // velocity = displacement / time
-                Vector3 displacement = kvp.Value.motionData[i + 1] - kvp.Value.motionData[i];
-                Vector3 velocity = displacement / Time.deltaTime;
-                velocities.Add(velocity.normalized);
-                // Normalize displacement to store vector representing the direction the hand is moving
-                directions.Add(displacement.normalized);
-            }
-
             // Compare finger positions for each frame in fingerData
             for (int i = 0; i < kvp.Value.fingerData.Count; i++)
             {
                 for (int j = 0; j < fingerBones.Count; j++)
                 {
+                    // Get the finger name for the current bone
+                    string fingerName = GetFingerName(fingerBones[j].Id);
+
+                    // Check if the finger name exists in the gesture's fingerData dictionary
+                    if (!kvp.Value.fingerData.ContainsKey(fingerName))
+                    {
+                        // If the finger name is not present, discard the gesture
+                        discard = true;
+                        break;
+                    }
+
+                    // Get the current finger bone position
                     Vector3 currentData = handToRecord.transform.InverseTransformPoint(fingerBones[j].Transform.position);
-                    float fingerDistance = Vector3.Distance(currentData, kvp.Value.fingerData[i][j]);
+
+                    // Calculate the distance between the current bone position and the corresponding position in the gesture's fingerData
+                    float fingerDistance = Vector3.Distance(currentData, kvp.Value.fingerData[fingerName][i]);
+
+                    // If the finger distance exceeds the detection threshold, discard the gesture
                     if (fingerDistance > detectionThreshold)
                     {
                         discard = true;
                         break;
                     }
 
+                    // Accumulate the finger distances
                     sumDistance += fingerDistance;
                 }
 
@@ -432,32 +470,52 @@ public class GestureDetect : MonoBehaviour
                 }
             }
 
-            //If fingerData is not correct, skip checking motionData
-            if (discard)
+            // If fingerData is not correct, skip checking motionData
+            if (!discard)
             {
-                continue;
-            }
+                // Create Lists to store Velocity and Direction of the motionData (as Vector3s)
+                List<Vector3> velocities = new List<Vector3>();
+                List<Vector3> directions = new List<Vector3>();
 
-            // Compare velocity and direction vectors for motionData
-            for (int i = 0; i < directions.Count; i++)
-            {
-                // Use Dot Product of vectors to compare velocity, and Vector Angles to compare direction
-                float dotProduct = Vector3.Dot(velocities[i], handToRecord.transform.forward);
-                float angle = Vector3.Angle(velocities[i], handToRecord.transform.forward);
-                // Get combined 'distance' between vectors, using velocityWeight to determine importance of velocity in gesture
-                float combinedDistance = angle + (dotProduct * velocityWeight);
-
-                if (combinedDistance > detectionThreshold)
+                // Calculate velocity and direction of movement for each item in motionData list
+                for (int i = 0; i < kvp.Value.motionData.Count - 1; i++)
                 {
-                    discard = true;
-                    break;
+                    // Calculate the displacement vector between consecutive motionData points
+                    Vector3 displacement = kvp.Value.motionData[i + 1] - kvp.Value.motionData[i];
+
+                    // Calculate velocity by dividing displacement by time
+                    Vector3 velocity = displacement / Time.deltaTime;
+                    velocities.Add(velocity.normalized);
+
+                    // Normalize displacement to store the direction vector representing the movement direction
+                    directions.Add(displacement.normalized);
                 }
 
-                sumDistance += combinedDistance;
+                // Compare velocity and direction vectors for motionData
+                for (int i = 0; i < directions.Count; i++)
+                {
+                    // Use Dot Product of vectors to compare velocity, and Vector Angles to compare direction
+                    float dotProduct = Vector3.Dot(velocities[i], handToRecord.transform.forward);
+                    float angle = Vector3.Angle(velocities[i], handToRecord.transform.forward);
+
+                    // Get combined 'distance' between vectors, using velocityWeight to determine the importance of velocity in the gesture
+                    float combinedDistance = angle + (dotProduct * velocityWeight);
+
+                    // If the combined distance exceeds the detection threshold, discard the gesture
+                    if (combinedDistance > detectionThreshold)
+                    {
+                        discard = true;
+                        break;
+                    }
+
+                    // Accumulate the combined distances
+                    sumDistance += combinedDistance;
+                }
             }
 
             if (!discard && sumDistance < currentMin)
             {
+                // Update the currentGesture if the sumDistance is smaller than the current minimum
                 currentMin = sumDistance;
                 currentGesture = kvp.Value;
             }
@@ -465,6 +523,7 @@ public class GestureDetect : MonoBehaviour
 
         return currentGesture;
     }
+
 }
 
 //Inspector Record Button, no longer used.
