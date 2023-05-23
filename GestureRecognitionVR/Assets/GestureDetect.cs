@@ -314,13 +314,83 @@ public class GestureDetect : MonoBehaviour
         return "Unknown";
     }
 
+    // Represents a serialized version of a gesture, used for JSON serialization/deserialization.
+    // Contains the necessary properties to store and retrieve gesture data in a serialized format.
+    public class SerializedGesture
+    {
+        public string name;
+        public List<List<SerializedFingerData>> fingerData;
+        public List<Vector3> motionData;
+    }
+
+    // Represents the finger data of a gesture, used for JSON serialization/deserialization.
+    // Contains the necessary properties to store and retrieve finger data in a serialized format.
+    public class SerializedFingerData
+    {
+        public string fingerName;
+        public List<Vector3> positions;
+    }
+
+
     //Save gestures in Gesture List as JSON data
     public void GesturesToJSON()
     {
-        string json = JsonConvert.SerializeObject(gestures, Formatting.Indented, new JsonSerializerSettings() 
-        { 
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore 
+        // Create a new dictionary to store the serialized gestures
+        Dictionary<string, SerializedGesture> serializedGestures = new Dictionary<string, SerializedGesture>();
+
+        // Iterate over each gesture in the gestures dictionary
+        foreach (var kvp in gestures)
+        {
+            // Create a new serialized gesture object
+            SerializedGesture serializedGesture = new SerializedGesture();
+
+            // Set the gesture name
+            serializedGesture.name = kvp.Key;
+
+            // Create a list to store the frames of finger data
+            List<List<SerializedFingerData>> fingerDataFrames = new List<List<SerializedFingerData>>();
+
+            // Iterate over each frame of finger data in the gesture's finger data
+            foreach (var frameData in kvp.Value.fingerData)
+            {
+                // Create a list to store the finger data for each frame
+                List<SerializedFingerData> fingerDataList = new List<SerializedFingerData>();
+
+                // Iterate over each finger position in the frame's finger data
+                foreach (var position in frameData.Value)
+                {
+                    // Create a new FingerData object with the finger name and position list
+                    SerializedFingerData finger = new SerializedFingerData()
+                    {
+                        fingerName = frameData.Key,
+                        positions = new List<Vector3>() { position }
+                    };
+
+                    // Add the finger data to the list for the current frame
+                    fingerDataList.Add(finger);
+                }
+
+                // Add the finger data list for the current frame to the frames list
+                fingerDataFrames.Add(fingerDataList);
+            }
+
+            // Set the finger data frames in the serialized gesture
+            serializedGesture.fingerData = fingerDataFrames;
+
+            // Set the motion data in the serialized gesture
+            serializedGesture.motionData = kvp.Value.motionData;
+
+            // Add the serialized gesture to the dictionary
+            serializedGestures.Add(kvp.Key, serializedGesture);
+        }
+
+        // Serialize the dictionary of serialized gestures to JSON
+        string json = JsonConvert.SerializeObject(serializedGestures, Formatting.Indented, new JsonSerializerSettings()
+        {
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+            NullValueHandling = NullValueHandling.Ignore // Ignore null motionData fields
         });
+
         string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
         string saveFile = directory + "savedGestures.json";
 
@@ -340,16 +410,6 @@ public class GestureDetect : MonoBehaviour
         File.WriteAllText(saveFile, json);
     }
 
-    /*
-    private void OnValidate()
-    {
-        // update JSON if any changes to the gesture list have been made
-        if (gestures.list.Count > 0)
-        {
-            GesturesToJSON();
-        }
-    }
-    */
 
     public void readGesturesFromJSON()
     {
@@ -365,45 +425,49 @@ public class GestureDetect : MonoBehaviour
 
             foreach (var jsonGesture in jsonGestures)
             {
-                // Retrieve gesture name
+                // Extract the gesture name from the JSON
                 string gestureName = jsonGesture["name"].ToString();
 
-                // Retrieve finger data array for the gesture
+                // Extract the finger data from the JSON
                 JArray jsonFingerData = (JArray)jsonGesture["fingerData"];
-
-                // Create a dictionary to hold the finger data for the gesture
                 Dictionary<string, List<Vector3>> fingerData = new Dictionary<string, List<Vector3>>();
 
-                // Iterate over each finger data entry
-                foreach (var fingerDataEntry in jsonFingerData)
+                foreach (var jsonFinger in jsonFingerData)
                 {
-                    // Retrieve the finger name
-                    string fingerName = fingerDataEntry["fingerName"].ToString();
+                    string fingerName = jsonFinger["fingerName"].ToString();
+                    JArray jsonVectorData = (JArray)jsonFinger["vectorData"];
 
-                    // Retrieve the vector data array for the finger
-                    JArray jsonVectorArray = (JArray)fingerDataEntry["data"];
+                    List<Vector3> fingerVectorData = new List<Vector3>();
 
-                    // Create a list to hold the vector data for the finger
-                    List<Vector3> vectorList = new List<Vector3>();
-
-                    // Iterate over each vector in the array and parse its components
-                    foreach (var jsonVector in jsonVectorArray)
+                    foreach (var jsonVector in jsonVectorData)
                     {
                         float x = float.Parse(jsonVector["x"].ToString());
                         float y = float.Parse(jsonVector["y"].ToString());
                         float z = float.Parse(jsonVector["z"].ToString());
 
-                        // Create a Vector3 instance from the parsed components and add it to the list
                         Vector3 vector = new Vector3(x, y, z);
-                        vectorList.Add(vector);
+                        fingerVectorData.Add(vector);
                     }
 
-                    // Add the finger data to the dictionary using the finger name as the key
-                    fingerData.Add(fingerName, vectorList);
+                    fingerData.Add(fingerName, fingerVectorData);
                 }
 
-                // Create a new Gesture instance with the retrieved data and add it to the gestures dictionary
-                gestures.Add(gestureName, new Gesture(gestureName, fingerData, null, null));
+                // Extract the motion data from the JSON
+                JArray jsonMotionData = (JArray)jsonGesture["motionData"];
+                List<Vector3> motionData = new List<Vector3>();
+
+                foreach (var jsonVector in jsonMotionData)
+                {
+                    float x = float.Parse(jsonVector["x"].ToString());
+                    float y = float.Parse(jsonVector["y"].ToString());
+                    float z = float.Parse(jsonVector["z"].ToString());
+
+                    Vector3 vector = new Vector3(x, y, z);
+                    motionData.Add(vector);
+                }
+
+                // Create a new Gesture object with the extracted data and add it to the gestures dictionary
+                gestures.Add(gestureName, new Gesture(gestureName, fingerData, motionData, null));
             }
         }
         else
@@ -411,6 +475,20 @@ public class GestureDetect : MonoBehaviour
             gestures = new Dictionary<string, Gesture>();
         }
     }
+
+
+
+
+    /*
+    private void OnValidate()
+    {
+        // update JSON if any changes to the gesture list have been made
+        if (gestures.list.Count > 0)
+        {
+            GesturesToJSON();
+        }
+    }
+    */
 
 
 
