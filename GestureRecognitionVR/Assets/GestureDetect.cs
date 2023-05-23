@@ -13,6 +13,7 @@ using UnityEngine.UI;
 using Microsoft.MixedReality.Toolkit.UI;
 using Microsoft.MixedReality.Toolkit.Input;
 using System.Linq;
+using Newtonsoft.Json.Linq;
 
 [System.Serializable]
 public struct Gesture
@@ -26,11 +27,11 @@ public struct Gesture
     public List<Vector3> motionData;
     public UnityEvent onRecognized;
 
-    public Gesture(UnityAction func)
+    public Gesture(string gestureName, Dictionary<string, List<Vector3>> fingerData, List<Vector3> motionData, UnityAction func)
     {
-        name = "UNNAMED";
-        fingerData = null;
-        motionData = null;
+        this.name = gestureName;
+        this.fingerData = fingerData;
+        this.motionData = motionData;
 
         onRecognized = new UnityEvent();
         onRecognized.AddListener(func);
@@ -191,10 +192,12 @@ public class GestureDetect : MonoBehaviour
         if (hands.Length > 0)
         {
             handToRecord = hands[0];
-            //NOTE: this gets all 24 bones in the hand
-            // fingerBones = new List<OVRBone>(handToRecord.Bones);
-            // This gets only bones in fingers
-            fingerBones = new List<OVRBone>
+
+            if (handToRecord != null && handToRecord.Bones != null && handToRecord.Bones.Count > 0)
+            {
+                // NOTE: this gets all 24 bones in the hand: fingerBones = new List<OVRBone>(handToRecord.Bones);
+                // This gets only bones in fingers
+                fingerBones = new List<OVRBone>
                 {
                     handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Thumb0],
                     handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Thumb1],
@@ -214,7 +217,11 @@ public class GestureDetect : MonoBehaviour
                     handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Pinky2],
                     handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Pinky3]
                 };
-
+            }
+            else
+            {
+                Debug.Log("No hand detected");
+            }
         }
     }
 
@@ -344,24 +351,68 @@ public class GestureDetect : MonoBehaviour
     }
     */
 
-    //Read json data from existing json files, save in list 
     public void readGesturesFromJSON()
     {
         string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
         string saveFile = directory + "savedGestures.json";
 
-        
-        
         if (File.Exists(saveFile))
         {
-            string Contents = File.ReadAllText(saveFile);
-            gestures = JsonConvert.DeserializeObject<Dictionary<string, Gesture>>(Contents);
+            string contents = File.ReadAllText(saveFile);
+            var jsonGestures = JArray.Parse(contents);
+
+            gestures = new Dictionary<string, Gesture>();
+
+            foreach (var jsonGesture in jsonGestures)
+            {
+                // Retrieve gesture name
+                string gestureName = jsonGesture["name"].ToString();
+
+                // Retrieve finger data array for the gesture
+                JArray jsonFingerData = (JArray)jsonGesture["fingerData"];
+
+                // Create a dictionary to hold the finger data for the gesture
+                Dictionary<string, List<Vector3>> fingerData = new Dictionary<string, List<Vector3>>();
+
+                // Iterate over each finger data entry
+                foreach (var fingerDataEntry in jsonFingerData)
+                {
+                    // Retrieve the finger name
+                    string fingerName = fingerDataEntry["fingerName"].ToString();
+
+                    // Retrieve the vector data array for the finger
+                    JArray jsonVectorArray = (JArray)fingerDataEntry["data"];
+
+                    // Create a list to hold the vector data for the finger
+                    List<Vector3> vectorList = new List<Vector3>();
+
+                    // Iterate over each vector in the array and parse its components
+                    foreach (var jsonVector in jsonVectorArray)
+                    {
+                        float x = float.Parse(jsonVector["x"].ToString());
+                        float y = float.Parse(jsonVector["y"].ToString());
+                        float z = float.Parse(jsonVector["z"].ToString());
+
+                        // Create a Vector3 instance from the parsed components and add it to the list
+                        Vector3 vector = new Vector3(x, y, z);
+                        vectorList.Add(vector);
+                    }
+
+                    // Add the finger data to the dictionary using the finger name as the key
+                    fingerData.Add(fingerName, vectorList);
+                }
+
+                // Create a new Gesture instance with the retrieved data and add it to the gestures dictionary
+                gestures.Add(gestureName, new Gesture(gestureName, fingerData, null, null));
+            }
         }
         else
         {
             gestures = new Dictionary<string, Gesture>();
         }
     }
+
+
 
     //Starts the G1Routine when "Gesture 1" is recognised
     public void G1()
