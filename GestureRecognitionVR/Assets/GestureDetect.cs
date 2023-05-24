@@ -104,7 +104,8 @@ public class GestureDetect : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        gestures = new Dictionary<string, Gesture>();
+
         //Read any previously saved Gestures from existing json data
         readGesturesFromJSON();
         
@@ -333,8 +334,16 @@ public class GestureDetect : MonoBehaviour
 
 
     //Save gestures in Gesture List as JSON data
+
+    /*
     public void GesturesToJSON()
     {
+        if (gestures.Count == 0)
+        {
+            Debug.Log("gestures is empty");
+            return;
+        }
+
         // Create a new dictionary to store the serialized gestures
         Dictionary<string, SerializedGesture> serializedGestures = new Dictionary<string, SerializedGesture>();
 
@@ -346,6 +355,13 @@ public class GestureDetect : MonoBehaviour
 
             // Set the gesture name
             serializedGesture.name = kvp.Key;
+
+            // Check if finger data is null or empty
+            if (kvp.Value.fingerData == null || kvp.Value.fingerData.Count == 0)
+            {
+                Debug.Log("Finger data is null or empty for gesture: " + kvp.Key);
+                continue;
+            }
 
             // Create a list to store the frames of finger data
             List<List<SerializedFingerData>> fingerDataFrames = new List<List<SerializedFingerData>>();
@@ -409,12 +425,101 @@ public class GestureDetect : MonoBehaviour
         //Save json data to new file
         File.WriteAllText(saveFile, json);
     }
+    */
 
 
+    public void GesturesToJSON()
+    {
+        if (gestures.Count == 0)
+        {
+            Debug.Log("gestures is empty");
+            return;
+        }
+
+        // Create a list to store the serialized gestures
+        List<SerializedGesture> serializedGestures = new List<SerializedGesture>();
+
+        // Iterate over each gesture in the gestures dictionary
+        foreach (var kvp in gestures)
+        {
+            // Create a new serialized gesture object
+            SerializedGesture serializedGesture = new SerializedGesture();
+
+            // Set the gesture name
+            serializedGesture.name = kvp.Key;
+
+            // Check if finger data is null or empty
+            if (kvp.Value.fingerData == null || kvp.Value.fingerData.Count == 0)
+            {
+                Debug.Log("Finger data is null or empty for gesture: " + kvp.Key);
+                continue;
+            }
+
+            // Create a list to store the finger data frames
+            List<List<SerializedFingerData>> fingerDataFrames = new List<List<SerializedFingerData>>();
+
+            // Iterate over each finger in the gesture's finger data
+            foreach (var fingerDataList in kvp.Value.fingerData)
+            {
+                // Check if finger data list is null or empty
+                if (fingerDataList.Value == null || fingerDataList.Value.Count == 0)
+                {
+                    Debug.Log("Finger data list is null or empty for gesture: " + kvp.Key);
+                    continue;
+                }
+
+                // Create a list to store the finger data
+                List<SerializedFingerData> fingerData = new List<SerializedFingerData>();
+
+                // Iterate over each finger position in the finger data list
+                foreach (var fingerPosition in fingerDataList.Value)
+                {
+                    // Create a new SerializedFingerData object with the finger name and position
+                    SerializedFingerData serializedFingerData = new SerializedFingerData()
+                    {
+                        fingerName = fingerDataList.Key,
+                        positions = new List<Vector3>() { fingerPosition }
+                    };
+
+                    // Add the serialized finger data to the list
+                    fingerData.Add(serializedFingerData);
+                }
+
+                // Add the finger data to the finger data frames list
+                fingerDataFrames.Add(fingerData);
+            }
+
+            // Set the finger data frames in the serialized gesture
+            serializedGesture.fingerData = fingerDataFrames;
+
+            // Add the serialized gesture to the list
+            serializedGestures.Add(serializedGesture);
+        }
+
+        // Convert the list of serialized gestures to JSON
+        string json = JsonUtility.ToJson(serializedGestures, true);
+
+        string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
+        string saveFile = directory + "savedGestures.json";
+
+        // If the json directory does not exist, create it
+        if (!Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        // Save the JSON data to the file
+        File.WriteAllText(saveFile, json);
+
+        Debug.Log("Gestures saved to JSON: " + saveFile);
+    }
+
+    /*
     public void readGesturesFromJSON()
     {
         string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
         string saveFile = directory + "savedGestures.json";
+        Debug.Log("JSON Path: " + saveFile);
 
         if (File.Exists(saveFile))
         {
@@ -474,9 +579,91 @@ public class GestureDetect : MonoBehaviour
         {
             gestures = new Dictionary<string, Gesture>();
         }
+    }*/
+
+    public void readGesturesFromJSON()
+    {
+        string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
+        string saveFile = directory + "savedGestures.json";
+
+        // If the saveFile does not exist, return
+        if (!File.Exists(saveFile))
+        {
+            Debug.Log("No saved gestures found.");
+            return;
+        }
+
+        // Read the JSON data from the file
+        string json = File.ReadAllText(saveFile);
+
+        // Deserialize the JSON data
+        List<SerializedGesture> serializedGestures = JsonUtility.FromJson<List<SerializedGesture>>(json);
+
+        // Clear the gestures dictionary
+        gestures.Clear();
+
+        // Iterate over each serialized gesture
+        foreach (SerializedGesture serializedGesture in serializedGestures)
+        {
+            // Create a new gesture object
+            Gesture gesture = new Gesture();
+
+            // Set the gesture name
+            gesture.name = serializedGesture.name;
+
+            // Check if finger data is null or empty
+            if (serializedGesture.fingerData == null || serializedGesture.fingerData.Count == 0)
+            {
+                Debug.Log("Finger data is null or empty for gesture: " + serializedGesture.name);
+                continue;
+            }
+
+            // Create a dictionary to store the finger data frames
+            Dictionary<string, List<Vector3>> fingerDataFrames = new Dictionary<string, List<Vector3>>();
+
+            // Iterate over each frame of finger data in the serialized gesture
+            foreach (List<SerializedFingerData> fingerDataList in serializedGesture.fingerData)
+            {
+                // Check if finger data list is null or empty
+                if (fingerDataList == null || fingerDataList.Count == 0)
+                {
+                    Debug.Log("Finger data list is null or empty for gesture: " + serializedGesture.name);
+                    continue;
+                }
+
+                // Iterate over each serialized finger data
+                foreach (SerializedFingerData serializedFingerData in fingerDataList)
+                {
+                    // Get the finger name and positions from the serialized finger data
+                    string fingerName = serializedFingerData.fingerName;
+                    List<Vector3> positions = serializedFingerData.positions;
+
+                    // Check if positions list is null or empty
+                    if (positions == null || positions.Count == 0)
+                    {
+                        Debug.Log("Finger positions are null or empty for gesture: " + serializedGesture.name);
+                        continue;
+                    }
+
+                    // Add the finger positions to the finger data frames dictionary
+                    if (!fingerDataFrames.ContainsKey(fingerName))
+                    {
+                        fingerDataFrames[fingerName] = new List<Vector3>();
+                    }
+
+                    fingerDataFrames[fingerName].AddRange(positions);
+                }
+            }
+
+            // Set the finger data frames in the gesture
+            gesture.fingerData = fingerDataFrames;
+
+            // Add the gesture to the gestures dictionary
+            gestures[gesture.name] = gesture;
+        }
+
+        Debug.Log("Gestures loaded from JSON: " + saveFile);
     }
-
-
 
 
     /*
