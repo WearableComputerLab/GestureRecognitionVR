@@ -172,31 +172,54 @@ public class GestureDetect : MonoBehaviour
     {
         // currentGestureIndex is used to cycle through recorded gestures
         currentGestureIndex++;
-        //If end of gesture list is reached, start from the start
-        if (currentGestureIndex >= gestureNames.Count)
+
+        // If the currentGestureIndex exceeds the range, wrap around to the first gesture
+        if (currentGestureIndex >= gestures.Count)
         {
             currentGestureIndex = 0;
         }
-        //Get current gesture name, playback the gesture
+
+        Debug.Log($"Gesture Index: {currentGestureIndex}");
+
+        // Check if the currentGestureIndex is within the valid range
+        if (currentGestureIndex >= 0 && currentGestureIndex < gestures.Count)
+        {
+            Gesture currentGesture = gestures.Values.ElementAt(currentGestureIndex);
+            string gestureName = currentGesture.name;
+            Debug.Log($"Gesture Name: {gestureName}");
+            gesturePlayback.PlayGesture(gestureName);
+        }
+        else
+        {
+            Debug.LogError("Invalid gesture index.");
+        }
+    }
+
+
+    private void PrevGesture()
+    {
+        // If there are no gestures recorded, return or handle the case appropriately
+        if (gestures.Count == 0)
+        {
+            Debug.LogWarning("No gestures recorded.");
+            return;
+        }
+
+        // currentGestureIndex is used to cycle through recorded gestures
+        currentGestureIndex--;
+
+        // If user goes back past the first gesture, go to the end of the gesture list
+        if (currentGestureIndex < 0)
+        {
+            currentGestureIndex = gestures.Count - 1;
+        }
+
+        // Get current gesture name, playback the gesture
         Gesture currentGesture = gestures.Values.ElementAt(currentGestureIndex);
         string gestureName = currentGesture.name;
         gesturePlayback.PlayGesture(gestureName);
     }
 
-    private void PrevGesture()
-    {
-        // currentGestureIndex is used to cycle through recorded gestures
-        currentGestureIndex--;
-        //If user goes back past first gesture, goto end of gesture list
-        if (currentGestureIndex < 0)
-        {
-            currentGestureIndex = gesturePlayback.gestures.Count - 1;
-        }
-        //Get current gesture name, playback the gesture
-        Gesture currentGesture = gestures.Values.ElementAt(currentGestureIndex);
-        string gestureName = currentGesture.name;
-        gesturePlayback.PlayGesture(gestureName);
-    }
 
     // Update is called once per frame
     void Update()

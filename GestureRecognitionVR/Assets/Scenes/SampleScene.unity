@@ -1237,9 +1237,29 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: -4.889
       objectReference: {fileID: 0}
+    - target: {fileID: -2703319315809908255, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
+      propertyPath: m_Name
+      value: Middle
+      objectReference: {fileID: 0}
+    - target: {fileID: -696517922892404106, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
+      propertyPath: m_Name
+      value: Thumb
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
       value: Hand Model
+      objectReference: {fileID: 0}
+    - target: {fileID: 6326139588559661623, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
+      propertyPath: m_Name
+      value: Index
+      objectReference: {fileID: 0}
+    - target: {fileID: 7914219095969318737, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
+      propertyPath: m_Name
+      value: Ring
+      objectReference: {fileID: 0}
+    - target: {fileID: 8404924512945515373, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
+      propertyPath: m_Name
+      value: Pinky
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}

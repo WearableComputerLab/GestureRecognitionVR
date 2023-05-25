@@ -26,13 +26,13 @@ public class GesturePlayback : MonoBehaviour
             Debug.Log("Current gesture name: " + currentGesture.name);
 
             // Check if it's a motion gesture
-            if (currentGesture.motionData.Count > 1)
+            if (currentGesture.motionData != null && currentGesture.motionData.Count > 1)
             {
                 // It's a motion gesture
                 Debug.Log("It's a motion gesture");
                 StartCoroutine(PlayGestureCoroutine(currentGesture.fingerData, currentGesture.motionData));
             }
-            else
+            else if (currentGesture.fingerData != null)
             {
                 // It's a static gesture
                 Debug.Log("It's a static gesture");
@@ -85,6 +85,10 @@ public class GesturePlayback : MonoBehaviour
                     Debug.LogWarning("Unable to find the 'hand_R' object in the hand model hierarchy.");
                 }
             }
+            else
+            {
+                Debug.LogWarning("Gesture '" + gestureName + "' has missing finger data or motion data.");
+            }
         }
         else
         {
@@ -92,7 +96,11 @@ public class GesturePlayback : MonoBehaviour
         }
     }
 
-    
+
+
+
+
+
     IEnumerator PlayGestureCoroutine(Dictionary<string, List<Vector3>> fingerDataFrames, List<Vector3> handMotionFrames)
     {
         foreach (KeyValuePair<string, List<Vector3>> kvp in fingerDataFrames)
@@ -197,7 +205,7 @@ public class GesturePlayback : MonoBehaviour
             // Check if the child transform represents a finger bone
             if (IsFingerBone(child))
             {
-                int boneIndex = GetBoneIndex(child);
+                int boneIndex = GetBoneIndex(child, fingerPositions);
 
                 // Check if the bone index is within the range of finger positions
                 if (boneIndex >= 0 && boneIndex < fingerPositions.Count)
@@ -218,6 +226,7 @@ public class GesturePlayback : MonoBehaviour
         }
     }
 
+
     // Check if a transform represents a finger bone
     bool IsFingerBone(Transform transform)
     {
@@ -227,15 +236,32 @@ public class GesturePlayback : MonoBehaviour
     }
 
     // Get the bone index based on a finger bone transform
-    int GetBoneIndex(Transform boneTransform)
+    private int GetBoneIndex(Transform boneTransform, List<Vector3> gestureBonePositions)
     {
-        // Assuming the bone name format is "fingerBone_R"
-        string boneName = boneTransform.name;
-        string indexString = boneName.Substring(boneName.Length - 2, 2); // Assuming a 2-digit index
-        int boneIndex = int.Parse(indexString);
-        return boneIndex;
-    }
+        Vector3 bonePosition = boneTransform.position;
+        float minDistance = float.MaxValue;
+        int boneIndex = -1;
 
+        for (int i = 0; i < gestureBonePositions.Count; i++)
+        {
+            float distance = Vector3.Distance(bonePosition, gestureBonePositions[i]);
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                boneIndex = i;
+            }
+        }
+
+        if (boneIndex != -1)
+        {
+            return boneIndex;
+        }
+        else
+        {
+            Debug.LogWarning("Failed to find matching bone index for transform: " + boneTransform.name);
+            return -1; // or another appropriate default value
+        }
+    }
 
 
 }
