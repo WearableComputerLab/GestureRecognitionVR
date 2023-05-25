@@ -106,6 +106,32 @@ public class GestureDetect : MonoBehaviour
     {
         gestures = new Dictionary<string, Gesture>();
 
+        // Initialize the gestures dictionary with default gestures
+        gestures = new Dictionary<string, Gesture>();
+
+        /// Add default gestures to the dictionary
+        gestures.Add("Gesture1", new Gesture()
+        {
+            fingerData = new Dictionary<string, List<Vector3>>()
+        {
+            {"Thumb", new List<Vector3> { new Vector3(0.1f, 0.2f, 0.3f) } },
+            {"Index", new List<Vector3> { new Vector3(0.4f, 0.5f, 0.6f) } },
+            // Add more finger data as needed
+        }
+        });
+
+        gestures.Add("Gesture2", new Gesture()
+        {
+            fingerData = new Dictionary<string, List<Vector3>>()
+        {
+            {"Thumb", new List<Vector3> { new Vector3(0.7f, 0.8f, 0.9f) } },
+            {"Index", new List<Vector3> { new Vector3(1.0f, 1.1f, 1.2f) } },
+            // Add more finger data as needed
+        }
+        });
+
+        // Save the gestures dictionary to JSON
+        GesturesToJSON();
         //Read any previously saved Gestures from existing json data
         readGesturesFromJSON();
         
@@ -169,19 +195,25 @@ public class GestureDetect : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //Search for user Hands
+        // Search for user Hands
         hands = FindObjectsOfType<OVRSkeleton>();
         findHandtoRecord();
 
-        //Check for Recognition (returns recognised Gesture if hand is in correct position)
+        // Check for Recognition (returns recognized Gesture if hand is in correct position)
         currentGesture = Recognize();
         bool hasRecognized = currentGesture.HasValue;
-        //Check if gesture is recognisable and new, log recognised gesture
+
+        // Check if gesture is recognizable and new, log recognized gesture
         if (hasRecognized && (!previousGesture.HasValue || !currentGesture.Value.Equals(previousGesture.Value)))
         {
             Debug.Log("Gesture Recognized: " + currentGesture.Value.name);
             previousGesture = currentGesture;
-            currentGesture.Value.onRecognized.Invoke();
+
+            // Invoke onRecognized event if currentGesture is not null and onRecognized is not null
+            if (currentGesture != null && currentGesture.Value.onRecognized != null && currentGesture.Value.onRecognized.GetPersistentEventCount() > 0)
+            {
+                currentGesture.Value.onRecognized.Invoke();
+            }
         }
     }
 
@@ -334,8 +366,7 @@ public class GestureDetect : MonoBehaviour
 
 
     //Save gestures in Gesture List as JSON data
-
-    /*
+       
     public void GesturesToJSON()
     {
         if (gestures.Count == 0)
@@ -407,8 +438,14 @@ public class GestureDetect : MonoBehaviour
             NullValueHandling = NullValueHandling.Ignore // Ignore null motionData fields
         });
 
+        // check serialization...
+        Debug.Log("Number of serialized gestures: " + serializedGestures.Count);
+
         string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
         string saveFile = directory + "savedGestures.json";
+
+        // check json was saved
+        Debug.Log("Serialized gestures JSON: " + json);
 
         //If json directory does not exist, create it
         if (!Directory.Exists(directory))
@@ -425,96 +462,7 @@ public class GestureDetect : MonoBehaviour
         //Save json data to new file
         File.WriteAllText(saveFile, json);
     }
-    */
 
-
-    public void GesturesToJSON()
-    {
-        if (gestures.Count == 0)
-        {
-            Debug.Log("gestures is empty");
-            return;
-        }
-
-        // Create a list to store the serialized gestures
-        List<SerializedGesture> serializedGestures = new List<SerializedGesture>();
-
-        // Iterate over each gesture in the gestures dictionary
-        foreach (var kvp in gestures)
-        {
-            // Create a new serialized gesture object
-            SerializedGesture serializedGesture = new SerializedGesture();
-
-            // Set the gesture name
-            serializedGesture.name = kvp.Key;
-
-            // Check if finger data is null or empty
-            if (kvp.Value.fingerData == null || kvp.Value.fingerData.Count == 0)
-            {
-                Debug.Log("Finger data is null or empty for gesture: " + kvp.Key);
-                continue;
-            }
-
-            // Create a list to store the finger data frames
-            List<List<SerializedFingerData>> fingerDataFrames = new List<List<SerializedFingerData>>();
-
-            // Iterate over each finger in the gesture's finger data
-            foreach (var fingerDataList in kvp.Value.fingerData)
-            {
-                // Check if finger data list is null or empty
-                if (fingerDataList.Value == null || fingerDataList.Value.Count == 0)
-                {
-                    Debug.Log("Finger data list is null or empty for gesture: " + kvp.Key);
-                    continue;
-                }
-
-                // Create a list to store the finger data
-                List<SerializedFingerData> fingerData = new List<SerializedFingerData>();
-
-                // Iterate over each finger position in the finger data list
-                foreach (var fingerPosition in fingerDataList.Value)
-                {
-                    // Create a new SerializedFingerData object with the finger name and position
-                    SerializedFingerData serializedFingerData = new SerializedFingerData()
-                    {
-                        fingerName = fingerDataList.Key,
-                        positions = new List<Vector3>() { fingerPosition }
-                    };
-
-                    // Add the serialized finger data to the list
-                    fingerData.Add(serializedFingerData);
-                }
-
-                // Add the finger data to the finger data frames list
-                fingerDataFrames.Add(fingerData);
-            }
-
-            // Set the finger data frames in the serialized gesture
-            serializedGesture.fingerData = fingerDataFrames;
-
-            // Add the serialized gesture to the list
-            serializedGestures.Add(serializedGesture);
-        }
-
-        // Convert the list of serialized gestures to JSON
-        string json = JsonUtility.ToJson(serializedGestures, true);
-
-        string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
-        string saveFile = directory + "savedGestures.json";
-
-        // If the json directory does not exist, create it
-        if (!Directory.Exists(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        // Save the JSON data to the file
-        File.WriteAllText(saveFile, json);
-
-        Debug.Log("Gestures saved to JSON: " + saveFile);
-    }
-
-    /*
     public void readGesturesFromJSON()
     {
         string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
@@ -524,27 +472,30 @@ public class GestureDetect : MonoBehaviour
         if (File.Exists(saveFile))
         {
             string contents = File.ReadAllText(saveFile);
-            var jsonGestures = JArray.Parse(contents);
+            Debug.Log("JSON Contents: " + contents);
+
+            var jsonGestures = JObject.Parse(contents);
 
             gestures = new Dictionary<string, Gesture>();
 
-            foreach (var jsonGesture in jsonGestures)
+            foreach (var gesture in jsonGestures)
             {
-                // Extract the gesture name from the JSON
-                string gestureName = jsonGesture["name"].ToString();
+                string gestureName = gesture.Key;
+                var jsonGesture = gesture.Value;
 
                 // Extract the finger data from the JSON
-                JArray jsonFingerData = (JArray)jsonGesture["fingerData"];
+                var jsonFingerData = (JArray)jsonGesture["fingerData"];
                 Dictionary<string, List<Vector3>> fingerData = new Dictionary<string, List<Vector3>>();
 
-                foreach (var jsonFinger in jsonFingerData)
+                foreach (var jsonFingerArray in jsonFingerData)
                 {
+                    var jsonFinger = (JObject)jsonFingerArray[0];
                     string fingerName = jsonFinger["fingerName"].ToString();
-                    JArray jsonVectorData = (JArray)jsonFinger["vectorData"];
+                    var jsonPositions = (JArray)jsonFinger["positions"];
 
                     List<Vector3> fingerVectorData = new List<Vector3>();
 
-                    foreach (var jsonVector in jsonVectorData)
+                    foreach (var jsonVector in jsonPositions)
                     {
                         float x = float.Parse(jsonVector["x"].ToString());
                         float y = float.Parse(jsonVector["y"].ToString());
@@ -558,18 +509,24 @@ public class GestureDetect : MonoBehaviour
                 }
 
                 // Extract the motion data from the JSON
-                JArray jsonMotionData = (JArray)jsonGesture["motionData"];
-                List<Vector3> motionData = new List<Vector3>();
+                var jsonMotionData = (JArray)jsonGesture["motionData"];
+                List<Vector3> motionData = null;
 
-                foreach (var jsonVector in jsonMotionData)
+                if (jsonMotionData != null && jsonMotionData.Count > 0)
                 {
-                    float x = float.Parse(jsonVector["x"].ToString());
-                    float y = float.Parse(jsonVector["y"].ToString());
-                    float z = float.Parse(jsonVector["z"].ToString());
+                    motionData = new List<Vector3>();
 
-                    Vector3 vector = new Vector3(x, y, z);
-                    motionData.Add(vector);
+                    foreach (var jsonVector in jsonMotionData)
+                    {
+                        float x = float.Parse(jsonVector["x"].ToString());
+                        float y = float.Parse(jsonVector["y"].ToString());
+                        float z = float.Parse(jsonVector["z"].ToString());
+
+                        Vector3 vector = new Vector3(x, y, z);
+                        motionData.Add(vector);
+                    }
                 }
+
 
                 // Create a new Gesture object with the extracted data and add it to the gestures dictionary
                 gestures.Add(gestureName, new Gesture(gestureName, fingerData, motionData, null));
@@ -579,90 +536,6 @@ public class GestureDetect : MonoBehaviour
         {
             gestures = new Dictionary<string, Gesture>();
         }
-    }*/
-
-    public void readGesturesFromJSON()
-    {
-        string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
-        string saveFile = directory + "savedGestures.json";
-
-        // If the saveFile does not exist, return
-        if (!File.Exists(saveFile))
-        {
-            Debug.Log("No saved gestures found.");
-            return;
-        }
-
-        // Read the JSON data from the file
-        string json = File.ReadAllText(saveFile);
-
-        // Deserialize the JSON data
-        List<SerializedGesture> serializedGestures = JsonUtility.FromJson<List<SerializedGesture>>(json);
-
-        // Clear the gestures dictionary
-        gestures.Clear();
-
-        // Iterate over each serialized gesture
-        foreach (SerializedGesture serializedGesture in serializedGestures)
-        {
-            // Create a new gesture object
-            Gesture gesture = new Gesture();
-
-            // Set the gesture name
-            gesture.name = serializedGesture.name;
-
-            // Check if finger data is null or empty
-            if (serializedGesture.fingerData == null || serializedGesture.fingerData.Count == 0)
-            {
-                Debug.Log("Finger data is null or empty for gesture: " + serializedGesture.name);
-                continue;
-            }
-
-            // Create a dictionary to store the finger data frames
-            Dictionary<string, List<Vector3>> fingerDataFrames = new Dictionary<string, List<Vector3>>();
-
-            // Iterate over each frame of finger data in the serialized gesture
-            foreach (List<SerializedFingerData> fingerDataList in serializedGesture.fingerData)
-            {
-                // Check if finger data list is null or empty
-                if (fingerDataList == null || fingerDataList.Count == 0)
-                {
-                    Debug.Log("Finger data list is null or empty for gesture: " + serializedGesture.name);
-                    continue;
-                }
-
-                // Iterate over each serialized finger data
-                foreach (SerializedFingerData serializedFingerData in fingerDataList)
-                {
-                    // Get the finger name and positions from the serialized finger data
-                    string fingerName = serializedFingerData.fingerName;
-                    List<Vector3> positions = serializedFingerData.positions;
-
-                    // Check if positions list is null or empty
-                    if (positions == null || positions.Count == 0)
-                    {
-                        Debug.Log("Finger positions are null or empty for gesture: " + serializedGesture.name);
-                        continue;
-                    }
-
-                    // Add the finger positions to the finger data frames dictionary
-                    if (!fingerDataFrames.ContainsKey(fingerName))
-                    {
-                        fingerDataFrames[fingerName] = new List<Vector3>();
-                    }
-
-                    fingerDataFrames[fingerName].AddRange(positions);
-                }
-            }
-
-            // Set the finger data frames in the gesture
-            gesture.fingerData = fingerDataFrames;
-
-            // Add the gesture to the gestures dictionary
-            gestures[gesture.name] = gesture;
-        }
-
-        Debug.Log("Gestures loaded from JSON: " + saveFile);
     }
 
 
@@ -676,7 +549,6 @@ public class GestureDetect : MonoBehaviour
         }
     }
     */
-
 
 
     //Starts the G1Routine when "Gesture 1" is recognised
@@ -793,39 +665,43 @@ public class GestureDetect : MonoBehaviour
                 List<Vector3> velocities = new List<Vector3>();
                 List<Vector3> directions = new List<Vector3>();
 
-                // Calculate velocity and direction of movement for each item in motionData list
-                for (int i = 0; i < kvp.Value.motionData.Count - 1; i++)
+                // Check if motionData is null or empty before processing
+                if (kvp.Value.motionData != null && kvp.Value.motionData.Count > 1)
                 {
-                    // Calculate the displacement vector between consecutive motionData points
-                    Vector3 displacement = kvp.Value.motionData[i + 1] - kvp.Value.motionData[i];
-
-                    // Calculate velocity by dividing displacement by time
-                    Vector3 velocity = displacement / Time.deltaTime;
-                    velocities.Add(velocity.normalized);
-
-                    // Normalize displacement to store the direction vector representing the movement direction
-                    directions.Add(displacement.normalized);
-                }
-
-                // Compare velocity and direction vectors for motionData
-                for (int i = 0; i < directions.Count; i++)
-                {
-                    // Use Dot Product of vectors to compare velocity, and Vector Angles to compare direction
-                    float dotProduct = Vector3.Dot(velocities[i], handToRecord.transform.forward);
-                    float angle = Vector3.Angle(velocities[i], handToRecord.transform.forward);
-
-                    // Get combined 'distance' between vectors, using velocityWeight to determine the importance of velocity in the gesture
-                    float combinedDistance = angle + (dotProduct * velocityWeight);
-
-                    // If the combined distance exceeds the detection threshold, discard the gesture
-                    if (combinedDistance > detectionThreshold)
+                    // Calculate velocity and direction of movement for each item in motionData list
+                    for (int i = 0; i < kvp.Value.motionData.Count - 1; i++)
                     {
-                        discard = true;
-                        break;
+                        // Calculate the displacement vector between consecutive motionData points
+                        Vector3 displacement = kvp.Value.motionData[i + 1] - kvp.Value.motionData[i];
+
+                        // Calculate velocity by dividing displacement by time
+                        Vector3 velocity = displacement / Time.deltaTime;
+                        velocities.Add(velocity.normalized);
+
+                        // Normalize displacement to store the direction vector representing the movement direction
+                        directions.Add(displacement.normalized);
                     }
 
-                    // Accumulate the combined distances
-                    sumDistance += combinedDistance;
+                    // Compare velocity and direction vectors for motionData
+                    for (int i = 0; i < directions.Count; i++)
+                    {
+                        // Use Dot Product of vectors to compare velocity, and Vector Angles to compare direction
+                        float dotProduct = Vector3.Dot(velocities[i], handToRecord.transform.forward);
+                        float angle = Vector3.Angle(velocities[i], handToRecord.transform.forward);
+
+                        // Get combined 'distance' between vectors, using velocityWeight to determine the importance of velocity in the gesture
+                        float combinedDistance = angle + (dotProduct * velocityWeight);
+
+                        // If the combined distance exceeds the detection threshold, discard the gesture
+                        if (combinedDistance > detectionThreshold)
+                        {
+                            discard = true;
+                            break;
+                        }
+
+                        // Accumulate the combined distances
+                        sumDistance += combinedDistance;
+                    }
                 }
             }
 
@@ -839,6 +715,7 @@ public class GestureDetect : MonoBehaviour
 
         return currentGesture;
     }
+
 
 }
 
