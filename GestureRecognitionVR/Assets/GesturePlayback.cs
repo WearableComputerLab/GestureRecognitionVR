@@ -54,25 +54,19 @@ public class GesturePlayback : MonoBehaviour
                             List<Vector3> fingerPositions = kvp.Value;
 
                             // Find the finger transform in the hand model hierarchy
-                            Transform finger = handObject.Find(fingerName);
+                            Transform finger = FindFingerTransform(handObject, fingerName);
 
                             if (finger != null)
                             {
                                 // Check if the number of positions matches the number of finger bones
-                                if (fingerPositions.Count == finger.childCount)
+                                if (fingerPositions.Count == GetChildBoneCountRecursive(finger))
                                 {
                                     // Update the finger bone positions
-                                    for (int boneIndex = 0; boneIndex < finger.childCount; boneIndex++)
-                                    {
-                                        Transform bone = finger.GetChild(boneIndex);
-
-                                        Vector3 bonePosition = fingerPositions[boneIndex];
-                                        bone.position = bonePosition;
-                                    }
+                                    UpdateFingerBonePositionsRecursive(finger, fingerPositions);
                                 }
                                 else
                                 {
-                                    Debug.LogWarning("Incorrect number of finger positions in the current gesture frame for finger '" + fingerName + "'. Expected: " + finger.childCount + ", Actual: " + fingerPositions.Count);
+                                    Debug.LogWarning("Incorrect number of finger positions in the current gesture frame for finger '" + fingerName + "'. Expected: " + GetChildBoneCountRecursive(finger) + ", Actual: " + fingerPositions.Count);
                                 }
                             }
                             else
@@ -98,8 +92,7 @@ public class GesturePlayback : MonoBehaviour
         }
     }
 
-
-
+    
     IEnumerator PlayGestureCoroutine(Dictionary<string, List<Vector3>> fingerDataFrames, List<Vector3> handMotionFrames)
     {
         foreach (KeyValuePair<string, List<Vector3>> kvp in fingerDataFrames)
@@ -141,6 +134,108 @@ public class GesturePlayback : MonoBehaviour
             yield return new WaitForSeconds(0.02f); 
         }
     }
+
+
+    // Recursively find the finger transform by name in the hand model hierarchy
+    Transform FindFingerTransform(Transform parentTransform, string fingerName)
+    {
+        Transform fingerTransform = parentTransform.Find(fingerName);
+
+        if (fingerTransform != null)
+        {
+            return fingerTransform;
+        }
+        else
+        {
+            // If the finger transform is not found at this level, recursively search the child transforms
+            for (int i = 0; i < parentTransform.childCount; i++)
+            {
+                Transform child = parentTransform.GetChild(i);
+                fingerTransform = FindFingerTransform(child, fingerName);
+
+                if (fingerTransform != null)
+                {
+                    return fingerTransform;
+                }
+            }
+
+            return null; // Finger transform not found in the hierarchy
+        }
+    }
+
+    // Recursively count the number of child bones under the finger transform
+    int GetChildBoneCountRecursive(Transform fingerTransform)
+    {
+        int count = 0;
+
+        for (int i = 0; i < fingerTransform.childCount; i++)
+        {
+            Transform child = fingerTransform.GetChild(i);
+
+            // Check if the child transform represents a finger bone
+            if (IsFingerBone(child))
+            {
+                count++;
+            }
+            else
+            {
+                // If the child transform has nested finger bones, recursively count them
+                count += GetChildBoneCountRecursive(child);
+            }
+        }
+
+        return count;
+    }
+
+    // Recursively update the positions of finger bones based on the finger positions
+    void UpdateFingerBonePositionsRecursive(Transform fingerTransform, List<Vector3> fingerPositions)
+    {
+        for (int i = 0; i < fingerTransform.childCount; i++)
+        {
+            Transform child = fingerTransform.GetChild(i);
+
+            // Check if the child transform represents a finger bone
+            if (IsFingerBone(child))
+            {
+                int boneIndex = GetBoneIndex(child);
+
+                // Check if the bone index is within the range of finger positions
+                if (boneIndex >= 0 && boneIndex < fingerPositions.Count)
+                {
+                    Vector3 bonePosition = fingerPositions[boneIndex];
+                    child.position = bonePosition;
+                }
+                else
+                {
+                    Debug.LogWarning("Invalid bone index for finger '" + fingerTransform.name + "'. Expected: " + boneIndex + ", Actual: " + fingerPositions.Count);
+                }
+            }
+            else
+            {
+                // If the child transform has nested finger bones, recursively update their positions
+                UpdateFingerBonePositionsRecursive(child, fingerPositions);
+            }
+        }
+    }
+
+    // Check if a transform represents a finger bone
+    bool IsFingerBone(Transform transform)
+    {
+        // Customize this check based on your hand model hierarchy
+        // For example, you can check for a specific naming pattern or tag
+        return transform.name.EndsWith("_R");
+    }
+
+    // Get the bone index based on a finger bone transform
+    int GetBoneIndex(Transform boneTransform)
+    {
+        // Assuming the bone name format is "fingerBone_R"
+        string boneName = boneTransform.name;
+        string indexString = boneName.Substring(boneName.Length - 2, 2); // Assuming a 2-digit index
+        int boneIndex = int.Parse(indexString);
+        return boneIndex;
+    }
+
 
 
 }
