@@ -110,24 +110,30 @@ public class GestureDetect : MonoBehaviour
         gestures = new Dictionary<string, Gesture>();
 
         /// Add default gestures to the dictionary
-        gestures.Add("Gesture1", new Gesture()
+        gestures.Add("DefaultGesture1", new Gesture()
         {
             fingerData = new Dictionary<string, List<Vector3>>()
-        {
-            {"Thumb", new List<Vector3> { new Vector3(0.1f, 0.2f, 0.3f) } },
-            {"Index", new List<Vector3> { new Vector3(0.4f, 0.5f, 0.6f) } },
-            // Add more finger data as needed
-        }
+            {
+            { "Index", new List<Vector3> { new Vector3(0.1f, 0.2f, 0.3f), new Vector3(0.4f, 0.5f, 0.6f), new Vector3(0.7f, 0.8f, 0.9f) } },
+            { "Middle", new List<Vector3> { new Vector3(0.2f, 0.3f, 0.4f), new Vector3(0.5f, 0.6f, 0.7f), new Vector3(0.8f, 0.9f, 1.0f) } },
+            { "Ring", new List<Vector3> { new Vector3(0.3f, 0.4f, 0.5f), new Vector3(0.6f, 0.7f, 0.8f), new Vector3(0.9f, 1.0f, 1.1f) } },
+            { "Pinky", new List<Vector3> { new Vector3(0.4f, 0.5f, 0.6f), new Vector3(0.7f, 0.8f, 0.9f), new Vector3(1.0f, 1.1f, 1.2f) } },
+            { "Thumb", new List<Vector3> { new Vector3(0.5f, 0.6f, 0.7f), new Vector3(0.8f, 0.9f, 1.0f), new Vector3(1.1f, 1.2f, 1.3f) } }
+            },
+            motionData = new List<Vector3>()
         });
 
-        gestures.Add("Gesture2", new Gesture()
+        gestures.Add("DefaultGesture2", new Gesture()
         {
             fingerData = new Dictionary<string, List<Vector3>>()
-        {
-            {"Thumb", new List<Vector3> { new Vector3(0.7f, 0.8f, 0.9f) } },
-            {"Index", new List<Vector3> { new Vector3(1.0f, 1.1f, 1.2f) } },
-            // Add more finger data as needed
-        }
+            {
+            { "Thumb", new List<Vector3> { new Vector3(0.1f, 0.2f, 0.3f), new Vector3(0.2f, 0.3f, 0.4f), new Vector3(0.3f, 0.4f, 0.5f) } },
+            { "Index", new List<Vector3> { new Vector3(0.4f, 0.5f, 0.6f), new Vector3(0.5f, 0.6f, 0.7f), new Vector3(0.6f, 0.7f, 0.8f) } },
+            { "Middle", new List<Vector3> { new Vector3(0.7f, 0.8f, 0.9f), new Vector3(0.8f, 0.9f, 1.0f), new Vector3(0.9f, 1.0f, 1.1f) } },
+            { "Ring", new List<Vector3> { new Vector3(1.1f, 1.2f, 1.3f), new Vector3(1.2f, 1.3f, 1.4f), new Vector3(1.3f, 1.4f, 1.5f) } },
+            { "Pinky", new List<Vector3> { new Vector3(1.4f, 1.5f, 1.6f), new Vector3(1.5f, 1.6f, 1.7f), new Vector3(1.6f, 1.7f, 1.8f) } }
+            },
+            motionData = new List<Vector3>()
         });
 
         // Save the gestures dictionary to JSON
