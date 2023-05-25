@@ -51,22 +51,30 @@ public class GesturePlayback : MonoBehaviour
                         foreach (KeyValuePair<string, List<Vector3>> kvp in currentGesture.fingerData)
                         {
                             string fingerName = kvp.Key;
-                            List<Vector3> fingerPositions = kvp.Value;
+                            List<Vector3> fingerPositions = new List<Vector3>();
 
                             // Find the finger transform in the hand model hierarchy
                             Transform finger = FindFingerTransform(handObject, fingerName);
 
                             if (finger != null)
                             {
+                                // Iterate over each bone/joint in the finger
+                                for (int i = 0; i < finger.childCount; i++)
+                                {
+                                    // Retrieve the finger position for the current bone/joint
+                                    Vector3 position = kvp.Value[i];
+                                    fingerPositions.Add(position);
+                                }
+
                                 // Check if the number of positions matches the number of finger bones
-                                if (fingerPositions.Count == GetChildBoneCountRecursive(finger))
+                                if (fingerPositions.Count == finger.childCount)
                                 {
                                     // Update the finger bone positions
                                     UpdateFingerBonePositionsRecursive(finger, fingerPositions);
                                 }
                                 else
                                 {
-                                    Debug.LogWarning("Incorrect number of finger positions in the current gesture frame for finger '" + fingerName + "'. Expected: " + GetChildBoneCountRecursive(finger) + ", Actual: " + fingerPositions.Count);
+                                    Debug.LogWarning("Incorrect number of finger positions in the current gesture frame for finger '" + fingerName + "'. Expected: " + finger.childCount + ", Actual: " + fingerPositions.Count);
                                 }
                             }
                             else
@@ -95,8 +103,6 @@ public class GesturePlayback : MonoBehaviour
             Debug.LogWarning("Gesture '" + gestureName + "' is not found.");
         }
     }
-
-
 
 
 
@@ -172,28 +178,26 @@ public class GesturePlayback : MonoBehaviour
     }
 
     // Recursively count the number of child bones under the finger transform
-    int GetChildBoneCountRecursive(Transform fingerTransform)
+    private int GetChildBoneCountRecursive(Transform fingerBone)
     {
         int count = 0;
 
-        for (int i = 0; i < fingerTransform.childCount; i++)
+        // Check if the fingerBone has children
+        if (fingerBone.childCount > 0)
         {
-            Transform child = fingerTransform.GetChild(i);
-
-            // Check if the child transform represents a finger bone
-            if (IsFingerBone(child))
+            // Iterate through the children and count the bones
+            foreach (Transform child in fingerBone)
             {
                 count++;
-            }
-            else
-            {
-                // If the child transform has nested finger bones, recursively count them
-                count += GetChildBoneCountRecursive(child);
+                count += GetChildBoneCountRecursive(child); // Recursively count child bones
             }
         }
 
         return count;
     }
+
+
+
 
     // Recursively update the positions of finger bones based on the finger positions
     void UpdateFingerBonePositionsRecursive(Transform fingerTransform, List<Vector3> fingerPositions)

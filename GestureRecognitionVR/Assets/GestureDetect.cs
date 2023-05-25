@@ -109,7 +109,7 @@ public class GestureDetect : MonoBehaviour
         // Initialize the gestures dictionary with default gestures
         gestures = new Dictionary<string, Gesture>();
 
-        /// Add default gestures to the dictionary
+        /* Add default gestures to the dictionary
         gestures.Add("DefaultGesture1", new Gesture()
         {
             fingerData = new Dictionary<string, List<Vector3>>()
@@ -135,6 +135,7 @@ public class GestureDetect : MonoBehaviour
             },
             motionData = new List<Vector3>()
         });
+        */
 
         // Save the gestures dictionary to JSON
         GesturesToJSON();
@@ -261,23 +262,20 @@ public class GestureDetect : MonoBehaviour
                 // This gets only bones in fingers
                 fingerBones = new List<OVRBone>
                 {
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Thumb0],
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Thumb1],
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Thumb2],
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Thumb3],
                     handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Index1],
                     handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Index2],
                     handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Index3],
                     handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Middle1],
                     handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Middle2],
                     handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Middle3],
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Ring1],
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Ring2],
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Ring3],
                     handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Pinky0],
                     handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Pinky1],
                     handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Pinky2],
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Pinky3]
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Ring1],
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Ring2],
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Ring3],
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Thumb2],
+                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Thumb3]
                 };
             }
             else
@@ -349,23 +347,21 @@ public class GestureDetect : MonoBehaviour
     {
         Dictionary<OVRSkeleton.BoneId, string> boneToFingerMap = new Dictionary<OVRSkeleton.BoneId, string>()
     {
-        { OVRSkeleton.BoneId.Hand_Thumb0, "Thumb" },
-        { OVRSkeleton.BoneId.Hand_Thumb1, "Thumb" },
-        { OVRSkeleton.BoneId.Hand_Thumb2, "Thumb" },
-        { OVRSkeleton.BoneId.Hand_Thumb3, "Thumb" },
+        
         { OVRSkeleton.BoneId.Hand_Index1, "Index" },
         { OVRSkeleton.BoneId.Hand_Index2, "Index" },
         { OVRSkeleton.BoneId.Hand_Index3, "Index" },
         { OVRSkeleton.BoneId.Hand_Middle1, "Middle" },
         { OVRSkeleton.BoneId.Hand_Middle2, "Middle" },
         { OVRSkeleton.BoneId.Hand_Middle3, "Middle" },
+        { OVRSkeleton.BoneId.Hand_Pinky1, "Pinky" },
+        { OVRSkeleton.BoneId.Hand_Pinky2, "Pinky" },
+        { OVRSkeleton.BoneId.Hand_Pinky3, "Pinky" },
         { OVRSkeleton.BoneId.Hand_Ring1, "Ring" },
         { OVRSkeleton.BoneId.Hand_Ring2, "Ring" },
         { OVRSkeleton.BoneId.Hand_Ring3, "Ring" },
-        { OVRSkeleton.BoneId.Hand_Pinky0, "Pinky" },
-        { OVRSkeleton.BoneId.Hand_Pinky1, "Pinky" },
-        { OVRSkeleton.BoneId.Hand_Pinky2, "Pinky" },
-        { OVRSkeleton.BoneId.Hand_Pinky3, "Pinky" }
+        { OVRSkeleton.BoneId.Hand_Thumb2, "Thumb" },
+        { OVRSkeleton.BoneId.Hand_Thumb3, "Thumb" }
     };
 
         if (boneToFingerMap.ContainsKey(boneId))
