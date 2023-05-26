@@ -14,6 +14,25 @@ public class GesturePlayback : MonoBehaviour
         gestures = new Dictionary<string, Gesture>(gestureDetect.gestures);
     }
 
+    public enum Bone
+    {
+        hand_R,
+        thumb02_R,
+        thumb03_R,        
+        index01_R,
+        index02_R,
+        index03_R,
+        middle01_R,
+        middle02_R,
+        middle03_R,
+        ring01_R,
+        ring02_R,
+        ring03_R,
+        pinky01_R,
+        pinky02_R,
+        pinky03_R
+    }
+
 
     public void PlayGesture(string gestureName)
     {
@@ -148,6 +167,91 @@ public class GesturePlayback : MonoBehaviour
             yield return new WaitForSeconds(0.02f); 
         }
     }
+
+
+    private Quaternion GetReferenceRotationForBone(Bone bone)
+    {
+        // default rotation values for each bone
+        switch (bone)
+        {
+            case Bone.hand_R:
+                return Quaternion.identity; // Default rotation for the hand
+            case Bone.thumb02_R:
+                return Quaternion.Euler(-4.027f, 0.099f, 29.069f); // Default rotation for the thumb base
+            case Bone.thumb03_R:
+                return Quaternion.Euler(-27.989f, 2.397f, -2.402f); // Default rotation for the thumb joint 1
+            case Bone.index01_R:
+                return Quaternion.Euler(-33.045f, -8.815f, -8.61f);    // etc..
+            case Bone.index02_R:
+                return Quaternion.Euler(10.185f, 5.971f, 3.078f);
+            case Bone.index03_R:
+                return Quaternion.Euler(-13.328f, -6.805f, 4.037f);
+            case Bone.middle01_R:
+                return Quaternion.Euler(-27.217f, -8.263f, -5.801f);
+            case Bone.middle02_R:
+                return Quaternion.Euler(10.583f, -3.814f, -0.32f);
+            case Bone.middle03_R:
+                return Quaternion.Euler(-10.12f, 8.456f, 1.415f);
+            case Bone.ring01_R:
+                return Quaternion.Euler(-24.229f, -6.375f, 1.026f);
+            case Bone.ring02_R:
+                return Quaternion.Euler(7.688f, 1.018f, -1.604f);
+            case Bone.ring03_R:
+                return Quaternion.Euler(-10.905f, -0.778f, 0.565f);
+            case Bone.pinky01_R:
+                return Quaternion.Euler(-17.425f, -10.422f, 12.275f);
+            case Bone.pinky02_R:
+                return Quaternion.Euler(7.427f, 3.158f, -0.919f);
+            case Bone.pinky03_R:
+                return Quaternion.Euler(-15.351f, -3.769f, -0.667f);
+
+            default:
+                return Quaternion.identity; // Default rotation for other bones
+        }
+    }
+
+    private Vector3 GetReferencePositionForBone(Bone bone)
+    {
+        // default position values for each bone
+        switch (bone)
+        {
+            case Bone.hand_R:
+                return Vector3.zero; // Default position for the hand
+            case Bone.thumb02_R:
+                return new Vector3(-1.396984e-11f, 0.000353353f, -2.328306e-11f); // Default position for the thumb base
+            case Bone.thumb03_R:
+                return new Vector3(-1.396984e-11f, 0.0003805762f, -8.731149e-11f); // Default position for the thumb joint 1
+            case Bone.index01_R:
+                return new Vector3(3.72529e-11f, 0.0006191823f, 6.984919e-12f);    // etc..
+            case Bone.index02_R:
+                return new Vector3(3.49246e-12f, 0.0003990389f, 8.149073e-12f);
+            case Bone.index03_R:
+                return new Vector3(3.958121e-11f, 0.000250507f, -1.222361e-11f);
+            case Bone.middle01_R:
+                return new Vector3(8.149073e-12f, 0.0005950172f, 1.658918e-11f);
+            case Bone.middle02_R:
+                return new Vector3(5.518086e-10f, 0.0004380123f, -2.176966e-09f);
+            case Bone.middle03_R:
+                return new Vector3(9.313226e-12f, 0.0002965813f, -1.629815e-11f);
+            case Bone.ring01_R:
+                return new Vector3(-5.820766e-12f, 0.000530321f, -1.018634e-11f);
+            case Bone.ring02_R:
+                return new Vector3(-9.022188e-12f, 0.0004294311f, -1.396984e-11f);
+            case Bone.ring03_R:
+                return new Vector3(-1.74623e-11f, 0.0002811306f, -1.164153e-11f);
+            case Bone.pinky01_R:
+                return new Vector3(-5.820766e-12f, 0.0004803261f, 1.513399e-11f);
+            case Bone.pinky02_R:
+                return new Vector3(8.731149e-13f, 0.0003517456f, -1.047738e-11f);
+            case Bone.pinky03_R:
+                return new Vector3(-1.047738e-11f, 0.0001998015f, -1.164153e-11f);
+
+            default:
+                return Vector3.zero; // Default position for other bones
+        }
+    }
+
+
 
 
     // Recursively find the finger transform by name in the hand model hierarchy
