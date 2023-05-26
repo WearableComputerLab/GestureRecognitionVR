@@ -664,7 +664,12 @@ public class GestureDetect : MonoBehaviour
                     Vector3 currentData = handToRecord.transform.InverseTransformPoint(fingerBones[j].Transform.position);
 
                     // Calculate the distance between the current bone position and the corresponding position in the gesture's fingerData
-                    float fingerDistance = Vector3.Distance(currentData, kvp.Value.fingerData[fingerName][i]);
+                    float fingerDistance = 0f;
+                    if (i < kvp.Value.fingerData[fingerName].Count)
+                    {
+                        fingerDistance = Mathf.Abs(Vector3.Distance(currentData, kvp.Value.fingerData[fingerName][i]));
+                    }
+
 
                     // If the finger distance exceeds the detection threshold, discard the gesture
                     if (fingerDistance > detectionThreshold)

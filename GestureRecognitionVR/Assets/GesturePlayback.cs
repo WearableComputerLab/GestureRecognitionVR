@@ -394,8 +394,6 @@ public class GesturePlayback : MonoBehaviour
     }
 
 
-
-
     // Check if a transform represents a finger bone
     bool IsFingerBone(Transform transform)
     {
