@@ -83,7 +83,9 @@ public abstract class State
     public abstract IEnumerator End();
 }
 
-
+/// <summary>
+/// Runs on start up to set up the application, including reading in gestures from JSON and creating the Next and Previous buttons
+/// </summary>
 public class StartScene : State
 {
     public override IEnumerator Start()
@@ -113,25 +115,17 @@ public class StartScene : State
 }
 
 /// <summary>
-/// State that waits for other states such as Record, Next Gesture, Previous Gesture and Recognizing Gestures
+/// State that waits for other states to be referenced such as Record, Next Gesture, Previous Gesture and Recognizing Gestures. 
 /// </summary>
 public class Waiting : State
 {
     public enum InputAction {None, Record, PlayGame}
     
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <returns></returns>
     public override IEnumerator Start()
     {
         yield break;
     }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <returns></returns>
+    
     public override IEnumerator End()
     {
         // TODO: Wait for input;
@@ -165,7 +159,8 @@ public class Waiting : State
                 GestureDetect.Instance.previousGesture = GestureDetect.Instance.currentGesture;
                 GestureDetect.Instance.currentGesture.Value.response.StartRoutine();
             }
-
+            
+            //if the current action is not None, break out of the loop and repeat until an appropriate input is found
             if (GestureDetect.Instance.currentAction != InputAction.None)
             {
                 break;
@@ -184,14 +179,19 @@ public class RecordStart : State
 {
     private string selectedName;
     private float duration;
+    
+    //If no name is passed, the gesture will be saved as a new gesture
     public RecordStart(string name = "")
     {
         selectedName = name;
     }
+    
+    //on start, set the duration to the selected recording time (default float.MinValue)
     public override IEnumerator Start()
     {
         duration = GestureDetect.Instance.selectedRecordingTime;
         yield break;
+        
     }
 
     public override IEnumerator End()
@@ -201,12 +201,53 @@ public class RecordStart : State
         GestureDetect.Instance.currentAction = Waiting.InputAction.None;
         if (selectedName == "")
         {
+            List<Vector3> currentFrame = new List<Vector3>();
             //TODO: Pass finger data to NameGesture(fingerData)
+            //If the duration is not static, record for the specified duration
+            if (duration > float.MinValue)
+            {
+                while (Time.time < duration)
+                {
+                    //Save each individual finger bone in fingerData, save whole hand position in motionData
+                    foreach (OVRBone bone in GestureDetect.Instance.fingerBones)
+                    {
+                        currentFrame.Add(GestureDetect.Instance.handToRecord.transform.InverseTransformPoint(bone.Transform.position));
+                    }
+                    /*g.motionData.Add(GestureDetect.Instance.handToRecord.transform.InverseTransformPoint(GestureDetect.Instance.handToRecord.transform.position));
+                    
+                    
+                    // Update count down every second (if motion gesture)
+                    if (GestureDetect.Instance.selectedRecordingTime > 0.01)
+                    {
+                        int currentSecond = Mathf.FloorToInt(Time.time);
+                        if (currentSecond > GestureDetect.Instance.lastSecondDisplayed)
+                        {
+                            float remainingTime = duration - (Time.time - GestureDetect.Instance.startTime);
+                            Debug.Log("Recording " + name + "... Time remaining: " +
+                                      Mathf.FloorToInt(remainingTime).ToString() + " seconds");
+                            lastSecondDisplayed = currentSecond;
+                        }
+                    }
+                    
+                    // Save Motion Gestures at 20fps to save resources (fine-tune this)
+                    yield return new WaitForSeconds(frameTime);*/
+                }
+            }
+            //If the duration is static, record the frame
+            else
+            {
+                foreach (OVRBone bone in GestureDetect.Instance.fingerBones)
+                {
+                    currentFrame.Add(GestureDetect.Instance.handToRecord.transform.InverseTransformPoint(bone.Transform.position));
+                }
+                //g.fingerData.Add(currentFrame);
+            }
+
             StateMachine.SetState(new NameGesture());
         }
         else
         {
-            //TODO: If name is not "", prompt for whatever the name is, and reset to PlayGame state
+            //TODO: If name is not "", prompt for whatever the name is, and reset to PlayGame state. Implement once rest of states are implemented
         }
         
         yield break;
