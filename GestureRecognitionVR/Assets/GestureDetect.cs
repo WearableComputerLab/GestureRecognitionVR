@@ -432,40 +432,39 @@ public class GestureDetect : MonoBehaviour
             foreach (KeyValuePair<string, List<Dictionary<string, SerializedFingerData>>> frameData in kvp.Value.fingerData)
             {
                 // Create a list to store the finger data for each frame
-                List<Dictionary<string, SerializedFingerData>> fingerDataList = new List<Dictionary<string, SerializedFingerData>>();
+                List<Dictionary<string, SerializedFingerData>> serializedFingerDataList = new List<Dictionary<string, SerializedFingerData>>();
 
-                // Iterate over each finger pose data in the frame's finger data
-                foreach (Dictionary<string, SerializedFingerData> fingerPoseData in frameData.Value)
+                // Iterate over each finger pose data in the finger pose data list
+                foreach (Dictionary<string, SerializedFingerData> fingerPoseDataList in frameData.Value)
                 {
                     // Create a new dictionary to store the finger pose data
                     Dictionary<string, SerializedFingerData> serializedFingerPoseData = new Dictionary<string, SerializedFingerData>();
 
-                    // Iterate over each finger pose data in the frame's finger data
-                    foreach (KeyValuePair<string, SerializedFingerData> fingerPose in fingerPoseData)
+                    // Iterate over each finger pose data in the finger pose data list
+                    foreach (KeyValuePair<string, SerializedFingerData> fingerPose in fingerPoseDataList)
                     {
-                        // Create a new SerializedFingerData object
-                        SerializedFingerData serializedFingerData = new SerializedFingerData();
+                        // Get the finger name and serialized finger data
+                        string fingerName = fingerPose.Value.fingerName;
+                        SerializedFingerData serializedFingerData = fingerPose.Value;
+
+                        // Create a new serialized finger data object
+                        SerializedFingerData mergedFingerData = new SerializedFingerData();
 
                         // Set the finger name
-                        serializedFingerData.fingerName = fingerPose.Key;
+                        mergedFingerData.fingerName = fingerName;
 
-                        // Get the list of bone data for the current finger pose data
-                        List<SerializedBoneData> boneDataList = fingerPose.Value.boneData;
-
-                        // Create a list to store the serialized bone data for the current finger pose data
+                        // Create a new list to store the serialized bone data
                         List<SerializedBoneData> serializedBoneDataList = new List<SerializedBoneData>();
 
-                        // Iterate over each bone data in the list
-                        foreach (SerializedBoneData boneData in boneDataList)
+                        // Iterate over each bone data in the serialized finger data
+                        foreach (SerializedBoneData boneData in serializedFingerData.boneData)
                         {
-                            // Get the bone name
+                            // Get the bone name, position, and rotation
                             string boneName = boneData.boneName;
-
-                            // Get the position and rotation values
                             Vector3 position = boneData.position;
                             Quaternion rotation = boneData.rotation;
 
-                            // Create a new SerializedBoneData object with the bone name, position, and rotation
+                            // Create a new serialized bone data object with the bone name, position, and rotation
                             SerializedBoneData serializedBoneData = new SerializedBoneData()
                             {
                                 boneName = boneName,
@@ -477,19 +476,19 @@ public class GestureDetect : MonoBehaviour
                             serializedBoneDataList.Add(serializedBoneData);
                         }
 
-                        // Set the serialized bone data list for the current finger pose data
-                        serializedFingerData.boneData = serializedBoneDataList;
+                        // Set the serialized bone data list for the merged finger data
+                        mergedFingerData.boneData = serializedBoneDataList;
 
-                        // Add the serialized finger data to the finger pose data dictionary
-                        serializedFingerPoseData.Add(fingerPose.Key, serializedFingerData);
+                        // Add the merged finger data to the finger pose data dictionary
+                        serializedFingerPoseData.Add(fingerName, mergedFingerData);
                     }
 
                     // Add the finger pose data dictionary to the finger data list
-                    fingerDataList.Add(serializedFingerPoseData);
+                    serializedFingerDataList.Add(serializedFingerPoseData);
                 }
 
                 // Add the finger data list for the current frame to the frames dictionary
-                fingerDataFrames.Add(frameData.Key, fingerDataList);
+                fingerDataFrames.Add(frameData.Key, serializedFingerDataList);
             }
 
             // Set the finger data frames in the serialized gesture
@@ -533,6 +532,7 @@ public class GestureDetect : MonoBehaviour
         //Save json data to new file
         File.WriteAllText(saveFile, json);
     }
+
 
 
     // Read data from JSON file, deserialize data into Gestures, populate Gesture list
@@ -583,12 +583,13 @@ public class GestureDetect : MonoBehaviour
                         // Retrieve the finger data for each finger property
                         var jsonFingers = (JArray)jsonFrame[fingerPropertyName];
 
+                        // Create an empty list to store the finger's bone data
+                        List<SerializedFingerData> fingerDataList = new List<SerializedFingerData>();
+
                         foreach (var jsonFinger in jsonFingers)
                         {
                             var fingerName = jsonFinger["fingerName"].ToString();
                             var jsonBoneData = (JArray)jsonFinger["boneData"];
-
-                            List<SerializedFingerData> fingerDataList = new List<SerializedFingerData>();
 
                             foreach (var jsonBone in jsonBoneData)
                             {
@@ -614,19 +615,18 @@ public class GestureDetect : MonoBehaviour
                                 // Add the finger data entry to the list
                                 fingerDataList.Add(fingerDataEntry);
                             }
-
-                            // Check if the finger name exists in the fingerData dictionary
-                            if (!fingerData.ContainsKey(fingerName))
-                            {
-                                // If not, create a new list for the finger name
-                                fingerData[fingerName] = new List<Dictionary<string, SerializedFingerData>>();
-                            }
-
-                            // Add the finger data list to the finger name entry in the dictionary
-                            fingerData[fingerName].AddRange(fingerDataList);
                         }
-                    }
 
+                        // Check if the finger name exists in the fingerData dictionary
+                        if (!fingerData.ContainsKey(fingerPropertyName))
+                        {
+                            // If not, create a new list for the finger name
+                            fingerData[fingerPropertyName] = new List<Dictionary<string, SerializedFingerData>>();
+                        }
+
+                        // Add the finger data list to the finger name entry in the dictionary
+                        fingerData[fingerPropertyName].AddRange(fingerDataList);
+                    }
                 }
 
                 // Extract the motion data from the JSON
@@ -657,6 +657,7 @@ public class GestureDetect : MonoBehaviour
             gestures = new Dictionary<string, Gesture>();
         }
     }
+
 
 
 

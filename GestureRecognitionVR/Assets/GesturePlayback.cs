@@ -78,13 +78,11 @@ public class GesturePlayback : MonoBehaviour
                                         {
                                             List<GestureDetect.SerializedBoneData> boneDataList = serializedFingerData.boneData;
 
-                                            Debug.Log("Finger Name: " + fingerName);
-                                            Debug.Log("Bone Count for Finger '" + fingerName + "': " + boneDataList.Count);
-
-                                            if (boneDataList.Count > 0)
+                                            // Iterate over each bone/joint in the finger
+                                            foreach (var boneData in boneDataList)
                                             {
-                                                // Access the bone data for the current bone/joint
-                                                GestureDetect.SerializedBoneData boneData = boneDataList[0];
+                                                Debug.Log("Finger Name: " + fingerName);
+                                                Debug.Log("Bone Count for Finger '" + fingerName + "': " + boneDataList.Count);
 
                                                 // Retrieve the rotation value
                                                 Quaternion rotation = boneData.rotation;
@@ -99,10 +97,7 @@ public class GesturePlayback : MonoBehaviour
                                                 Vector3 targetPosition = boneData.position;
                                                 finger.GetChild(i).position = position + targetPosition;
                                             }
-                                            else
-                                            {
-                                                Debug.LogWarning("No bone data found for finger '" + fingerName + "' and bone index " + i);
-                                            }
+
                                         }
                                         else
                                         {
@@ -141,6 +136,7 @@ public class GesturePlayback : MonoBehaviour
             Debug.LogWarning("Gesture not found: " + gestureName);
         }
     }
+
 
 
 
