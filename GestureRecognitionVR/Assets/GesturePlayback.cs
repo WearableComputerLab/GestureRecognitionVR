@@ -55,6 +55,7 @@ public class GesturePlayback : MonoBehaviour
                         if (finger != null)
                         {
                             // Check if the number of positions matches the number of finger bones
+                            // Check if the number of positions matches the number of finger bones
                             if (fingerDataList.Count == finger.childCount)
                             {
                                 // Iterate over each bone/joint in the finger
@@ -69,6 +70,9 @@ public class GesturePlayback : MonoBehaviour
 
                                     // Retrieve the list of bone data for the finger
                                     List<GestureDetect.SerializedBoneData> boneDataList = serializedFingerDataEntry.boneData;
+
+                                    Debug.Log("Finger Name: " + fingerName);
+                                    Debug.Log("Bone Count for Finger '" + fingerName + "': " + boneDataList.Count);
 
                                     if (boneDataList.Count > 0)
                                     {
@@ -90,13 +94,12 @@ public class GesturePlayback : MonoBehaviour
                                         Debug.LogWarning("No bone data found for finger '" + fingerName + "' and bone index " + i);
                                     }
                                 }
-
-
                             }
                             else
                             {
                                 Debug.LogWarning("Incorrect number of finger positions in the current gesture frame for finger '" + fingerName + "'. Expected: " + finger.childCount + ", Actual: " + fingerDataList.Count);
                             }
+
                         }
                         else
                         {
