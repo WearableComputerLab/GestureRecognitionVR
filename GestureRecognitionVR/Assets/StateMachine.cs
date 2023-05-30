@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using Oculus.Voice;
 using System.Linq;
+using Microsoft.MixedReality.Toolkit.UI;
+using Microsoft.MixedReality.Toolkit.Utilities;
+using TMPro;
 
 public class StateMachine : MonoBehaviour
 {
@@ -328,6 +331,7 @@ public class SelectResponse : State
     private List<List<Vector3>> fingerData;
     private List<Vector3> motionData;
     private string name;
+    private List<GameObject> buttons;
 
     public SelectResponse(List<List<Vector3>> fingerData, List<Vector3> motionData, string name)
     {
@@ -344,6 +348,22 @@ public class SelectResponse : State
         Debug.Log($"Please select which response you would like to assign to {name}.");
         Debug.Log(
             $"Possible Responses: {string.Join(", ", GestureDetect.Instance.responses.Select(response => response.Name()))}");
+
+        buttons = new List<GameObject>();
+        //Instantiate Buttons for each item in Response responses
+        for (int i = 0; i < GestureDetect.Instance.responses.Count; i++)
+        {
+            GameObject responseButton = GameObject.Instantiate(GestureDetect.Instance.responseButtonPrefab,
+                GestureDetect.Instance.responseButtonPosition.transform);
+            responseButton.GetComponent<Interactable>().OnClick.AddListener((() =>
+            {
+                GestureDetect.Instance.userInput = GestureDetect.Instance.responses[i].Name();
+            }));
+            responseButton.GetComponentInChildren<TextMeshPro>().text = GestureDetect.Instance.responses[i].Name();
+            buttons.Add(responseButton);
+        }
+        GestureDetect.Instance.responseButtonPosition.GetComponent<GridObjectCollection>().UpdateCollection();
+
         yield break;
     }
 
@@ -377,6 +397,11 @@ public class SelectResponse : State
         }
 
         GestureDetect.Instance.userInput = "";
+        foreach (GameObject button in buttons)
+        {
+            GameObject.Destroy(button);
+        }
+
         StateMachine.SetState(new SaveGesture(fingerData, motionData, name, r));
     }
 }

@@ -9,6 +9,9 @@ using UnityEngine.Events;
 using Oculus.Voice;
 using JsonConvert = Newtonsoft.Json.JsonConvert;
 using System.Linq;
+using Oculus.Platform;
+using UnityEngine.Serialization;
+using Application = UnityEngine.Application;
 
 [System.Serializable]
 public struct Gesture
@@ -150,9 +153,9 @@ public class GestureDetect : MonoBehaviour
     /// <summary>
     /// TODO
     /// </summary>
-    public GameObject gestureNamerPrefab;
+    [FormerlySerializedAs("gestureNamerPrefab")] public GameObject responseButtonPrefab;
 
-    public GameObject gestureNamerPosition;
+    [FormerlySerializedAs("gestureNamerPosition")] public GameObject responseButtonPosition;
 
     /// <summary>
     /// Voice Recognition Controller
