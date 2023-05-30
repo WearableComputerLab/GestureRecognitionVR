@@ -183,7 +183,7 @@ public class GestureDetect : MonoBehaviour
     /// <summary>
     /// String for Voice Recognition Status
     /// </summary>
-    public string _voiceRecog;
+    private string _voiceRecog;
 
     public Waiting.InputAction currentAction = Waiting.InputAction.None;
 
@@ -244,6 +244,14 @@ public class GestureDetect : MonoBehaviour
             }
         }
     }
+
+    public string userInput
+    {
+        get { return _userInput; }
+        set { _userInput = value; }
+    }
+
+    private string _userInput;
 
 
     /// <summary>
@@ -314,71 +322,18 @@ public class GestureDetect : MonoBehaviour
     /// <param name="name"></param>
     /// <param name="recordingTime"></param>
     /// <returns></returns>
-    public IEnumerator SaveGesture(string name, float recordingTime)
+    public void SaveGesture(List<List<Vector3>> fingerData, List<Vector3> motionData, string name, Response response)
     {
-        isRecording = true;
-        float startTime = Time.time;
-        // Capture 20 frames per second (fine-tune along with Update() updateFrequency)
-        const float frameTime = 1f / 20f;
-
         Gesture g = new Gesture(name)
         {
-            fingerData = new List<List<Vector3>>(),
-            motionData = new List<Vector3>()
+            fingerData = fingerData,
+            motionData = motionData,
+            response = response
         };
-        int lastSecondDisplayed = Mathf.FloorToInt(startTime);
-
-        while (Time.time - startTime < recordingTime)
-        {
-            List<Vector3> currentFrame = new List<Vector3>();
-
-            //Save each individual finger bone in fingerData, save whole hand position in motionData
-            foreach (OVRBone bone in fingerBones)
-            {
-                currentFrame.Add(handToRecord.transform.InverseTransformPoint(bone.Transform.position));
-            }
-
-            // if static, motionData should have length of 1.
-            g.fingerData.Add(currentFrame);
-            g.motionData.Add(handToRecord.transform.InverseTransformPoint(handToRecord.transform.position));
-
-
-            // Update count down every second (if motion gesture)
-            if (recordingTime > 0.01)
-            {
-                int currentSecond = Mathf.FloorToInt(Time.time);
-                if (currentSecond > lastSecondDisplayed)
-                {
-                    float remainingTime = recordingTime - (Time.time - startTime);
-                    Debug.Log("Recording " + name + "... Time remaining: " +
-                              Mathf.FloorToInt(remainingTime).ToString() + " seconds");
-                    lastSecondDisplayed = currentSecond;
-                }
-            }
-
-            // Save Motion Gestures at 20fps to save resources (fine-tune this)
-            yield return new WaitForSeconds(frameTime);
-        }
-        
-        g.response = responses.First(res => res.Name() == g.name);
 
         // Add gesture to Gesture List
         gestures[name] = g;
-        Debug.Log("Saved Gesture " + name);
-
-        // set time when gesture was recorded, set isRecording to false
-        lastRecordTime = Time.time;
-        isRecording = false;
-    }
-
-    /// <summary>
-    /// Calls upon SaveGesture coroutine to save a gesture.
-    /// </summary>
-    /// <param name="name">Name of Gesture</param>
-    /// <param name="customTime">Time to recording gesture for, defaults to recordingTime (0.01f)</param>
-    public void Save(string name, float customTime = recordingTime)
-    {
-        StartCoroutine(SaveGesture(name, customTime));
+        Debug.Log($"Saved Gesture {name}");
     }
 
 

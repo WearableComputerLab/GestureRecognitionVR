@@ -10,7 +10,7 @@ public abstract class Response
 
     public void StartRoutine()
     {
-       StateMachine.Instance.StartCoroutine(Routine());
+        StateMachine.Instance.StartCoroutine(Routine());
     }
 }
 
@@ -18,7 +18,7 @@ public abstract class Response
 public class BlueCube : Response
 {
     public override string Name() => "Blue Cube";
-    
+
     /// <summary>
     /// When "Gesture 1" is recognised, change cube color to blue for 2 seconds, then back to red.
     /// </summary>
@@ -28,7 +28,7 @@ public class BlueCube : Response
         Material material = GestureDetect.Instance.cubeRenderer.material;
         material.color = GestureDetect.Instance.newColour;
         yield return new WaitForSeconds(2);
-        
+
         material.color = GestureDetect.Instance.oldColour;
     }
 }
@@ -36,6 +36,7 @@ public class BlueCube : Response
 public class Sphere : Response
 {
     public override string Name() => "Sphere";
+
     /// <summary>
     /// When "Gesture 2" is recognised, change cube to a sphere for 2 seconds, then back to cube.
     /// </summary>
@@ -56,6 +57,7 @@ public class Sphere : Response
 public class BlueSphere : Response
 {
     public override string Name() => "Blue Cube and Sphere";
+
     /// <summary>
     /// When "Gesture 3" is recognized, change cube color and change cube to sphere for 2 seconds, then back to original color and cube.
     /// </summary>
