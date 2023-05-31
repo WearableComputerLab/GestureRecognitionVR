@@ -134,7 +134,7 @@ public class GesturePlayback : MonoBehaviour
                             if (fingerDataList.Count == expectedPositions)
                             {
                                 // Recursive function to update nested finger bones
-                                UpdateNestedFingerBones(finger, fingerDataList, 1);
+                                UpdateNestedFingerBones(finger, fingerDataList, 0);
                             }
                             else
                             {
@@ -242,17 +242,6 @@ public class GesturePlayback : MonoBehaviour
     // Recursive function to update nested finger bones
     private void UpdateNestedFingerBones(Transform parentBone, List<Dictionary<string, GestureDetect.SerializedFingerData>> fingerDataList, int dataIndex)
     {
-        // Check if the position index is valid
-        if (dataIndex >= fingerDataList.Count)
-        {
-            Debug.LogError("Invalid position index for finger bone.");
-            return;
-        }
-
-        // Log the finger transform and position index
-        Debug.Log("Updating finger: " + parentBone.name);
-        Debug.Log("Position index: " + dataIndex);
-
         // Check if dataIndex is within the range of fingerDataList
         if (dataIndex < 0 || dataIndex >= fingerDataList.Count)
         {
@@ -312,8 +301,14 @@ public class GesturePlayback : MonoBehaviour
                 Vector3 targetPosition = boneData.position;
                 bone.position = position + targetPosition;
 
-                // Recursively update nested finger bones
-                UpdateNestedFingerBones(bone, fingerDataList, 1);
+                Debug.Log("Updated Bone: " + bone.name);
+
+                // Check if fingerDataList has more finger data to update
+                if (dataIndex + 1 < fingerDataList.Count)
+                {
+                    // Recursively update nested finger bones with the next finger data
+                    UpdateNestedFingerBones(bone, fingerDataList, dataIndex + 1);
+                }
             }
             else
             {
@@ -323,10 +318,6 @@ public class GesturePlayback : MonoBehaviour
             }
         }
     }
-
-
-
-
 
 
 
@@ -437,7 +428,7 @@ public class GesturePlayback : MonoBehaviour
             Transform child = parent.GetChild(i);
 
             // Debug log to see the child's name
-            Debug.Log("Child name: " + child.name);
+            // Debug.Log("Child name: " + child.name);
 
             // Check if the child's name matches the boneName
             if (child.name.Equals(boneName))
@@ -481,72 +472,12 @@ public class GesturePlayback : MonoBehaviour
         return count;
     }
 
-
-    // Recursively update the positions of finger bones based on the default finger positions
-    void UpdateFingerBonePositionsRecursive(Transform fingerTransform, List<Vector3> fingerPositions)
-    {
-        for (int i = 0; i < fingerTransform.childCount; i++)
-        {
-            Transform child = fingerTransform.GetChild(i);
-
-            // Check if the child transform represents a finger bone
-            if (IsFingerBone(child))
-            {
-                int boneIndex = GetBoneIndex(child, fingerPositions);
-
-                // Check if the bone index is within the range of finger positions
-                if (boneIndex >= 0 && boneIndex < fingerPositions.Count)
-                {
-                    Vector3 bonePosition = fingerPositions[boneIndex];
-
-                    // Convert the finger bone position to be relative to the root transform
-                    bonePosition = fingerTransform.TransformPoint(bonePosition);
-
-                    // Convert the relative position back to local space of the finger bone
-                    bonePosition = child.InverseTransformPoint(bonePosition);
-
-                    child.localPosition = bonePosition;
-                }
-                else
-                {
-                    Debug.LogWarning("Invalid bone index for finger '" + fingerTransform.name + "'. Expected: " + boneIndex + ", Actual: " + fingerPositions.Count);
-                }
-            }
-            else
-            {
-                // If the child transform has nested finger bones, recursively update their positions
-                UpdateFingerBonePositionsRecursive(child, fingerPositions);
-            }
-        }
-    }
-
-
-    // Recursively update the rotations of finger bones based on the default finger rotations
-    private void UpdateFingerBoneRotationsRecursive(Transform bone, List<Quaternion> rotations, ref int rotationIndex)
-    {
-        if (bone == null || rotations == null || rotationIndex >= rotations.Count)
-        {
-            return;
-        }
-
-        // Update the rotation of the current bone
-        bone.rotation = rotations[rotationIndex];
-        rotationIndex++;
-
-        // Recursively update the rotations of child bones
-        for (int i = 0; i < bone.childCount; i++)
-        {
-            UpdateFingerBoneRotationsRecursive(bone.GetChild(i), rotations, ref rotationIndex);
-        }
-    }
-
-
-
     // Check if a transform represents a finger bone
     bool IsFingerBone(Transform transform)
     {
         return transform.name.EndsWith("_R");
     }
+
 
     // Get the bone index based on a finger bone transform
     private int GetBoneIndex(Transform boneTransform, List<Vector3> gestureBonePositions)
