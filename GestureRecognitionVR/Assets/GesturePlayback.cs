@@ -178,7 +178,11 @@ public class GesturePlayback : MonoBehaviour
                 {
                     GestureDetect.SerializedBoneData boneData = boneDataList[i];
                     Debug.Log("Parent name: " + parentBone.name);
-                    Transform bone = FindBoneTransform(parentBone, boneData.boneName);
+
+                    // Get the bone name from the child transform
+                    string boneName = parentBone.GetChild(i).name;
+
+                    Transform bone = FindBoneTransform(parentBone, boneName);
 
                     if (bone != null)
                     {
@@ -200,7 +204,7 @@ public class GesturePlayback : MonoBehaviour
                     }
                     else
                     {
-                        Debug.LogWarning("Bone '" + boneData.boneName + "' not found in the hand model hierarchy");
+                        Debug.LogWarning("Bone '" + boneName + "' not found in the hand model hierarchy");
                         Debug.Log("Parent Bone: " + parentBone.name);
                         Debug.Log("Hierarchy: " + GetBoneHierarchy(parentBone));
                     }
@@ -216,6 +220,7 @@ public class GesturePlayback : MonoBehaviour
             Debug.LogWarning("Key 'boneData' not found in finger data at data index " + dataIndex);
         }
     }
+
 
     // Helper function to get the hierarchy of bones
     private string GetBoneHierarchy(Transform bone)
@@ -234,7 +239,7 @@ public class GesturePlayback : MonoBehaviour
 
     private Quaternion GetReferenceRotationForBone(string boneName)
     {
-        // Default rotation values for each bone
+        // Default rotation values for each bone // NOTE: The rotation becomes the rotation of the last gesture, not default. 
         switch (boneName)
         {
             case "hand_R":
@@ -291,7 +296,7 @@ public class GesturePlayback : MonoBehaviour
 
     private Vector3 GetReferencePositionForBone(string boneName)
     {
-        // Default position values for each bone
+        // Default position values for each bone // NOTE: The position becomes the position of the last gesture, not default. 
         switch (boneName)
         {
             case "hand_R":
@@ -396,6 +401,7 @@ public class GesturePlayback : MonoBehaviour
     private Transform FindBoneTransform(Transform parent, string boneName)
     {
         Transform bone = null;
+        Debug.Log("boneName = " + boneName);
 
         // Iterate over each child transform of the parent
         for (int i = 0; i < parent.childCount; i++)
