@@ -171,10 +171,6 @@ public class GesturePlayback : MonoBehaviour
     }
 
 
-
-
-
-
     // Coroutine to Playback Motion Gestures on the hand model
     IEnumerator PlayGestureCoroutine(Dictionary<string, List<Dictionary<string, GestureDetect.SerializedFingerData>>> fingerDataFrames, List<Vector3> handMotionFrames)
     {
@@ -288,18 +284,29 @@ public class GesturePlayback : MonoBehaviour
 
             if (bone != null)
             {
+                // Retrieve the reference position for the bone
+                Vector3 referencePosition = GetReferencePositionForBone(bone.name);
+                Debug.Log("Bone: " + bone.name);
+                Debug.Log("Reference Position: " + referencePosition);
+                Debug.Log("Saved Position: " + boneData.position);
+
+                // Calculate the target position by adding the reference position and the saved position
+                Vector3 targetPosition = referencePosition + boneData.position;
+                Debug.Log("Target Position: " + targetPosition);
+
+                // Update the finger bone position
+                bone.position = targetPosition;
+
                 // Retrieve the rotation value
                 Quaternion rotation = boneData.rotation;
-
-                // Update the finger bone rotation
                 Quaternion referenceRotation = GetReferenceRotationForBone(bone.name);
                 Quaternion targetRotation = referenceRotation * rotation;
                 bone.rotation = targetRotation;
 
-                // Update the finger bone position
-                Vector3 position = GetReferencePositionForBone(bone.name);
-                Vector3 targetPosition = boneData.position;
-                bone.position = position + targetPosition;
+                // Log the rotation values
+                Debug.Log("Reference Rotation: " + referenceRotation);
+                Debug.Log("Saved Rotation: " + rotation);
+                Debug.Log("Target Rotation: " + targetRotation);
 
                 Debug.Log("Updated Bone: " + bone.name);
 
@@ -318,6 +325,8 @@ public class GesturePlayback : MonoBehaviour
             }
         }
     }
+
+
 
 
 
@@ -506,6 +515,5 @@ public class GesturePlayback : MonoBehaviour
             return -1; // or another appropriate default value
         }
     }
-
 
 }
