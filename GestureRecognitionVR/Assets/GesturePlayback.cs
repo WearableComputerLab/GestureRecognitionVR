@@ -12,6 +12,79 @@ public class GesturePlayback : MonoBehaviour
     public GestureDetect gestureDetect;
     public Dictionary<string, Gesture> gestures;
 
+    // Declare dictionaries to store default position/rotation values for each bone and whole hand model
+    private Dictionary<string, Quaternion> defaultBoneRotations = new Dictionary<string, Quaternion>();
+    private Dictionary<string, Vector3> defaultBonePositions = new Dictionary<string, Vector3>();
+    private Vector3 defaultHandPosition;
+
+
+    private void Start()
+    {
+        Debug.Log("STARTED!!");
+
+        // Store the default position/rotation of the hand model for reference
+        InitializeDefaultModelPositions();
+        InitializeDefaultModelRotations();
+
+        // Find the hand object in the hand model hierarchy
+        Transform handObject = handModel.transform.Find("m_ca01_skeleton/hand_R");
+        if (handObject != null)
+        {
+            
+            // Calculate the forward-facing point on the palm relative to handToRecord
+            Vector3 palmForwardPoint = handObject.InverseTransformPoint(handObject.position + handObject.forward);
+
+            // Store the palm forward point for reference
+            defaultHandPosition = palmForwardPoint;
+        }
+        else
+        {
+            Debug.LogWarning("Hand object not found in the hand model hierarchy");
+        }
+    }
+
+
+    // Set the initial/default reference rotation for the hand model bones
+    private void InitializeDefaultModelRotations()
+    {
+        defaultBoneRotations.Add("hand_R", Quaternion.identity);
+        defaultBoneRotations.Add("thumb02_R", GetBoneRotation("m_ca01_skeleton/hand_R/Thumb/thumb02_R"));
+        defaultBoneRotations.Add("thumb03_R", GetBoneRotation("m_ca01_skeleton/hand_R/Thumb/thumb02_R/thumb03_R"));
+        defaultBoneRotations.Add("index01_R", GetBoneRotation("m_ca01_skeleton/hand_R/Index/index01_R"));
+        defaultBoneRotations.Add("index02_R", GetBoneRotation("m_ca01_skeleton/hand_R/Index/index01_R/index02_R"));
+        defaultBoneRotations.Add("index03_R", GetBoneRotation("m_ca01_skeleton/hand_R/Index/index01_R/index02_R/index03_R"));
+        defaultBoneRotations.Add("middle01_R", GetBoneRotation("m_ca01_skeleton/hand_R/Middle/middle01_R"));
+        defaultBoneRotations.Add("middle02_R", GetBoneRotation("m_ca01_skeleton/hand_R/Middle/middle01_R/middle02_R"));
+        defaultBoneRotations.Add("middle03_R", GetBoneRotation("m_ca01_skeleton/hand_R/Middle/middle01_R/middle02_R/middle03_R"));
+        defaultBoneRotations.Add("ring01_R", GetBoneRotation("m_ca01_skeleton/hand_R/Ring/ring01_R"));
+        defaultBoneRotations.Add("ring02_R", GetBoneRotation("m_ca01_skeleton/hand_R/Ring/ring01_R/ring02_R"));
+        defaultBoneRotations.Add("ring03_R", GetBoneRotation("m_ca01_skeleton/hand_R/Ring/ring01_R/ring02_R/ring03_R"));
+        defaultBoneRotations.Add("pinky01_R", GetBoneRotation("m_ca01_skeleton/hand_R/Pinky/pinky01_R"));
+        defaultBoneRotations.Add("pinky02_R", GetBoneRotation("m_ca01_skeleton/hand_R/Pinky/pinky01_R/pinky02_R"));
+        defaultBoneRotations.Add("pinky03_R", GetBoneRotation("m_ca01_skeleton/hand_R/Pinky/pinky01_R/pinky02_R/pinky03_R"));
+
+    }
+
+    // Set the initial/default reference position for the hand model bones
+    private void InitializeDefaultModelPositions()
+    {
+        defaultBonePositions.Add("hand_R", Vector3.zero);
+        defaultBonePositions.Add("thumb02_R", GetBonePosition("m_ca01_skeleton/hand_R/Thumb/thumb02_R"));
+        defaultBonePositions.Add("thumb03_R", GetBonePosition("m_ca01_skeleton/hand_R/Thumb/thumb02_R/thumb03_R"));
+        defaultBonePositions.Add("index01_R", GetBonePosition("m_ca01_skeleton/hand_R/Index/index01_R"));
+        defaultBonePositions.Add("index02_R", GetBonePosition("m_ca01_skeleton/hand_R/Index/index01_R/index02_R"));
+        defaultBonePositions.Add("index03_R", GetBonePosition("m_ca01_skeleton/hand_R/Index/index01_R/index02_R/index03_R"));
+        defaultBonePositions.Add("middle01_R", GetBonePosition("m_ca01_skeleton/hand_R/Middle/middle01_R"));
+        defaultBonePositions.Add("middle02_R", GetBonePosition("m_ca01_skeleton/hand_R/Middle/middle01_R/middle02_R"));
+        defaultBonePositions.Add("middle03_R", GetBonePosition("m_ca01_skeleton/hand_R/Middle/middle01_R/middle02_R/middle03_R"));
+        defaultBonePositions.Add("ring01_R", GetBonePosition("m_ca01_skeleton/hand_R/Ring/ring01_R"));
+        defaultBonePositions.Add("ring02_R", GetBonePosition("m_ca01_skeleton/hand_R/Ring/ring01_R/ring02_R"));
+        defaultBonePositions.Add("ring03_R", GetBonePosition("m_ca01_skeleton/hand_R/Ring/ring01_R/ring02_R/ring03_R"));
+        defaultBonePositions.Add("pinky01_R", GetBonePosition("m_ca01_skeleton/hand_R/Pinky/pinky01_R"));
+        defaultBonePositions.Add("pinky02_R", GetBonePosition("m_ca01_skeleton/hand_R/Pinky/pinky01_R/pinky02_R"));
+        defaultBonePositions.Add("pinky03_R", GetBonePosition("m_ca01_skeleton/hand_R/Pinky/pinky01_R/pinky02_R/pinky03_R"));
+    }
+
     public void UpdateGestures()
     {
         gestures = new Dictionary<string, Gesture>(gestureDetect.gestures);
@@ -61,7 +134,7 @@ public class GesturePlayback : MonoBehaviour
                             if (fingerDataList.Count == expectedPositions)
                             {
                                 // Recursive function to update nested finger bones
-                                UpdateNestedFingerBones(finger, fingerDataList, 0);
+                                UpdateNestedFingerBones(finger, fingerDataList, 1);
                             }
                             else
                             {
@@ -86,11 +159,19 @@ public class GesturePlayback : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Gesture not found: " + gestureName);
+            if (gestures == null)
+            {
+                Debug.LogWarning("Gestures dictionary is null");
+            }
+            else
+            {
+                Debug.LogWarning("Gesture not found: " + gestureName);
+            }
         }
     }
 
-    
+
+
 
 
 
@@ -161,65 +242,92 @@ public class GesturePlayback : MonoBehaviour
     // Recursive function to update nested finger bones
     private void UpdateNestedFingerBones(Transform parentBone, List<Dictionary<string, GestureDetect.SerializedFingerData>> fingerDataList, int dataIndex)
     {
+        // Check if the position index is valid
         if (dataIndex >= fingerDataList.Count)
+        {
+            Debug.LogError("Invalid position index for finger bone.");
             return;
+        }
+
+        // Log the finger transform and position index
+        Debug.Log("Updating finger: " + parentBone.name);
+        Debug.Log("Position index: " + dataIndex);
+
+        // Check if dataIndex is within the range of fingerDataList
+        if (dataIndex < 0 || dataIndex >= fingerDataList.Count)
+        {
+            Debug.LogError("Invalid data index for finger bone.");
+            return;
+        }
 
         Dictionary<string, GestureDetect.SerializedFingerData> fingerData = fingerDataList[dataIndex];
 
-        // Retrieve the bone data for the finger
-        if (fingerData.TryGetValue("boneData", out GestureDetect.SerializedFingerData serializedFingerData))
+        // Check if fingerData dictionary is null or empty
+        if (fingerData == null || fingerData.Count == 0)
         {
-            List<GestureDetect.SerializedBoneData> boneDataList = serializedFingerData.boneData;
+            Debug.LogWarning("No finger data found at index " + dataIndex);
+            return;
+        }
 
-            // Check if bone count for finger is greater than 0
-            if (boneDataList.Count > 0)
+        // Check if fingerData contains boneData key
+        if (!fingerData.TryGetValue("boneData", out GestureDetect.SerializedFingerData serializedFingerData))
+        {
+            Debug.LogWarning("Key 'boneData' not found in finger data at index " + dataIndex);
+            return;
+        }
+
+        List<GestureDetect.SerializedBoneData> boneDataList = serializedFingerData.boneData;
+
+        // Check if boneDataList is null or empty
+        if (boneDataList == null || boneDataList.Count == 0)
+        {
+            Debug.LogWarning("No bone data found for finger at index " + dataIndex);
+            return;
+        }
+
+        int numBones = Mathf.Min(parentBone.childCount, boneDataList.Count);
+
+        for (int i = 0; i < numBones; i++)
+        {
+            GestureDetect.SerializedBoneData boneData = boneDataList[i];
+            Debug.Log("Parent name: " + parentBone.name);
+
+            // Get the bone name from the child transform
+            string boneName = parentBone.GetChild(i).name;
+
+            Transform bone = FindBoneTransform(parentBone, boneName);
+
+            if (bone != null)
             {
-                for (int i = 0; i < boneDataList.Count; i++)
-                {
-                    GestureDetect.SerializedBoneData boneData = boneDataList[i];
-                    Debug.Log("Parent name: " + parentBone.name);
+                // Retrieve the rotation value
+                Quaternion rotation = boneData.rotation;
 
-                    // Get the bone name from the child transform
-                    string boneName = parentBone.GetChild(i).name;
+                // Update the finger bone rotation
+                Quaternion referenceRotation = GetReferenceRotationForBone(bone.name);
+                Quaternion targetRotation = referenceRotation * rotation;
+                bone.rotation = targetRotation;
 
-                    Transform bone = FindBoneTransform(parentBone, boneName);
+                // Update the finger bone position
+                Vector3 position = GetReferencePositionForBone(bone.name);
+                Vector3 targetPosition = boneData.position;
+                bone.position = position + targetPosition;
 
-                    if (bone != null)
-                    {
-                        // Retrieve the rotation value
-                        Quaternion rotation = boneData.rotation;
-
-                        // Update the finger bone rotation
-                        Quaternion referenceRotation = GetReferenceRotationForBone(bone.name);
-                        Quaternion targetRotation = referenceRotation * rotation;
-                        bone.rotation = targetRotation;
-
-                        // Update the finger bone position
-                        Vector3 position = GetReferencePositionForBone(bone.name);
-                        Vector3 targetPosition = boneData.position;
-                        bone.position = position + targetPosition;
-
-                        // Recursively update nested finger bones
-                        UpdateNestedFingerBones(bone, fingerDataList, dataIndex + 1);
-                    }
-                    else
-                    {
-                        Debug.LogWarning("Bone '" + boneName + "' not found in the hand model hierarchy");
-                        Debug.Log("Parent Bone: " + parentBone.name);
-                        Debug.Log("Hierarchy: " + GetBoneHierarchy(parentBone));
-                    }
-                }
+                // Recursively update nested finger bones
+                UpdateNestedFingerBones(bone, fingerDataList, 1);
             }
             else
             {
-                Debug.LogWarning("No bone data found for finger at data index " + dataIndex);
+                Debug.LogWarning("Bone '" + boneName + "' not found in the hand model hierarchy");
+                Debug.Log("Parent Bone: " + parentBone.name);
+                Debug.Log("Hierarchy: " + GetBoneHierarchy(parentBone));
             }
         }
-        else
-        {
-            Debug.LogWarning("Key 'boneData' not found in finger data at data index " + dataIndex);
-        }
     }
+
+
+
+
+
 
 
     // Helper function to get the hierarchy of bones
@@ -237,47 +345,21 @@ public class GesturePlayback : MonoBehaviour
     }
 
 
+    // Retrieve the default rotation value for a bone
     private Quaternion GetReferenceRotationForBone(string boneName)
     {
-        // Default rotation values for each bone // NOTE: The rotation becomes the rotation of the last gesture, not default. 
-        switch (boneName)
+        // Check if the bone name exists in the dictionary
+        if (defaultBoneRotations.ContainsKey(boneName))
         {
-            case "hand_R":
-                return Quaternion.identity; // Default rotation for the hand
-            case "thumb02_R":
-                return GetBoneRotation("m_ca01_skeleton/hand_R/Thumb/thumb02_R");
-            case "thumb03_R":
-                return GetBoneRotation("m_ca01_skeleton/hand_R/Thumb/thumb02_R/thumb03_R");
-            case "index01_R":
-                return GetBoneRotation("m_ca01_skeleton/hand_R/Index/index01_R");
-            case "index02_R":
-                return GetBoneRotation("m_ca01_skeleton/hand_R/Index/index01_R/index02_R");
-            case "index03_R":
-                return GetBoneRotation("m_ca01_skeleton/hand_R/Index/index01_R/index02_R/index03_R");
-            case "middle01_R":
-                return GetBoneRotation("m_ca01_skeleton/hand_R/Middle/middle01_R");
-            case "middle02_R":
-                return GetBoneRotation("m_ca01_skeleton/hand_R/Middle/middle01_R/middle02_R");
-            case "middle03_R":
-                return GetBoneRotation("m_ca01_skeleton/hand_R/Middle/middle01_R/middle02_R/middle03_R");
-            case "ring01_R":
-                return GetBoneRotation("m_ca01_skeleton/hand_R/Ring/ring01_R");
-            case "ring02_R":
-                return GetBoneRotation("m_ca01_skeleton/hand_R/Ring/ring01_R/ring02_R");
-            case "ring03_R":
-                return GetBoneRotation("m_ca01_skeleton/hand_R/Ring/ring01_R/ring02_R/ring03_R");
-            case "pinky01_R":
-                return GetBoneRotation("m_ca01_skeleton/hand_R/Pinky/pinky01_R");
-            case "pinky02_R":
-                return GetBoneRotation("m_ca01_skeleton/hand_R/Pinky/pinky01_R/pinky02_R");
-            case "pinky03_R":
-                return GetBoneRotation("m_ca01_skeleton/hand_R/Pinky/pinky01_R/pinky02_R/pinky03_R");
-            default:
-                return Quaternion.identity; // Default rotation for other bones
+            return defaultBoneRotations[boneName];
+        }
+        else
+        {
+            return Quaternion.identity; // Default rotation for other bones
         }
     }
 
-
+    // Retrieve the Rotation of a given bone
     private Quaternion GetBoneRotation(string bonePath)
     {
         Transform boneTransform = handModel.transform.Find(bonePath);
@@ -294,47 +376,21 @@ public class GesturePlayback : MonoBehaviour
 
 
 
+    // Retrieve the default position value for a bone
     private Vector3 GetReferencePositionForBone(string boneName)
     {
-        // Default position values for each bone // NOTE: The position becomes the position of the last gesture, not default. 
-        switch (boneName)
+        // Check if the bone name exists in the dictionary
+        if (defaultBonePositions.ContainsKey(boneName))
         {
-            case "hand_R":
-                return Vector3.zero; // Default position for the hand
-            case "thumb02_R":
-                return GetBonePosition("m_ca01_skeleton/hand_R/Thumb/thumb02_R");
-            case "thumb03_R":
-                return GetBonePosition("m_ca01_skeleton/hand_R/Thumb/thumb02_R/thumb03_R");
-            case "index01_R":
-                return GetBonePosition("m_ca01_skeleton/hand_R/Index/index01_R");
-            case "index02_R":
-                return GetBonePosition("m_ca01_skeleton/hand_R/Index/index01_R/index02_R");
-            case "index03_R":
-                return GetBonePosition("m_ca01_skeleton/hand_R/Index/index01_R/index02_R/index03_R");
-            case "middle01_R":
-                return GetBonePosition("m_ca01_skeleton/hand_R/Middle/middle01_R");
-            case "middle02_R":
-                return GetBonePosition("m_ca01_skeleton/hand_R/Middle/middle01_R/middle02_R");
-            case "middle03_R":
-                return GetBonePosition("m_ca01_skeleton/hand_R/Middle/middle01_R/middle02_R/middle03_R");
-            case "ring01_R":
-                return GetBonePosition("m_ca01_skeleton/hand_R/Ring/ring01_R");
-            case "ring02_R":
-                return GetBonePosition("m_ca01_skeleton/hand_R/Ring/ring01_R/ring02_R");
-            case "ring03_R":
-                return GetBonePosition("m_ca01_skeleton/hand_R/Ring/ring01_R/ring02_R/ring03_R");
-            case "pinky01_R":
-                return GetBonePosition("m_ca01_skeleton/hand_R/Pinky/pinky01_R");
-            case "pinky02_R":
-                return GetBonePosition("m_ca01_skeleton/hand_R/Pinky/pinky01_R/pinky02_R");
-            case "pinky03_R":
-                return GetBonePosition("m_ca01_skeleton/hand_R/Pinky/pinky01_R/pinky02_R/pinky03_R");
-            default:
-                return Vector3.zero; // Default position for other bones
+            return defaultBonePositions[boneName];
+        }
+        else
+        {
+            return Vector3.zero; // Default position for other bones
         }
     }
 
-
+    // Retrieve the position of a given bone
     private Vector3 GetBonePosition(string bonePath)
     {
         Transform boneTransform = handModel.transform.Find(bonePath);
@@ -348,33 +404,6 @@ public class GesturePlayback : MonoBehaviour
             return Vector3.zero;
         }
     }
-
-    /* Recursively find the finger transform by name in the hand model hierarchy - OLD
-    Transform FindFingerTransform(Transform parentTransform, string fingerName)
-    {
-        Transform fingerTransform = parentTransform.Find(fingerName);
-
-        if (fingerTransform != null)
-        {
-            return fingerTransform;
-        }
-        else
-        {
-            // If the finger transform is not found at this level, recursively search the child transforms
-            for (int i = 0; i < parentTransform.childCount; i++)
-            {
-                Transform child = parentTransform.GetChild(i);
-                fingerTransform = FindFingerTransform(child, fingerName);
-
-                if (fingerTransform != null)
-                {
-                    return fingerTransform;
-                }
-            }
-
-            return null; // Finger transform not found in the hierarchy
-        }
-    }*/
 
   
     // Recursive function to find the finger transform in the hand model hierarchy
@@ -401,7 +430,6 @@ public class GesturePlayback : MonoBehaviour
     private Transform FindBoneTransform(Transform parent, string boneName)
     {
         Transform bone = null;
-        Debug.Log("boneName = " + boneName);
 
         // Iterate over each child transform of the parent
         for (int i = 0; i < parent.childCount; i++)
