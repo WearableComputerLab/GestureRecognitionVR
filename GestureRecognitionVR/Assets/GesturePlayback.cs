@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.MixedReality.Toolkit.Utilities.FigmaImporter;
+using TMPro;
 using UnityEngine;
 
 public class GesturePlayback : MonoBehaviour
@@ -284,29 +285,68 @@ public class GesturePlayback : MonoBehaviour
 
             if (bone != null)
             {
+                // POSITION NEEDS TO BE CHECKED AGAINST PARENT BONE / MODEL ORIGIN?
+                // ROTATION NEEDS USE EULER ANGLES (wrapped correctly)
+
+                Vector3 parentPosition;
+                Quaternion parentRotation;
+
+                // Check if the parent bone is the hand_R bone
+                if (parentBone.name == "hand_R")
+                {
+                    // Use the hand_R position as the reference position for the fingers
+                    parentPosition = parentBone.localPosition;
+                    parentRotation = parentBone.localRotation;
+                }
+                else
+                {
+                    // Use the parent bone's position as the reference position
+                    parentPosition = GetReferencePositionForBone(parentBone.name);
+                    parentRotation = parentBone.localRotation;
+                }
+
                 // Retrieve the reference position for the bone
                 Vector3 referencePosition = GetReferencePositionForBone(bone.name);
+
+                // Get the saved position in the same coordinate space as the reference position
+                Vector3 savedPosition = referencePosition + boneData.position;
+
+                // Calculate the target position by subtracting the parent position from the saved position
+                Vector3 targetPosition = savedPosition - parentPosition;
+
+                // Update the finger bone position
+                bone.localPosition = targetPosition;
+
                 Debug.Log("Bone: " + bone.name);
                 Debug.Log("Reference Position: " + referencePosition);
                 Debug.Log("Saved Position: " + boneData.position);
-
-                // Calculate the target position by adding the reference position and the saved position
-                Vector3 targetPosition = referencePosition + boneData.position;
+                Debug.Log("Parent Position: " + parentPosition);
                 Debug.Log("Target Position: " + targetPosition);
+
 
                 // Update the finger bone position
                 bone.position = targetPosition;
 
                 // Retrieve the rotation value
-                Quaternion rotation = boneData.rotation;
                 Quaternion referenceRotation = GetReferenceRotationForBone(bone.name);
-                Quaternion targetRotation = referenceRotation * rotation;
-                bone.rotation = targetRotation;
+                Quaternion targetRotation = parentRotation * referenceRotation * boneData.rotation;
 
-                // Log the rotation values
-                Debug.Log("Reference Rotation: " + referenceRotation);
-                Debug.Log("Saved Rotation: " + rotation);
-                Debug.Log("Target Rotation: " + targetRotation);
+                // Convert target rotation to Euler angles
+                Vector3 targetRotationEulerAngles = targetRotation.eulerAngles;
+
+                Debug.Log("Saved Rotation: " + boneData.rotation.eulerAngles);
+                Debug.Log("Reference Rotation: " + referenceRotation.eulerAngles);
+                Debug.Log("Parent Rotation: " + parentRotation.eulerAngles);
+                Debug.Log("Target Rotation: " + targetRotation.eulerAngles);
+
+                // Wrap the Euler angles into the range of -180 to 180 degrees
+                float xAngle = WrapAngle(targetRotationEulerAngles.x);
+                float yAngle = WrapAngle(targetRotationEulerAngles.y);
+                float zAngle = WrapAngle(targetRotationEulerAngles.z);
+
+                // Update the finger bone rotation with Euler angles
+                bone.eulerAngles = new Vector3(xAngle, yAngle, zAngle);
+                Debug.Log("Euler Angles: " + bone.eulerAngles.x + ", " + bone.eulerAngles.y + ", " + bone.eulerAngles.z);
 
                 Debug.Log("Updated Bone: " + bone.name);
 
@@ -327,6 +367,16 @@ public class GesturePlayback : MonoBehaviour
     }
 
 
+    // For euler angles
+    private float WrapAngle(float angle)
+    {
+        angle %= 360f;
+        if (angle > 180f)
+        {
+            angle -= 360f;
+        }
+        return angle;
+    }
 
 
 
@@ -359,13 +409,21 @@ public class GesturePlayback : MonoBehaviour
         }
     }
 
-    // Retrieve the Rotation of a given bone
+    // Retrieve the Rotation of a given bone (used in Start() to get default rotation of hand model bones)
     private Quaternion GetBoneRotation(string bonePath)
     {
         Transform boneTransform = handModel.transform.Find(bonePath);
         if (boneTransform != null)
         {
-            return boneTransform.rotation;
+            // Wrap the Euler angles into the range of -180 to 180 degrees
+            Vector3 wrappedEulerAngles = new Vector3(
+                WrapAngle(boneTransform.localEulerAngles.x),
+                WrapAngle(boneTransform.localEulerAngles.y),
+                WrapAngle(boneTransform.localEulerAngles.z)
+            );
+
+            Debug.Log("Default Euler Angles for " + bonePath + ": " + wrappedEulerAngles);
+            return Quaternion.Euler(wrappedEulerAngles);
         }
         else
         {
@@ -373,7 +431,6 @@ public class GesturePlayback : MonoBehaviour
             return Quaternion.identity;
         }
     }
-
 
 
     // Retrieve the default position value for a bone
@@ -390,13 +447,18 @@ public class GesturePlayback : MonoBehaviour
         }
     }
 
-    // Retrieve the position of a given bone
+    // Retrieve the position of a given bone (used in Start() to get default position of hand model bones)
     private Vector3 GetBonePosition(string bonePath)
     {
         Transform boneTransform = handModel.transform.Find(bonePath);
+
         if (boneTransform != null)
         {
-            return boneTransform.position;
+            //convert to local position
+            Vector3 position = handModel.transform.InverseTransformPoint(boneTransform.position);
+
+            Debug.Log("Default Position for " + bonePath + ": " + position);
+            return position;
         }
         else
         {
@@ -405,7 +467,8 @@ public class GesturePlayback : MonoBehaviour
         }
     }
 
-  
+
+
     // Recursive function to find the finger transform in the hand model hierarchy
     private Transform FindFingerTransform(Transform parent, string fingerName)
     {
