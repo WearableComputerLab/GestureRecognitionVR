@@ -66,25 +66,27 @@ public class GesturePlayback : MonoBehaviour
 
     }
 
-    // Set the initial/default reference position for the hand model bones
+    // Set the initial/default reference position for the hand model bones, use bones parent to calculate local position
     private void InitializeDefaultModelPositions()
     {
         defaultBonePositions.Add("hand_R", Vector3.zero);
-        defaultBonePositions.Add("thumb02_R", GetBonePosition("m_ca01_skeleton/hand_R/Thumb/thumb02_R"));
-        defaultBonePositions.Add("thumb03_R", GetBonePosition("m_ca01_skeleton/hand_R/Thumb/thumb02_R/thumb03_R"));
-        defaultBonePositions.Add("index01_R", GetBonePosition("m_ca01_skeleton/hand_R/Index/index01_R"));
-        defaultBonePositions.Add("index02_R", GetBonePosition("m_ca01_skeleton/hand_R/Index/index01_R/index02_R"));
-        defaultBonePositions.Add("index03_R", GetBonePosition("m_ca01_skeleton/hand_R/Index/index01_R/index02_R/index03_R"));
-        defaultBonePositions.Add("middle01_R", GetBonePosition("m_ca01_skeleton/hand_R/Middle/middle01_R"));
-        defaultBonePositions.Add("middle02_R", GetBonePosition("m_ca01_skeleton/hand_R/Middle/middle01_R/middle02_R"));
-        defaultBonePositions.Add("middle03_R", GetBonePosition("m_ca01_skeleton/hand_R/Middle/middle01_R/middle02_R/middle03_R"));
-        defaultBonePositions.Add("ring01_R", GetBonePosition("m_ca01_skeleton/hand_R/Ring/ring01_R"));
-        defaultBonePositions.Add("ring02_R", GetBonePosition("m_ca01_skeleton/hand_R/Ring/ring01_R/ring02_R"));
-        defaultBonePositions.Add("ring03_R", GetBonePosition("m_ca01_skeleton/hand_R/Ring/ring01_R/ring02_R/ring03_R"));
-        defaultBonePositions.Add("pinky01_R", GetBonePosition("m_ca01_skeleton/hand_R/Pinky/pinky01_R"));
-        defaultBonePositions.Add("pinky02_R", GetBonePosition("m_ca01_skeleton/hand_R/Pinky/pinky01_R/pinky02_R"));
-        defaultBonePositions.Add("pinky03_R", GetBonePosition("m_ca01_skeleton/hand_R/Pinky/pinky01_R/pinky02_R/pinky03_R"));
+        defaultBonePositions.Add("thumb02_R", GetBonePosition("m_ca01_skeleton/hand_R/Thumb/thumb02_R", handModel.transform.Find("Thumb")));
+        defaultBonePositions.Add("thumb03_R", GetBonePosition("m_ca01_skeleton/hand_R/Thumb/thumb02_R/thumb03_R", handModel.transform.Find("Thumb/thumb02_R")));
+        defaultBonePositions.Add("index01_R", GetBonePosition("m_ca01_skeleton/hand_R/Index/index01_R", handModel.transform));
+        defaultBonePositions.Add("index02_R", GetBonePosition("m_ca01_skeleton/hand_R/Index/index01_R/index02_R", handModel.transform.Find("Index/index01_R")));
+        defaultBonePositions.Add("index03_R", GetBonePosition("m_ca01_skeleton/hand_R/Index/index01_R/index02_R/index03_R", handModel.transform.Find("Index/index01_R/index02_R")));
+        defaultBonePositions.Add("middle01_R", GetBonePosition("m_ca01_skeleton/hand_R/Middle/middle01_R", handModel.transform));
+        defaultBonePositions.Add("middle02_R", GetBonePosition("m_ca01_skeleton/hand_R/Middle/middle01_R/middle02_R", handModel.transform.Find("Middle/middle01_R")));
+        defaultBonePositions.Add("middle03_R", GetBonePosition("m_ca01_skeleton/hand_R/Middle/middle01_R/middle02_R/middle03_R", handModel.transform.Find("Middle/middle01_R/middle02_R")));
+        defaultBonePositions.Add("ring01_R", GetBonePosition("m_ca01_skeleton/hand_R/Ring/ring01_R", handModel.transform));
+        defaultBonePositions.Add("ring02_R", GetBonePosition("m_ca01_skeleton/hand_R/Ring/ring01_R/ring02_R", handModel.transform.Find("Ring/ring01_R")));
+        defaultBonePositions.Add("ring03_R", GetBonePosition("m_ca01_skeleton/hand_R/Ring/ring01_R/ring02_R/ring03_R", handModel.transform.Find("Ring/ring01_R/ring02_R")));
+        defaultBonePositions.Add("pinky01_R", GetBonePosition("m_ca01_skeleton/hand_R/Pinky/pinky01_R", handModel.transform.Find("Pinky")));
+        defaultBonePositions.Add("pinky02_R", GetBonePosition("m_ca01_skeleton/hand_R/Pinky/pinky01_R/pinky02_R", handModel.transform.Find("Pinky/pinky01_R")));
+        defaultBonePositions.Add("pinky03_R", GetBonePosition("m_ca01_skeleton/hand_R/Pinky/pinky01_R/pinky02_R/pinky03_R", handModel.transform.Find("Pinky/pinky01_R/pinky02_R")));
     }
+
+
 
     public void UpdateGestures()
     {
@@ -448,14 +450,24 @@ public class GesturePlayback : MonoBehaviour
     }
 
     // Retrieve the position of a given bone (used in Start() to get default position of hand model bones)
-    private Vector3 GetBonePosition(string bonePath)
+    private Vector3 GetBonePosition(string bonePath, Transform parentTransform)
     {
         Transform boneTransform = handModel.transform.Find(bonePath);
 
         if (boneTransform != null)
         {
-            //convert to local position
-            Vector3 position = handModel.transform.InverseTransformPoint(boneTransform.position);
+            Vector3 position;
+
+            if (boneTransform.parent != null && parentTransform != null)
+            {
+                // Convert the bone's position to the parent's local space
+                position = parentTransform.InverseTransformPoint(boneTransform.position);
+            }
+            else
+            {
+                // If the bone has no parent or parent transform is null, use its global position
+                position = boneTransform.position;
+            }
 
             Debug.Log("Default Position for " + bonePath + ": " + position);
             return position;
@@ -466,6 +478,8 @@ public class GesturePlayback : MonoBehaviour
             return Vector3.zero;
         }
     }
+
+
 
 
 
