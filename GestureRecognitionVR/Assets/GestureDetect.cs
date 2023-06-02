@@ -297,6 +297,7 @@ public class GestureDetect : MonoBehaviour
 
                 // Create a SerializedBoneData object to store the bone position and rotation
                 SerializedBoneData boneData = new SerializedBoneData();
+                boneData.boneName = bone.Transform.name;
                 boneData.position = handToRecord.transform.InverseTransformPoint(bone.Transform.position);
                 boneData.rotation = bone.Transform.rotation;
 
@@ -504,8 +505,8 @@ public class GestureDetect : MonoBehaviour
         // Serialize the dictionary of serialized gestures to JSON
         string json = JsonConvert.SerializeObject(serializedGestures, Formatting.Indented, new JsonSerializerSettings()
         {
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-            NullValueHandling = NullValueHandling.Ignore // Ignore null motionData fields
+           ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+           //NullValueHandling = NullValueHandling.Ignore // Ignore null motionData fields
         });
 
         // check serialization...
