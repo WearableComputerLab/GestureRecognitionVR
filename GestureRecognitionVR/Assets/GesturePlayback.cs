@@ -29,12 +29,11 @@ public class GesturePlayback : MonoBehaviour
         InitializeDefaultModelPositions();
         InitializeDefaultModelRotations();
 
-        // Find the hand object in the hand model hierarchy
-        Transform handObject = handModel.transform.Find("m_ca01_skeleton/hand_R");
-        if (handObject != null)
+
+        if (hand_R != null)
         {
             // Calculate the forward-facing point on the palm relative to handToRecord
-            Vector3 palmForwardPoint = handObject.InverseTransformPoint(handObject.position + handObject.forward);
+            Vector3 palmForwardPoint = hand_R.InverseTransformPoint(hand_R.position + hand_R.forward);
 
             // Store the palm forward point for reference
             defaultHandPosition = palmForwardPoint;
@@ -45,36 +44,37 @@ public class GesturePlayback : MonoBehaviour
         }
     }
 
+    // Set the initial/default reference rotations for the hand model bones
     private void InitializeDefaultModelRotations()
     {
-        RecurseRotations(hand_R);
+        RecurseRotations(hand_R, defaultBoneRotations);
     }
 
 
-    // Set the initial/default reference position for the hand model bones, use bones parent to calculate local position
+    // Set the initial/default reference positions for the hand model bones
     private void InitializeDefaultModelPositions()
     {
-        RecursePositions(hand_R);
+        RecursePositions(hand_R, defaultBonePositions);
     }
 
 
     // Recursively set default rotations for finger bones
-    public void RecurseRotations(Transform bone)
+    public void RecurseRotations(Transform bone, Dictionary<string, Quaternion> rotations)
     {
-        defaultBoneRotations[bone.name] = GetBoneRotation(bone);
+        rotations[bone.name] = GetBoneRotation(bone);
         foreach (Transform child in bone)
         {
-            RecurseRotations(child);
+            RecurseRotations(child, rotations);
         }
     }
 
     // Recursively set default positions for finger bones
-    public void RecursePositions(Transform bone)
+    public void RecursePositions(Transform bone, Dictionary<string, Vector3> positions)
     {
-        defaultBonePositions[bone.name] = GetBonePosition(bone);
+        positions[bone.name] = GetBonePosition(bone);
         foreach (Transform child in bone)
         {
-            RecursePositions(child);
+            RecursePositions(child, positions);
         }
     }
 
@@ -91,7 +91,7 @@ public class GesturePlayback : MonoBehaviour
             {
                 // It's a motion gesture
                 Debug.Log("It's a motion gesture");
-                StartCoroutine(PlayGestureCoroutine(currentGesture.fingerData, currentGesture.motionData));
+               // StartCoroutine(PlayGestureCoroutine(currentGesture.fingerData, currentGesture.motionData));
             }
             else if (currentGesture.fingerData != null)
             {
@@ -99,16 +99,15 @@ public class GesturePlayback : MonoBehaviour
                 Debug.Log("It's a static gesture");
 
                 // Iterate over each finger in the gesture data
-                foreach ((string fingerName, List<SerializedFingerData> joints) in currentGesture.fingerData)
+                foreach ((string fingerName, SerializedBoneData bone) in currentGesture.fingerData)
                 {
                     // Find the finger transform in the hand model hierarchy
                     Transform finger = FindFingerTransform(hand_R, fingerName);
 
                     if (finger != null)
                     {
-                        // Recursive function to update nested finger bones
-                        // UpdateNestedFingerBones(finger, joints, 0);
-                        UpdateFingerBones(finger, joints);
+                        finger.localPosition = bone.position;
+                        finger.rotation = bone.rotation;
                     }
                     else
                     {
@@ -135,18 +134,10 @@ public class GesturePlayback : MonoBehaviour
         }
     }
 
-    private void UpdateFingerBones(Transform finger, List<SerializedFingerData> joints)
-    {
-        foreach(SerializedFingerData joint in joints)
-        {
-            finger.localPosition = joint.boneData[0].position;
-            /*finger.rotation = joint.boneData[0].rotation;*/
-        }
-    }
-
+   
 
     // Coroutine to Playback Motion gestureDetect.gestures on the hand model
-    IEnumerator PlayGestureCoroutine(Dictionary<string, List<SerializedFingerData>> fingerDataFrames, List<Vector3> handMotionFrames)
+    /*IEnumerator PlayGestureCoroutine(List<SerializedBoneData> bone, List<Vector3> handMotionFrames)
     {
         for (int frameIndex = 0; frameIndex < handMotionFrames.Count; frameIndex++)
         {
@@ -165,7 +156,7 @@ public class GesturePlayback : MonoBehaviour
 
                 if (finger != null)
                 {
-                    /*// Retrieve the finger positions and rotations for the current frame
+                    // Retrieve the finger positions and rotations for the current frame
                     List<GestureDetect.SerializedFingerData> fingerDataFramesList = fingerDataEntry.Value;
                     Dictionary<string, GestureDetect.SerializedFingerData> fingerData = fingerDataFramesList[frameIndex];
 
@@ -196,7 +187,7 @@ public class GesturePlayback : MonoBehaviour
                     else
                     {
                         Debug.LogWarning("Incorrect number of finger positions in the current gesture frame for finger: " + fingerName);
-                    }*/
+                    }
                 }
                 else
                 {
@@ -208,122 +199,123 @@ public class GesturePlayback : MonoBehaviour
             yield return new WaitForSeconds(0.02f);
         }
     }
-
-
+*/
+    #region
     // Recursive function to update nested finger bones
-    private void UpdateNestedFingerBones(Transform parentBone, List<SerializedFingerData> joints, int dataIndex)
-    {
-        // Check if dataIndex is within the range of fingerDataList
-        if (dataIndex < 0 || dataIndex >= joints.Count)
-        {
-            Debug.LogError("Invalid data index for finger bone.");
-            return;
-        }
+    /* private void UpdateNestedFingerBones(Transform parentBone, List<SerializedFingerData> joints, int dataIndex)
+     {
+         // Check if dataIndex is within the range of fingerDataList
+         if (dataIndex < 0 || dataIndex >= joints.Count)
+         {
+             Debug.LogError("Invalid data index for finger bone.");
+             return;
+         }
 
-        List<SerializedBoneData> boneDataList = joints[dataIndex].boneData;
+         List<SerializedBoneData> boneDataList = joints[dataIndex].boneData;
 
-        // Check if boneDataList is null or empty
-        if (boneDataList == null || boneDataList.Count == 0)
-        {
-            Debug.LogWarning("No bone data found for finger at index " + dataIndex);
-            return;
-        }
+         // Check if boneDataList is null or empty
+         if (boneDataList == null || boneDataList.Count == 0)
+         {
+             Debug.LogWarning("No bone data found for finger at index " + dataIndex);
+             return;
+         }
 
-        int numBones = Mathf.Min(parentBone.childCount, boneDataList.Count);
+         int numBones = Mathf.Min(parentBone.childCount, boneDataList.Count);
 
-        for (int i = 0; i < numBones; i++)
-        {
-            GestureDetect.SerializedBoneData boneData = boneDataList[i];
-            Debug.Log("Parent name: " + parentBone.name);
+         for (int i = 0; i < numBones; i++)
+         {
+             GestureDetect.SerializedBoneData boneData = boneDataList[i];
+             Debug.Log("Parent name: " + parentBone.name);
 
-            // Get the bone name from the child transform
-            string boneName = parentBone.GetChild(i).name;
+             // Get the bone name from the child transform
+             string boneName = parentBone.GetChild(i).name;
 
-            Transform bone = FindBoneTransform(parentBone, boneName);
+             Transform bone = FindBoneTransform(parentBone, boneName);
 
-            if (bone != null)
-            {
-                // POSITION NEEDS TO BE CHECKED AGAINST PARENT BONE / MODEL ORIGIN?
-                // ROTATION NEEDS USE EULER ANGLES (wrapped correctly)
+             if (bone != null)
+             {
+                 // POSITION NEEDS TO BE CHECKED AGAINST PARENT BONE / MODEL ORIGIN?
+                 // ROTATION NEEDS USE EULER ANGLES (wrapped correctly)
 
-                Vector3 parentPosition;
-                Quaternion parentRotation;
+                 Vector3 parentPosition;
+                 Quaternion parentRotation;
 
-                // Check if the parent bone is the hand_R bone
-                if (parentBone.name == "hand_R")
-                {
-                    // Use the hand_R position as the reference position for the fingers
-                    parentPosition = parentBone.localPosition;
-                    parentRotation = parentBone.localRotation;
-                }
-                else
-                {
-                    // Use the parent bone's position as the reference position
-                    parentPosition = GetReferencePositionForBone(parentBone.name);
-                    parentRotation = parentBone.localRotation;
-                }
+                 // Check if the parent bone is the hand_R bone
+                 if (parentBone.name == "hand_R")
+                 {
+                     // Use the hand_R position as the reference position for the fingers
+                     parentPosition = parentBone.localPosition;
+                     parentRotation = parentBone.localRotation;
+                 }
+                 else
+                 {
+                     // Use the parent bone's position as the reference position
+                     parentPosition = GetReferencePositionForBone(parentBone.name);
+                     parentRotation = parentBone.localRotation;
+                 }
 
-                // Retrieve the reference position for the bone
-                Vector3 referencePosition = GetReferencePositionForBone(bone.name);
+                 // Retrieve the reference position for the bone
+                 Vector3 referencePosition = GetReferencePositionForBone(bone.name);
 
-                // Get the saved position in the same coordinate space as the reference position
-                Vector3 savedPosition = referencePosition + boneData.position;
+                 // Get the saved position in the same coordinate space as the reference position
+                 Vector3 savedPosition = referencePosition + boneData.position;
 
-                // Calculate the target position by subtracting the parent position from the saved position
-                Vector3 targetPosition = savedPosition - parentPosition;
+                 // Calculate the target position by subtracting the parent position from the saved position
+                 Vector3 targetPosition = savedPosition - parentPosition;
 
-                // Update the finger bone position
-                bone.localPosition = targetPosition;
+                 // Update the finger bone position
+                 bone.localPosition = targetPosition;
 
-                /*Debug.Log("Bone: " + bone.name);
-                Debug.Log("Reference Position: " + referencePosition);
-                Debug.Log("Saved Position: " + boneData.position);
-                Debug.Log("Parent Position: " + parentPosition);
-                Debug.Log("Target Position: " + targetPosition);*/
+                 *//*Debug.Log("Bone: " + bone.name);
+                 Debug.Log("Reference Position: " + referencePosition);
+                 Debug.Log("Saved Position: " + boneData.position);
+                 Debug.Log("Parent Position: " + parentPosition);
+                 Debug.Log("Target Position: " + targetPosition);*//*
 
 
-                // Update the finger bone position
-                bone.position = targetPosition;
+                 // Update the finger bone position
+                 bone.position = targetPosition;
 
-                // Retrieve the rotation value
-                Quaternion referenceRotation = GetReferenceRotationForBone(bone.name);
-                Quaternion targetRotation = parentRotation * referenceRotation * boneData.rotation;
+                 // Retrieve the rotation value
+                 Quaternion referenceRotation = GetReferenceRotationForBone(bone.name);
+                 Quaternion targetRotation = parentRotation * referenceRotation * boneData.rotation;
 
-                // Convert target rotation to Euler angles
-                Vector3 targetRotationEulerAngles = targetRotation.eulerAngles;
+                 // Convert target rotation to Euler angles
+                 Vector3 targetRotationEulerAngles = targetRotation.eulerAngles;
 
-                /*Debug.Log("Saved Rotation: " + boneData.rotation.eulerAngles);
-                Debug.Log("Reference Rotation: " + referenceRotation.eulerAngles);
-                Debug.Log("Parent Rotation: " + parentRotation.eulerAngles);
-                Debug.Log("Target Rotation: " + targetRotation.eulerAngles);*/
+                 *//*Debug.Log("Saved Rotation: " + boneData.rotation.eulerAngles);
+                 Debug.Log("Reference Rotation: " + referenceRotation.eulerAngles);
+                 Debug.Log("Parent Rotation: " + parentRotation.eulerAngles);
+                 Debug.Log("Target Rotation: " + targetRotation.eulerAngles);*//*
 
-                // Wrap the Euler angles into the range of -180 to 180 degrees
-                float xAngle = WrapAngle(targetRotationEulerAngles.x);
-                float yAngle = WrapAngle(targetRotationEulerAngles.y);
-                float zAngle = WrapAngle(targetRotationEulerAngles.z);
+                 // Wrap the Euler angles into the range of -180 to 180 degrees
+                 float xAngle = WrapAngle(targetRotationEulerAngles.x);
+                 float yAngle = WrapAngle(targetRotationEulerAngles.y);
+                 float zAngle = WrapAngle(targetRotationEulerAngles.z);
 
-                // Update the finger bone rotation with Euler angles
-                bone.eulerAngles = new Vector3(xAngle, yAngle, zAngle);
-                Debug.Log("Euler Angles: " + bone.eulerAngles.x + ", " + bone.eulerAngles.y + ", " + bone.eulerAngles.z);
+                 // Update the finger bone rotation with Euler angles
+                 bone.eulerAngles = new Vector3(xAngle, yAngle, zAngle);
+                 Debug.Log("Euler Angles: " + bone.eulerAngles.x + ", " + bone.eulerAngles.y + ", " + bone.eulerAngles.z);
 
-                Debug.Log("Updated Bone: " + bone.name);
+                 Debug.Log("Updated Bone: " + bone.name);
 
-                // Check if fingerDataList has more finger data to update
-                if (dataIndex + 1 < joints.Count)
-                {
-                    // Recursively update nested finger bones with the next finger data
-                    UpdateNestedFingerBones(bone, joints, dataIndex + 1);
-                }
-            }
-            else
-            {
-                Debug.LogWarning("Bone '" + boneName + "' not found in the hand model hierarchy");
-                Debug.Log("Parent Bone: " + parentBone.name);
-                Debug.Log("Hierarchy: " + GetBoneHierarchy(parentBone));
-            }
-        }
-    }
-
+                 // Check if fingerDataList has more finger data to update
+                 if (dataIndex + 1 < joints.Count)
+                 {
+                     // Recursively update nested finger bones with the next finger data
+                     UpdateNestedFingerBones(bone, joints, dataIndex + 1);
+                 }
+             }
+             else
+             {
+                 Debug.LogWarning("Bone '" + boneName + "' not found in the hand model hierarchy");
+                 Debug.Log("Parent Bone: " + parentBone.name);
+                 Debug.Log("Hierarchy: " + GetBoneHierarchy(parentBone));
+             }
+         }
+     }
+ */
+    #endregion
 
     // For euler angles
     private float WrapAngle(float angle)
@@ -413,16 +405,10 @@ public class GesturePlayback : MonoBehaviour
     // Retrieve the position of a given bone (used in Start() to get default position of hand model bones)
     private Vector3 GetBonePosition(Transform boneTransform)
     {
-
-
-
         Vector3 localPosition = boneTransform.localPosition;
         //Debug.Log("Default Position for " + boneTransform.name + ": " + VectorString(localPosition));
         return localPosition;
     }
-
-
-
 
 
     // Recursive function to find the finger transform in the hand model hierarchy

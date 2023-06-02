@@ -1240,39 +1240,39 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8501846259491542822, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
-      value: Hand_Pinky3
+      value: Hand_PinkyTip
       objectReference: {fileID: 0}
     - target: {fileID: -7370195875966881031, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
-      value: Hand_Pinky1
+      value: Hand_Pinky2
       objectReference: {fileID: 0}
     - target: {fileID: -6940898419534055857, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
-      value: Hand_Ring1
+      value: Hand_Ring2
       objectReference: {fileID: 0}
     - target: {fileID: -6425509112995116093, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
-      value: Hand_Pinky2
+      value: Hand_Pinky3
       objectReference: {fileID: 0}
     - target: {fileID: -5633748528941744518, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
-      value: Hand_Thumb3
+      value: Hand_ThumbTip
       objectReference: {fileID: 0}
     - target: {fileID: -5382683776994980007, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
-      value: Hand_Ring2
+      value: Hand_Ring3
       objectReference: {fileID: 0}
     - target: {fileID: -2703319315809908255, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
-      value: Middle
+      value: Hand_Middle1
       objectReference: {fileID: 0}
     - target: {fileID: -2459285314674037209, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
-      value: Hand_Index2
+      value: Hand_Index3
       objectReference: {fileID: 0}
     - target: {fileID: -2218950438484785920, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
-      value: Hand_Index3
+      value: Hand_IndexTip
       objectReference: {fileID: 0}
     - target: {fileID: -2068409912079303411, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_ConstrainProportionsScale
@@ -1280,11 +1280,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -1762835603243745406, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
-      value: Hand_Middle1
+      value: Hand_Middle2
       objectReference: {fileID: 0}
     - target: {fileID: -696517922892404106, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
-      value: Thumb
+      value: Hand_Thumb2
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
@@ -1292,35 +1292,35 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1865862734740543065, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
-      value: Hand_Middle3
+      value: Hand_MiddleTip
       objectReference: {fileID: 0}
     - target: {fileID: 5449868871355920452, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
-      value: Hand_Thumb2
+      value: Hand_Thumb3
       objectReference: {fileID: 0}
     - target: {fileID: 5874769846210471071, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
-      value: Hand_Middle2
+      value: Hand_Middle3
       objectReference: {fileID: 0}
     - target: {fileID: 6326139588559661623, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
-      value: Index
+      value: Hand_Index1
       objectReference: {fileID: 0}
     - target: {fileID: 7196454632491838217, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
-      value: Hand_Ring3
+      value: Hand_RingTip
       objectReference: {fileID: 0}
     - target: {fileID: 7914219095969318737, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
-      value: Ring
+      value: Hand_Ring1
       objectReference: {fileID: 0}
     - target: {fileID: 8404924512945515373, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
-      value: Pinky
+      value: Hand_Pinky1
       objectReference: {fileID: 0}
     - target: {fileID: 9100845716385274489, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}
       propertyPath: m_Name
-      value: Hand_Index1
+      value: Hand_Index2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 140cc1d12a4b1724e96a84bee84c30e2, type: 3}

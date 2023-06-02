@@ -21,16 +21,14 @@ public struct Gesture
 {
     public string name;
 
-    // Stores a list of dictionaries, where each dictionary represents the pose data for a specific finger bone.
-    // The pose data dictionary contains two entries: "position" and "rotation",
-    // which respectively stores the position and rotation values for the finger bone.
-    public Dictionary<string, List<SerializedFingerData>> fingerData;
+    // ..
+    public Dictionary<string, SerializedBoneData> fingerData;
 
     // motionData = List of hand position/rotation over time
     public List<Vector3> motionData;
     public UnityEvent onRecognized;
 
-    public Gesture(string gestureName, Dictionary<string, List<SerializedFingerData>> fingerData, List<Vector3> motionData, UnityAction func)
+    public Gesture(string gestureName, Dictionary<string, SerializedBoneData> fingerData, List<Vector3> motionData, UnityAction func)
     {
         this.name = gestureName;
         this.fingerData = fingerData;
@@ -74,7 +72,7 @@ public class GestureDetect : MonoBehaviour
     public Dictionary<string, Gesture> gestures;
 
     // Record new gestures
-    [Header("Recording")] [SerializeField] private OVRSkeleton handToRecord;
+    [Header("Recording")][SerializeField] private OVRSkeleton handToRecord;
     // NOTE: fingerBones is currently including all 24 bones in the hand
     private List<OVRBone> fingerBones = new List<OVRBone>();
     private float recordingTime = 0.01f; //set recording time default to 0.01 second (one frame, user should be able to change this)
@@ -110,7 +108,7 @@ public class GestureDetect : MonoBehaviour
         GesturesToJSON();
         //Read any previously saved Gestures from existing json data
         readGesturesFromJSON();
-        
+
         //Set 3 default gestures at startup 
         gestureNames = new Dictionary<string, UnityAction>()
         {
@@ -128,7 +126,7 @@ public class GestureDetect : MonoBehaviour
             gn.gestName = keyValuePair.Key;
             gn.gestureDetection = this;
             buttonCube.transform.position = currentPos;
-            
+
             currentPos.x += 0.2f;
         }
 
@@ -227,25 +225,8 @@ public class GestureDetect : MonoBehaviour
 
             if (handToRecord != null && handToRecord.Bones != null && handToRecord.Bones.Count > 0)
             {
-                // NOTE: this gets all 24 bones in the hand: fingerBones = new List<OVRBone>(handToRecord.Bones);
-                // This gets only bones in fingers
-                fingerBones = new List<OVRBone>
-                {
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Index1],
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Index2],
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Index3],
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Middle1],
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Middle2],
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Middle3],
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Pinky1],
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Pinky2],
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Pinky3],
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Ring1],
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Ring2],
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Ring3],
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Thumb2],
-                    handToRecord.Bones[(int)OVRSkeleton.BoneId.Hand_Thumb3]
-                };
+                // Need every bone in hand to determine local position of fingers
+                fingerBones = handToRecord.Bones.ToList();
             }
             else
             {
@@ -253,6 +234,7 @@ public class GestureDetect : MonoBehaviour
             }
         }
     }
+
 
     public void Save(string name)
     {
@@ -264,7 +246,7 @@ public class GestureDetect : MonoBehaviour
     {
         Gesture g = new Gesture();
         g.name = name;
-        g.fingerData = new Dictionary<string, List<SerializedFingerData>>();
+        g.fingerData = new Dictionary<string, SerializedBoneData>();
         g.motionData = new List<Vector3>();
 
         float startTime = Time.time;
@@ -277,31 +259,20 @@ public class GestureDetect : MonoBehaviour
                 Debug.Log($"bone name: {bone.Id}");
 
                 // Get the finger name based on the bone ID
-                string fingerName = GetFingerName(bone.Id);
+                // string fingerName = GetFingerName(bone.Id);
+                string fingerName = bone.Id.ToString();
 
-                if (!g.fingerData.ContainsKey(fingerName))
-                {
-                    // Create a new list for the finger if it doesn't exist
-                    g.fingerData[fingerName] = new List<SerializedFingerData>();
-                }
-
-                // Create a SerializedFingerData object to store the bone data
-                SerializedFingerData fingerData = new SerializedFingerData();
-
-                // Set the finger name
-                fingerData.fingerName = fingerName;
 
                 // Create a SerializedBoneData object to store the bone position and rotation
                 SerializedBoneData boneData = new SerializedBoneData();
                 boneData.boneName = bone.Transform.name;
-                boneData.position = handToRecord.transform.InverseTransformPoint(bone.Transform.position);
-                boneData.rotation = bone.Transform.rotation;
 
-                // Add the bone data to the finger data
-                fingerData.boneData = new List<SerializedBoneData> { boneData };
+                // TODO: check localPosition/rotation works
+                boneData.position = bone.Transform.localPosition;
+                boneData.rotation = bone.Transform.localRotation;
 
                 // Add the finger data to the list for the corresponding finger
-                g.fingerData[fingerName].Add(fingerData);
+                g.fingerData[fingerName] = boneData;
 
             }
 
@@ -340,21 +311,31 @@ public class GestureDetect : MonoBehaviour
     {
         Dictionary<OVRSkeleton.BoneId, string> boneToFingerMap = new Dictionary<OVRSkeleton.BoneId, string>()
     {
-        
+
         { OVRSkeleton.BoneId.Hand_Index1, "Index" },
         { OVRSkeleton.BoneId.Hand_Index2, "Index" },
         { OVRSkeleton.BoneId.Hand_Index3, "Index" },
+        { OVRSkeleton.BoneId.Hand_IndexTip, "Index" },
+
         { OVRSkeleton.BoneId.Hand_Middle1, "Middle" },
         { OVRSkeleton.BoneId.Hand_Middle2, "Middle" },
         { OVRSkeleton.BoneId.Hand_Middle3, "Middle" },
+        { OVRSkeleton.BoneId.Hand_MiddleTip, "Middle" },
+
         { OVRSkeleton.BoneId.Hand_Pinky1, "Pinky" },
         { OVRSkeleton.BoneId.Hand_Pinky2, "Pinky" },
         { OVRSkeleton.BoneId.Hand_Pinky3, "Pinky" },
+        { OVRSkeleton.BoneId.Hand_PinkyTip, "Pinky" },
+
         { OVRSkeleton.BoneId.Hand_Ring1, "Ring" },
         { OVRSkeleton.BoneId.Hand_Ring2, "Ring" },
         { OVRSkeleton.BoneId.Hand_Ring3, "Ring" },
+        { OVRSkeleton.BoneId.Hand_RingTip, "Ring" },
+
         { OVRSkeleton.BoneId.Hand_Thumb2, "Thumb" },
-        { OVRSkeleton.BoneId.Hand_Thumb3, "Thumb" }
+        { OVRSkeleton.BoneId.Hand_Thumb3, "Thumb" },
+        { OVRSkeleton.BoneId.Hand_ThumbTip, "Thumb" }
+
     };
 
         if (boneToFingerMap.ContainsKey(boneId))
@@ -363,15 +344,6 @@ public class GestureDetect : MonoBehaviour
         }
 
         return "Unknown";
-    }
-
-    // Represents the finger data of a gesture, used for JSON serialization/deserialization.
-    // Contains the necessary properties to store and retrieve finger data in a serialized format.
-    [System.Serializable]
-    public class SerializedFingerData
-    {
-        public string fingerName;
-        public List<SerializedBoneData> boneData;
     }
 
 
@@ -395,8 +367,7 @@ public class GestureDetect : MonoBehaviour
         // Serialize the dictionary of serialized gestures to JSON
         string json = JsonConvert.SerializeObject(gestures, Formatting.Indented, new JsonSerializerSettings()
         {
-           ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-           //NullValueHandling = NullValueHandling.Ignore // Ignore null motionData fields
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
         });
 
         // check serialization...
@@ -528,59 +499,50 @@ public class GestureDetect : MonoBehaviour
             bool discard = false;
 
             // Compare finger positions and rotations for each frame in fingerData
-            foreach (KeyValuePair<string, List<SerializedFingerData>> fingerData in kvp.Value.fingerData)
+            foreach (KeyValuePair<string, SerializedBoneData> fingerData in kvp.Value.fingerData)
             {
                 // Get the finger data for the current finger
-                List<SerializedFingerData> fingerPoseData = fingerData.Value;
+                SerializedBoneData serializedBoneData = fingerData.Value;
 
                 // Compare finger positions and rotations for each frame in fingerPoseData
-                for (int i = 0; i < fingerPoseData.Count; i++)
+
+                foreach (OVRBone bone in fingerBones)
                 {
-                    // Get the serialized bone data for the current frame
-                    SerializedFingerData serializedFingerData = fingerPoseData[i];
+                    // Get the finger name based on the bone ID
+                    string fingerName = GetFingerName(bone.Id);
 
-                    foreach (OVRBone bone in fingerBones)
+                    // Check if the finger name matches the current finger in the gesture's fingerData
+                    if (fingerData.Key != fingerName)
                     {
-                        // Get the finger name based on the bone ID
-                        string fingerName = GetFingerName(bone.Id);
-
-                        // Check if the finger name matches the current finger in the gesture's fingerData
-                        if (fingerData.Key != fingerName)
-                        {
-                            // If the finger names don't match, discard the gesture
-                            discard = true;
-                            break;
-                        }
-
-                        // Get the current finger bone position and rotation
-                        Vector3 currentData = handToRecord.transform.InverseTransformPoint(bone.Transform.position);
-                        Quaternion currentRotation = Quaternion.Inverse(handToRecord.transform.rotation) * bone.Transform.rotation;
-
-                        // Calculate the distance between the current bone position and rotation and the corresponding serialized bone data
-                        float fingerPositionDistance = Mathf.Abs(Vector3.Distance(currentData, serializedFingerData.boneData[i].position));
-                        float fingerRotationDistance = Quaternion.Angle(currentRotation, serializedFingerData.boneData[i].rotation);
-
-                        // If the finger position or rotation distance exceeds the detection threshold, discard the gesture
-                        if (fingerPositionDistance > detectionThreshold || fingerRotationDistance > detectionThreshold)
-                        {
-                            discard = true;
-                            break;
-                        }
-
-                        // Accumulate the finger position and rotation distances
-                        sumDistance += fingerPositionDistance + fingerRotationDistance;
-                    }
-
-                    if (discard)
-                    {
+                        // If the finger names don't match, discard the gesture
+                        discard = true;
                         break;
                     }
+
+                    // Get the current finger bone position and rotation
+                    Vector3 currentData = handToRecord.transform.InverseTransformPoint(bone.Transform.position);
+                    Quaternion currentRotation = Quaternion.Inverse(handToRecord.transform.rotation) * bone.Transform.rotation;
+
+                    // Calculate the distance between the current bone position and rotation and the corresponding serialized bone data
+                    float fingerPositionDistance = Mathf.Abs(Vector3.Distance(currentData, serializedBoneData.position));
+                    float fingerRotationDistance = Quaternion.Angle(currentRotation, serializedBoneData.rotation);
+
+                    // If the finger position or rotation distance exceeds the detection threshold, discard the gesture
+                    if (fingerPositionDistance > detectionThreshold || fingerRotationDistance > detectionThreshold)
+                    {
+                        discard = true;
+                        break;
+                    }
+
+                    // Accumulate the finger position and rotation distances
+                    sumDistance += fingerPositionDistance + fingerRotationDistance;
                 }
 
                 if (discard)
                 {
                     break;
                 }
+
             }
 
             // Check motionData if fingerData is correct and not discarded
