@@ -10,9 +10,9 @@ using static GestureDetect;
 
 public class GesturePlayback : MonoBehaviour
 {
-    
+
     public GameObject handModel;
-    public Transform hand_R;    
+    public Transform hand_R;
     public GestureDetect gestureDetect;
 
     // Declare dictionaries to store default position/rotation values for each bone and whole hand model
@@ -33,7 +33,6 @@ public class GesturePlayback : MonoBehaviour
         Transform handObject = handModel.transform.Find("m_ca01_skeleton/hand_R");
         if (handObject != null)
         {
-            
             // Calculate the forward-facing point on the palm relative to handToRecord
             Vector3 palmForwardPoint = handObject.InverseTransformPoint(handObject.position + handObject.forward);
 
@@ -50,7 +49,7 @@ public class GesturePlayback : MonoBehaviour
     {
         RecurseRotations(hand_R);
     }
-    
+
 
     // Set the initial/default reference position for the hand model bones, use bones parent to calculate local position
     private void InitializeDefaultModelPositions()
@@ -59,21 +58,21 @@ public class GesturePlayback : MonoBehaviour
     }
 
 
+    // Recursively set default rotations for finger bones
     public void RecurseRotations(Transform bone)
     {
         defaultBoneRotations[bone.name] = GetBoneRotation(bone);
-        foreach(Transform child in bone)
+        foreach (Transform child in bone)
         {
             RecurseRotations(child);
         }
     }
 
-    public void RecursePositions(Transform thing)
+    // Recursively set default positions for finger bones
+    public void RecursePositions(Transform bone)
     {
-        //Debug.Log(thing.name);
-        defaultBonePositions[thing.name] = GetBonePosition(thing);
-        
-        foreach(Transform child in thing)
+        defaultBonePositions[bone.name] = GetBonePosition(bone);
+        foreach (Transform child in bone)
         {
             RecursePositions(child);
         }
@@ -81,18 +80,11 @@ public class GesturePlayback : MonoBehaviour
 
     public void PlayGesture(string gestureName)
     {
-        // Serialize the dictionary of serialized gestures to JSON
-        string json = JsonConvert.SerializeObject(gestureDetect.gestures    , Formatting.Indented, new JsonSerializerSettings()
-        {
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-            //NullValueHandling = NullValueHandling.Ignore // Ignore null motionData fields
-        });
-        Debug.Log(json);
         // Check if the gestureDetect.gestures dictionary is not null and contains the specified gesture
         if (gestureDetect.gestures != null && gestureDetect.gestures.ContainsKey(gestureName))
         {
             Gesture currentGesture = gestureDetect.gestures[gestureName];
-            Debug.Log("Current gesture name: " + currentGesture.name);
+            Debug.Log($"Playing gesture: {currentGesture.name}");
 
             // Check if it's a motion gesture
             if (currentGesture.motionData != null && currentGesture.motionData.Count > 1)
@@ -106,29 +98,24 @@ public class GesturePlayback : MonoBehaviour
                 // It's a static gesture
                 Debug.Log("It's a static gesture");
 
-                if (hand_R != null)
+                // Iterate over each finger in the gesture data
+                foreach ((string fingerName, List<SerializedFingerData> joints) in currentGesture.fingerData)
                 {
-                    // Iterate over each finger in the gesture data
-                    foreach ((string fingerName, List<SerializedFingerData> joints) in currentGesture.fingerData)
-                    {
-                        // Find the finger transform in the hand model hierarchy
-                        Transform finger = FindFingerTransform(hand_R, fingerName);
+                    // Find the finger transform in the hand model hierarchy
+                    Transform finger = FindFingerTransform(hand_R, fingerName);
 
-                        if (finger != null)
-                        {
-                            // Recursive function to update nested finger bones
-                            UpdateNestedFingerBones(finger, joints, 0);
-                        }
-                        else
-                        {
-                            Debug.LogWarning("Finger '" + fingerName + "' not found in the hand model hierarchy");
-                        }
+                    if (finger != null)
+                    {
+                        // Recursive function to update nested finger bones
+                        // UpdateNestedFingerBones(finger, joints, 0);
+                        UpdateFingerBones(finger, joints);
+                    }
+                    else
+                    {
+                        Debug.LogWarning("Finger '" + fingerName + "' not found in the hand model hierarchy");
                     }
                 }
-                else
-                {
-                    Debug.LogWarning("Hand object not found in the hand model hierarchy");
-                }
+
             }
             else
             {
@@ -145,6 +132,15 @@ public class GesturePlayback : MonoBehaviour
             {
                 Debug.LogWarning("Gesture not found: " + gestureName);
             }
+        }
+    }
+
+    private void UpdateFingerBones(Transform finger, List<SerializedFingerData> joints)
+    {
+        foreach(SerializedFingerData joint in joints)
+        {
+            finger.localPosition = joint.boneData[0].position;
+            /*finger.rotation = joint.boneData[0].rotation;*/
         }
     }
 
@@ -212,6 +208,7 @@ public class GesturePlayback : MonoBehaviour
             yield return new WaitForSeconds(0.02f);
         }
     }
+
 
     // Recursive function to update nested finger bones
     private void UpdateNestedFingerBones(Transform parentBone, List<SerializedFingerData> joints, int dataIndex)
@@ -416,12 +413,12 @@ public class GesturePlayback : MonoBehaviour
     // Retrieve the position of a given bone (used in Start() to get default position of hand model bones)
     private Vector3 GetBonePosition(Transform boneTransform)
     {
-      
 
 
-            Vector3 localPosition = boneTransform.localPosition;
-            //Debug.Log("Default Position for " + boneTransform.name + ": " + VectorString(localPosition));
-            return localPosition;
+
+        Vector3 localPosition = boneTransform.localPosition;
+        //Debug.Log("Default Position for " + boneTransform.name + ": " + VectorString(localPosition));
+        return localPosition;
     }
 
 

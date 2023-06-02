@@ -274,6 +274,8 @@ public class GestureDetect : MonoBehaviour
             // Save each individual finger bone in fingerData
             foreach (OVRBone bone in fingerBones)
             {
+                Debug.Log($"bone name: {bone.Id}");
+
                 // Get the finger name based on the bone ID
                 string fingerName = GetFingerName(bone.Id);
 
