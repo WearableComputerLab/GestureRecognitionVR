@@ -307,44 +307,44 @@ public class GestureDetect : MonoBehaviour
 
 
 
-    private string GetFingerName(OVRSkeleton.BoneId boneId)
-    {
-        Dictionary<OVRSkeleton.BoneId, string> boneToFingerMap = new Dictionary<OVRSkeleton.BoneId, string>()
-    {
+    //private string GetFingerName(OVRSkeleton.BoneId boneId)
+    //{
+    //    Dictionary<OVRSkeleton.BoneId, string> boneToFingerMap = new Dictionary<OVRSkeleton.BoneId, string>()
+    //{
 
-        { OVRSkeleton.BoneId.Hand_Index1, "Index" },
-        { OVRSkeleton.BoneId.Hand_Index2, "Index" },
-        { OVRSkeleton.BoneId.Hand_Index3, "Index" },
-        { OVRSkeleton.BoneId.Hand_IndexTip, "Index" },
+    //    { OVRSkeleton.BoneId.Hand_Index1, "Index" },
+    //    { OVRSkeleton.BoneId.Hand_Index2, "Index" },
+    //    { OVRSkeleton.BoneId.Hand_Index3, "Index" },
+    //    { OVRSkeleton.BoneId.Hand_IndexTip, "Index" },
 
-        { OVRSkeleton.BoneId.Hand_Middle1, "Middle" },
-        { OVRSkeleton.BoneId.Hand_Middle2, "Middle" },
-        { OVRSkeleton.BoneId.Hand_Middle3, "Middle" },
-        { OVRSkeleton.BoneId.Hand_MiddleTip, "Middle" },
+    //    { OVRSkeleton.BoneId.Hand_Middle1, "Middle" },
+    //    { OVRSkeleton.BoneId.Hand_Middle2, "Middle" },
+    //    { OVRSkeleton.BoneId.Hand_Middle3, "Middle" },
+    //    { OVRSkeleton.BoneId.Hand_MiddleTip, "Middle" },
 
-        { OVRSkeleton.BoneId.Hand_Pinky1, "Pinky" },
-        { OVRSkeleton.BoneId.Hand_Pinky2, "Pinky" },
-        { OVRSkeleton.BoneId.Hand_Pinky3, "Pinky" },
-        { OVRSkeleton.BoneId.Hand_PinkyTip, "Pinky" },
+    //    { OVRSkeleton.BoneId.Hand_Pinky1, "Pinky" },
+    //    { OVRSkeleton.BoneId.Hand_Pinky2, "Pinky" },
+    //    { OVRSkeleton.BoneId.Hand_Pinky3, "Pinky" },
+    //    { OVRSkeleton.BoneId.Hand_PinkyTip, "Pinky" },
 
-        { OVRSkeleton.BoneId.Hand_Ring1, "Ring" },
-        { OVRSkeleton.BoneId.Hand_Ring2, "Ring" },
-        { OVRSkeleton.BoneId.Hand_Ring3, "Ring" },
-        { OVRSkeleton.BoneId.Hand_RingTip, "Ring" },
+    //    { OVRSkeleton.BoneId.Hand_Ring1, "Ring" },
+    //    { OVRSkeleton.BoneId.Hand_Ring2, "Ring" },
+    //    { OVRSkeleton.BoneId.Hand_Ring3, "Ring" },
+    //    { OVRSkeleton.BoneId.Hand_RingTip, "Ring" },
 
-        { OVRSkeleton.BoneId.Hand_Thumb2, "Thumb" },
-        { OVRSkeleton.BoneId.Hand_Thumb3, "Thumb" },
-        { OVRSkeleton.BoneId.Hand_ThumbTip, "Thumb" }
+    //    { OVRSkeleton.BoneId.Hand_Thumb2, "Thumb" },
+    //    { OVRSkeleton.BoneId.Hand_Thumb3, "Thumb" },
+    //    { OVRSkeleton.BoneId.Hand_ThumbTip, "Thumb" }
 
-    };
+    //};
 
-        if (boneToFingerMap.ContainsKey(boneId))
-        {
-            return boneToFingerMap[boneId];
-        }
+    //    if (boneToFingerMap.ContainsKey(boneId))
+    //    {
+    //        return boneToFingerMap[boneId];
+    //    }
 
-        return "Unknown";
-    }
+    //    return "Unknown";
+    //}
 
 
     public class SerializedBoneData
@@ -509,7 +509,8 @@ public class GestureDetect : MonoBehaviour
                 foreach (OVRBone bone in fingerBones)
                 {
                     // Get the finger name based on the bone ID
-                    string fingerName = GetFingerName(bone.Id);
+                    // string fingerName = GetFingerName(bone.Id);
+                    string fingerName = bone.Id.ToString();
 
                     // Check if the finger name matches the current finger in the gesture's fingerData
                     if (fingerData.Key != fingerName)
