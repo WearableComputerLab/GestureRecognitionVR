@@ -44,7 +44,6 @@ public class GestureName : MonoBehaviour
     {
         cubeRenderer.material.color = recording;
         gestureDetection.Save(_gestName);
-        gestureDetection.GesturesToJSON();
     }
     
     private void OnTriggerExit(Collider other)

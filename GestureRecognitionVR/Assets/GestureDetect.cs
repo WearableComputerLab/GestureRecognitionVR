@@ -24,13 +24,13 @@ public struct Gesture
     // Stores a list of dictionaries, where each dictionary represents the pose data for a specific finger bone.
     // The pose data dictionary contains two entries: "position" and "rotation",
     // which respectively stores the position and rotation values for the finger bone.
-    public Dictionary<string, List<Dictionary<string, SerializedFingerData>>> fingerData;
+    public Dictionary<string, List<SerializedFingerData>> fingerData;
 
     // motionData = List of hand position/rotation over time
     public List<Vector3> motionData;
     public UnityEvent onRecognized;
 
-    public Gesture(string gestureName, Dictionary<string, List<Dictionary<string, SerializedFingerData>>> fingerData, List<Vector3> motionData, UnityAction func)
+    public Gesture(string gestureName, Dictionary<string, List<SerializedFingerData>> fingerData, List<Vector3> motionData, UnityAction func)
     {
         this.name = gestureName;
         this.fingerData = fingerData;
@@ -52,12 +52,6 @@ public struct Gesture
         //grab tip of thumb, find distance vector - vector.magnitude
         return base.Equals(obj);
     }
-}
-
-[System.Serializable]
-public class SerializableList<T>
-{
-    public List<T> list;
 }
 
 public class GestureDetect : MonoBehaviour
@@ -270,7 +264,7 @@ public class GestureDetect : MonoBehaviour
     {
         Gesture g = new Gesture();
         g.name = name;
-        g.fingerData = new Dictionary<string, List<Dictionary<string, SerializedFingerData>>>();
+        g.fingerData = new Dictionary<string, List<SerializedFingerData>>();
         g.motionData = new List<Vector3>();
 
         float startTime = Time.time;
@@ -286,7 +280,7 @@ public class GestureDetect : MonoBehaviour
                 if (!g.fingerData.ContainsKey(fingerName))
                 {
                     // Create a new list for the finger if it doesn't exist
-                    g.fingerData[fingerName] = new List<Dictionary<string, SerializedFingerData>>();
+                    g.fingerData[fingerName] = new List<SerializedFingerData>();
                 }
 
                 // Create a SerializedFingerData object to store the bone data
@@ -305,10 +299,7 @@ public class GestureDetect : MonoBehaviour
                 fingerData.boneData = new List<SerializedBoneData> { boneData };
 
                 // Add the finger data to the list for the corresponding finger
-                g.fingerData[fingerName].Add(new Dictionary<string, SerializedFingerData>()
-                {
-                    { "boneData", fingerData }
-                });
+                g.fingerData[fingerName].Add(fingerData);
 
             }
 
@@ -337,6 +328,8 @@ public class GestureDetect : MonoBehaviour
         {
             Debug.Log("Saved Static Gesture: " + name);
         }
+
+        GesturesToJSON();
     }
 
 
@@ -370,16 +363,6 @@ public class GestureDetect : MonoBehaviour
         return "Unknown";
     }
 
-    // Represents a serialized version of a gesture, used for JSON serialization/deserialization.
-    // Contains the necessary properties to store and retrieve gesture data in a serialized format.
-    public class SerializedGesture
-    {
-        public string name;
-        public Dictionary<string, List<Dictionary<string, SerializedFingerData>>> fingerData;
-        public List<Vector3> motionData;
-    }
-
-
     // Represents the finger data of a gesture, used for JSON serialization/deserialization.
     // Contains the necessary properties to store and retrieve finger data in a serialized format.
     [System.Serializable]
@@ -407,110 +390,15 @@ public class GestureDetect : MonoBehaviour
             return;
         }
 
-        // Create a new dictionary to store the serialized gestures
-        Dictionary<string, SerializedGesture> serializedGestures = new Dictionary<string, SerializedGesture>();
-
-        // Iterate over each gesture in the gestures dictionary
-        foreach (KeyValuePair<string, Gesture> kvp in gestures)
-        {
-            // Create a new serialized gesture object
-            SerializedGesture serializedGesture = new SerializedGesture();
-
-            // Set the gesture name
-            serializedGesture.name = kvp.Key;
-
-            // Check if finger data is null or empty
-            if (kvp.Value.fingerData == null || kvp.Value.fingerData.Count == 0)
-            {
-                Debug.Log("Finger data is null or empty for gesture: " + kvp.Key);
-                continue;
-            }
-
-            // Create a dictionary to store the frames of finger data
-            Dictionary<string, List<Dictionary<string, SerializedFingerData>>> fingerDataFrames = new Dictionary<string, List<Dictionary<string, SerializedFingerData>>>();
-
-            // Iterate over each frame of finger data in the gesture's finger data
-            foreach (KeyValuePair<string, List<Dictionary<string, SerializedFingerData>>> frameData in kvp.Value.fingerData)
-            {
-                // Create a list to store the finger data for each frame
-                List<Dictionary<string, SerializedFingerData>> serializedFingerDataList = new List<Dictionary<string, SerializedFingerData>>();
-
-                // Iterate over each finger pose data in the finger pose data list
-                foreach (Dictionary<string, SerializedFingerData> fingerPoseDataList in frameData.Value)
-                {
-                    // Create a new dictionary to store the finger pose data
-                    Dictionary<string, SerializedFingerData> serializedFingerPoseData = new Dictionary<string, SerializedFingerData>();
-
-                    // Iterate over each finger pose data in the finger pose data list
-                    foreach (KeyValuePair<string, SerializedFingerData> fingerPose in fingerPoseDataList)
-                    {
-                        // Get the finger name and serialized finger data
-                        string fingerName = fingerPose.Value.fingerName;
-                        SerializedFingerData serializedFingerData = fingerPose.Value;
-
-                        // Create a new serialized finger data object
-                        SerializedFingerData mergedFingerData = new SerializedFingerData();
-
-                        // Set the finger name
-                        mergedFingerData.fingerName = fingerName;
-
-                        // Create a new list to store the serialized bone data
-                        List<SerializedBoneData> serializedBoneDataList = new List<SerializedBoneData>();
-
-                        // Iterate over each bone data in the serialized finger data
-                        foreach (SerializedBoneData boneData in serializedFingerData.boneData)
-                        {
-                            // Get the bone name, position, and rotation
-                            string boneName = boneData.boneName;
-                            Vector3 position = boneData.position;
-                            Quaternion rotation = boneData.rotation;
-
-                            // Create a new serialized bone data object with the bone name, position, and rotation
-                            SerializedBoneData serializedBoneData = new SerializedBoneData()
-                            {
-                                boneName = boneName,
-                                position = position,
-                                rotation = rotation
-                            };
-
-                            // Add the serialized bone data to the list
-                            serializedBoneDataList.Add(serializedBoneData);
-                        }
-
-                        // Set the serialized bone data list for the merged finger data
-                        mergedFingerData.boneData = serializedBoneDataList;
-
-                        // Add the merged finger data to the finger pose data dictionary
-                        serializedFingerPoseData.Add(fingerName, mergedFingerData);
-                    }
-
-                    // Add the finger pose data dictionary to the finger data list
-                    serializedFingerDataList.Add(serializedFingerPoseData);
-                }
-
-                // Add the finger data list for the current frame to the frames dictionary
-                fingerDataFrames.Add(frameData.Key, serializedFingerDataList);
-            }
-
-            // Set the finger data frames in the serialized gesture
-            serializedGesture.fingerData = fingerDataFrames;
-
-            // Set the motion data as a Vector3
-            serializedGesture.motionData = kvp.Value.motionData;
-
-            // Add the serialized gesture to the dictionary
-            serializedGestures.Add(kvp.Key, serializedGesture);
-        }
-
         // Serialize the dictionary of serialized gestures to JSON
-        string json = JsonConvert.SerializeObject(serializedGestures, Formatting.Indented, new JsonSerializerSettings()
+        string json = JsonConvert.SerializeObject(gestures, Formatting.Indented, new JsonSerializerSettings()
         {
            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
            //NullValueHandling = NullValueHandling.Ignore // Ignore null motionData fields
         });
 
         // check serialization...
-        Debug.Log("Number of serialized gestures: " + serializedGestures.Count);
+        Debug.Log("Number of serialized gestures: " + gestures.Count);
 
         string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
         string saveFile = directory + "savedGestures.json";
@@ -546,112 +434,7 @@ public class GestureDetect : MonoBehaviour
         if (File.Exists(saveFile))
         {
             string contents = File.ReadAllText(saveFile);
-            Debug.Log("JSON Contents: " + contents);
-
-            var jsonGestures = JObject.Parse(contents);
-
-            gestures = new Dictionary<string, Gesture>();
-
-            foreach (var gesture in jsonGestures)
-            {
-                string gestureName = gesture.Key;
-                var jsonGesture = gesture.Value;
-
-                // Check if the JSON has the "fingerData" property
-                if (jsonGesture["fingerData"] == null)
-                {
-                    Debug.Log("Missing 'fingerData' property for gesture: " + gestureName);
-                    continue;
-                }
-
-                // Extract the finger data from the JSON
-                var jsonFingerData = jsonGesture["fingerData"];
-                Dictionary<string, List<Dictionary<string, SerializedFingerData>>> fingerData = new Dictionary<string, List<Dictionary<string, SerializedFingerData>>>();
-
-                // Handle empty finger data or missing frames
-                if (jsonFingerData == null || jsonFingerData.Children().Count() == 0)
-                {
-                    Debug.Log("Empty finger data for gesture: " + gestureName);
-                    continue;
-                }
-
-                // Iterate over the frames (properties) of the finger data
-                foreach (var jsonFrame in jsonFingerData.Children())
-                {
-                    // Iterate over the finger properties within each frame
-                    foreach (var fingerPropertyName in jsonFrame.Children<JProperty>().Select(p => p.Name))
-                    {
-                        // Retrieve the finger data for each finger property
-                        var jsonFingers = (JArray)jsonFrame[fingerPropertyName];
-
-                        // Create an empty list to store the finger's bone data
-                        List<SerializedFingerData> fingerDataList = new List<SerializedFingerData>();
-
-                        foreach (var jsonFinger in jsonFingers)
-                        {
-                            var fingerName = jsonFinger["fingerName"].ToString();
-                            var jsonBoneData = (JArray)jsonFinger["boneData"];
-
-                            foreach (var jsonBone in jsonBoneData)
-                            {
-                                var boneName = jsonBone["boneName"].ToString();
-                                var position = JsonConvert.DeserializeObject<Vector3>(jsonBone["position"].ToString());
-                                var rotation = JsonConvert.DeserializeObject<Quaternion>(jsonBone["rotation"].ToString());
-
-                                // Create SerializedBoneData object to store bone data
-                                SerializedBoneData boneData = new SerializedBoneData()
-                                {
-                                    boneName = boneName,
-                                    position = position,
-                                    rotation = rotation
-                                };
-
-                                // Create SerializedFingerData object to store finger data
-                                SerializedFingerData fingerDataEntry = new SerializedFingerData()
-                                {
-                                    fingerName = fingerName,
-                                    boneData = new List<SerializedBoneData>() { boneData }
-                                };
-
-                                // Add the finger data entry to the list
-                                fingerDataList.Add(fingerDataEntry);
-                            }
-                        }
-
-                        // Check if the finger name exists in the fingerData dictionary
-                        if (!fingerData.ContainsKey(fingerPropertyName))
-                        {
-                            // If not, create a new list for the finger name
-                            fingerData[fingerPropertyName] = new List<Dictionary<string, SerializedFingerData>>();
-                        }
-
-                        // Add the finger data list to the finger name entry in the dictionary
-                        fingerData[fingerPropertyName].AddRange(fingerDataList);
-                    }
-                }
-
-                // Extract the motion data from the JSON
-                var jsonMotionData = (JArray)jsonGesture["motionData"];
-                List<Vector3> motionData = null;
-
-                if (jsonMotionData != null && jsonMotionData.Count > 0)
-                {
-                    motionData = new List<Vector3>();
-
-                    foreach (var jsonVector in jsonMotionData)
-                    {
-                        float x = float.Parse(jsonVector["x"].ToString());
-                        float y = float.Parse(jsonVector["y"].ToString());
-                        float z = float.Parse(jsonVector["z"].ToString());
-
-                        Vector3 vector = new Vector3(x, y, z);
-                        motionData.Add(vector);
-                    }
-                }
-
-                // Create a new Gesture object with the extracted data and add it to the gestures dictionary (Made UnityAction null)
-                gestures.Add(gestureName, new Gesture(gestureName, fingerData, motionData, null));
-            }
+            gestures = JsonConvert.DeserializeObject<Dictionary<string, Gesture>>(contents);
         }
         else
         {
@@ -743,35 +526,16 @@ public class GestureDetect : MonoBehaviour
             bool discard = false;
 
             // Compare finger positions and rotations for each frame in fingerData
-            foreach (KeyValuePair<string, List<Dictionary<string, SerializedFingerData>>> fingerData in kvp.Value.fingerData)
+            foreach (KeyValuePair<string, List<SerializedFingerData>> fingerData in kvp.Value.fingerData)
             {
-                // Check if any dictionary in the fingerData list contains the "boneData" key
-                bool containsBoneData = fingerData.Value.Any(dict => dict.ContainsKey("boneData"));
-
-                if (!containsBoneData)
-                {
-                    // If "boneData" key is not present in any dictionary, discard the gesture
-                    discard = true;
-                    break;
-                }
-
                 // Get the finger data for the current finger
-                List<Dictionary<string, SerializedFingerData>> fingerPoseData = fingerData.Value;
+                List<SerializedFingerData> fingerPoseData = fingerData.Value;
 
                 // Compare finger positions and rotations for each frame in fingerPoseData
                 for (int i = 0; i < fingerPoseData.Count; i++)
                 {
-                    // Check if the current dictionary contains the "boneData" key
-                    if (!fingerPoseData[i].ContainsKey("boneData"))
-                    {
-                        // If "boneData" key is not present in the current dictionary, discard the gesture
-                        discard = true;
-                        break;
-                    }
-
                     // Get the serialized bone data for the current frame
-                    SerializedFingerData serializedFingerData = fingerPoseData[i]["boneData"];
-
+                    SerializedFingerData serializedFingerData = fingerPoseData[i];
 
                     foreach (OVRBone bone in fingerBones)
                     {

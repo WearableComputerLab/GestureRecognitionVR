@@ -109,7 +109,7 @@ public class GesturePlayback : MonoBehaviour
                 if (hand_R != null)
                 {
                     // Iterate over each finger in the gesture data
-                    foreach ((string fingerName, List<Dictionary<string, GestureDetect.SerializedFingerData>> joints) in currentGesture.fingerData)
+                    foreach ((string fingerName, List<SerializedFingerData> joints) in currentGesture.fingerData)
                     {
                         // Find the finger transform in the hand model hierarchy
                         Transform finger = FindFingerTransform(hand_R, fingerName);
@@ -150,7 +150,7 @@ public class GesturePlayback : MonoBehaviour
 
 
     // Coroutine to Playback Motion gestureDetect.gestures on the hand model
-    IEnumerator PlayGestureCoroutine(Dictionary<string, List<Dictionary<string, GestureDetect.SerializedFingerData>>> fingerDataFrames, List<Vector3> handMotionFrames)
+    IEnumerator PlayGestureCoroutine(Dictionary<string, List<SerializedFingerData>> fingerDataFrames, List<Vector3> handMotionFrames)
     {
         for (int frameIndex = 0; frameIndex < handMotionFrames.Count; frameIndex++)
         {
@@ -159,7 +159,7 @@ public class GesturePlayback : MonoBehaviour
             // Update the hand position
             handModel.transform.position = handPosition;
 
-            foreach (KeyValuePair<string, List<Dictionary<string, GestureDetect.SerializedFingerData>>> fingerDataEntry in fingerDataFrames)
+            foreach (KeyValuePair<string, List<GestureDetect.SerializedFingerData>> fingerDataEntry in fingerDataFrames)
             {
                 // Retrieve the finger name directly from the dictionary
                 string fingerName = fingerDataEntry.Key;
@@ -169,8 +169,8 @@ public class GesturePlayback : MonoBehaviour
 
                 if (finger != null)
                 {
-                    // Retrieve the finger positions and rotations for the current frame
-                    List<Dictionary<string, GestureDetect.SerializedFingerData>> fingerDataFramesList = fingerDataEntry.Value;
+                    /*// Retrieve the finger positions and rotations for the current frame
+                    List<GestureDetect.SerializedFingerData> fingerDataFramesList = fingerDataEntry.Value;
                     Dictionary<string, GestureDetect.SerializedFingerData> fingerData = fingerDataFramesList[frameIndex];
 
                     // Not actually getting "rotation" data here, 
@@ -200,7 +200,7 @@ public class GesturePlayback : MonoBehaviour
                     else
                     {
                         Debug.LogWarning("Incorrect number of finger positions in the current gesture frame for finger: " + fingerName);
-                    }
+                    }*/
                 }
                 else
                 {
@@ -214,7 +214,7 @@ public class GesturePlayback : MonoBehaviour
     }
 
     // Recursive function to update nested finger bones
-    private void UpdateNestedFingerBones(Transform parentBone, List<Dictionary<string, GestureDetect.SerializedFingerData>> joints, int dataIndex)
+    private void UpdateNestedFingerBones(Transform parentBone, List<SerializedFingerData> joints, int dataIndex)
     {
         // Check if dataIndex is within the range of fingerDataList
         if (dataIndex < 0 || dataIndex >= joints.Count)
@@ -223,23 +223,7 @@ public class GesturePlayback : MonoBehaviour
             return;
         }
 
-        Dictionary<string, GestureDetect.SerializedFingerData> fingerData = joints[dataIndex];
-
-        // Check if fingerData dictionary is null or empty
-        if (fingerData == null || fingerData.Count == 0)
-        {
-            Debug.LogWarning("No finger data found at index " + dataIndex);
-            return;
-        }
-
-        // Check if fingerData contains boneData key
-        if (!fingerData.TryGetValue("boneData", out GestureDetect.SerializedFingerData serializedFingerData))
-        {
-            Debug.LogWarning("Key 'boneData' not found in finger data at index " + dataIndex);
-            return;
-        }
-
-        List<GestureDetect.SerializedBoneData> boneDataList = serializedFingerData.boneData;
+        List<SerializedBoneData> boneDataList = joints[dataIndex].boneData;
 
         // Check if boneDataList is null or empty
         if (boneDataList == null || boneDataList.Count == 0)
@@ -294,11 +278,11 @@ public class GesturePlayback : MonoBehaviour
                 // Update the finger bone position
                 bone.localPosition = targetPosition;
 
-                Debug.Log("Bone: " + bone.name);
+                /*Debug.Log("Bone: " + bone.name);
                 Debug.Log("Reference Position: " + referencePosition);
                 Debug.Log("Saved Position: " + boneData.position);
                 Debug.Log("Parent Position: " + parentPosition);
-                Debug.Log("Target Position: " + targetPosition);
+                Debug.Log("Target Position: " + targetPosition);*/
 
 
                 // Update the finger bone position
@@ -311,10 +295,10 @@ public class GesturePlayback : MonoBehaviour
                 // Convert target rotation to Euler angles
                 Vector3 targetRotationEulerAngles = targetRotation.eulerAngles;
 
-                Debug.Log("Saved Rotation: " + boneData.rotation.eulerAngles);
+                /*Debug.Log("Saved Rotation: " + boneData.rotation.eulerAngles);
                 Debug.Log("Reference Rotation: " + referenceRotation.eulerAngles);
                 Debug.Log("Parent Rotation: " + parentRotation.eulerAngles);
-                Debug.Log("Target Rotation: " + targetRotation.eulerAngles);
+                Debug.Log("Target Rotation: " + targetRotation.eulerAngles);*/
 
                 // Wrap the Euler angles into the range of -180 to 180 degrees
                 float xAngle = WrapAngle(targetRotationEulerAngles.x);
