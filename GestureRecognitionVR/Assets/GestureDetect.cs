@@ -266,8 +266,9 @@ public class GestureDetect : MonoBehaviour
 
                 // TODO: check localPosition/rotation works (localPosition results in position always being 0,0,0 but seems to work for rotation)
                 // Using position saves same position for every bone??
-              
-                boneData.position = new Vector3(bone.Transform.position.x, bone.Transform.position.y, bone.Transform.position.z);
+
+                // boneData.position = new Vector3(bone.Transform.position.x, bone.Transform.position.y, bone.Transform.position.z);
+                boneData.position = bone.Transform.localPosition;
                 boneData.rotation = bone.Transform.localRotation;
 
                 Debug.Log($"Position for Bone {boneName}: {boneData.position}");

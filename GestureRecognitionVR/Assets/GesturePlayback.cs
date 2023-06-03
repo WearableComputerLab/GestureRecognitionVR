@@ -99,6 +99,7 @@ public class GesturePlayback : MonoBehaviour
                 // It's a static gesture
                 Debug.Log("It's a static gesture");
 
+
                 // Iterate over each finger in the gesture data
                 foreach ((string fingerName, SerializedBoneData bone) in currentGesture.fingerData)
                 {
@@ -111,16 +112,17 @@ public class GesturePlayback : MonoBehaviour
                         if (finger.parent != null)
                         {
                             // Transform the bone position from world space to local space of the finger's parent
-                            Vector3 localPosition = finger.parent.InverseTransformPoint(bone.position);
+                            //Vector3 localPosition = finger.parent.InverseTransformPoint(bone.position);
 
-                            // Set the finger's position using the transformed local position
-                            finger.localPosition = localPosition;
+                            // Set the finger's position using Lerp for smooth interpolation
+                            //finger.localPosition = Vector3.Lerp(finger.localPosition, localPosition, 0.5f);
                         }
                         else
                         {
                             Debug.LogWarning("Finger '" + fingerName + "' does not have a parent transform.");
                         }
 
+                        finger.position = bone.position;
                         finger.rotation = bone.rotation;
                     }
                     else
