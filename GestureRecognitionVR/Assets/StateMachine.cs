@@ -22,6 +22,8 @@ public class StateMachine : MonoBehaviour
 
     public AppVoiceExperience appVoiceExperienceName;
 
+    public TouchScreenKeyboard keyboard;
+
     /// <summary>
     /// Runs before start to set up Singleton.
     /// </summary>
@@ -65,6 +67,13 @@ public class StateMachine : MonoBehaviour
         //Debug.Log($"Starting state: {state.GetType()}");
         yield return state.Start();
         yield return state.End();
+    }
+    
+    public void OpenKeyboard()
+    {
+        Debug.Log("About to Open Keyboard");
+        keyboard = TouchScreenKeyboard.Open("", TouchScreenKeyboardType.Default, false, false, false, false, "Enter Name");
+        Debug.Log("Opened Keyboard");
     }
 }
 
@@ -295,6 +304,7 @@ public class NameGesture : State
         GestureDetect.Instance.appVoiceExperience.Deactivate();
         StateMachine.Instance.appVoiceExperienceName.Activate();
         Debug.Log("What would you like to name this gesture?");
+        StateMachine.Instance.OpenKeyboard();
         yield break;
     }
 
