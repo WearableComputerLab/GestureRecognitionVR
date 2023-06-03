@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.MixedReality.Toolkit;
 using Microsoft.MixedReality.Toolkit.Utilities.FigmaImporter;
 using Newtonsoft.Json;
 using TMPro;
@@ -106,7 +107,20 @@ public class GesturePlayback : MonoBehaviour
 
                     if (finger != null)
                     {
-                        finger.localPosition = bone.position;
+                        // Ensure the finger has a parent transform
+                        if (finger.parent != null)
+                        {
+                            // Transform the bone position from world space to local space of the finger's parent
+                            Vector3 localPosition = finger.parent.InverseTransformPoint(bone.position);
+
+                            // Set the finger's position using the transformed local position
+                            finger.localPosition = localPosition;
+                        }
+                        else
+                        {
+                            Debug.LogWarning("Finger '" + fingerName + "' does not have a parent transform.");
+                        }
+
                         finger.rotation = bone.rotation;
                     }
                     else
@@ -114,6 +128,7 @@ public class GesturePlayback : MonoBehaviour
                         Debug.LogWarning("Finger '" + fingerName + "' not found in the hand model hierarchy");
                     }
                 }
+
 
             }
             else

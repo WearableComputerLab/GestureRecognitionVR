@@ -99,8 +99,6 @@ public class GestureDetect : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        gestures = new Dictionary<string, Gesture>();
-
         // Initialize the gestures dictionary with default gestures
         gestures = new Dictionary<string, Gesture>();
 
@@ -256,23 +254,27 @@ public class GestureDetect : MonoBehaviour
             // Save each individual finger bone in fingerData
             foreach (OVRBone bone in fingerBones)
             {
-                Debug.Log($"bone name: {bone.Id}");
+                Debug.Log($"Saving Bone: {bone.Id}");
 
                 // Get the finger name based on the bone ID
-                // string fingerName = GetFingerName(bone.Id);
-                string fingerName = bone.Id.ToString();
-
+                //string fingerName = GetFingerName(bone.Id);
+                string boneName = bone.Id.ToString();
 
                 // Create a SerializedBoneData object to store the bone position and rotation
                 SerializedBoneData boneData = new SerializedBoneData();
                 boneData.boneName = bone.Transform.name;
 
-                // TODO: check localPosition/rotation works
-                boneData.position = bone.Transform.localPosition;
+                // TODO: check localPosition/rotation works (localPosition results in position always being 0,0,0 but seems to work for rotation)
+                // Using position saves same position for every bone??
+              
+                boneData.position = new Vector3(bone.Transform.position.x, bone.Transform.position.y, bone.Transform.position.z);
                 boneData.rotation = bone.Transform.localRotation;
 
+                Debug.Log($"Position for Bone {boneName}: {boneData.position}");
+                Debug.Log($"Rotation for Bone {boneName}: {boneData.rotation}");
+
                 // Add the finger data to the list for the corresponding finger
-                g.fingerData[fingerName] = boneData;
+                g.fingerData[boneName] = boneData;
 
             }
 
