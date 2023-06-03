@@ -112,17 +112,20 @@ public class GesturePlayback : MonoBehaviour
                         if (finger.parent != null)
                         {
                             // Transform the bone position from world space to local space of the finger's parent
-                            //Vector3 localPosition = finger.parent.InverseTransformPoint(bone.position);
+                            Vector3 localPosition = finger.parent.InverseTransformPoint(bone.position);
+
+                            // Calculate the change in position based on the default bone position
+                            Vector3 positionChange = localPosition - finger.localPosition;
 
                             // Set the finger's position using Lerp for smooth interpolation
-                            //finger.localPosition = Vector3.Lerp(finger.localPosition, localPosition, 0.5f);
+                            //finger.localPosition = positionChange;
                         }
                         else
                         {
                             Debug.LogWarning("Finger '" + fingerName + "' does not have a parent transform.");
                         }
 
-                        finger.position = bone.position;
+                        finger.localPosition = bone.position;
                         finger.rotation = bone.rotation;
                     }
                     else
@@ -130,6 +133,7 @@ public class GesturePlayback : MonoBehaviour
                         Debug.LogWarning("Finger '" + fingerName + "' not found in the hand model hierarchy");
                     }
                 }
+
 
 
             }

@@ -271,8 +271,8 @@ public class GestureDetect : MonoBehaviour
                 boneData.position = bone.Transform.localPosition;
                 boneData.rotation = bone.Transform.localRotation;
 
-                Debug.Log($"Position for Bone {boneName}: {boneData.position}");
-                Debug.Log($"Rotation for Bone {boneName}: {boneData.rotation}");
+                Debug.Log($"localPosition for Bone {boneName}: {boneData.position}");
+                Debug.Log($"localRotation for Bone {boneName}: {boneData.rotation}");
 
                 // Add the finger data to the list for the corresponding finger
                 g.fingerData[boneName] = boneData;
