@@ -145,14 +145,14 @@ public class GestureDetect : MonoBehaviour
             currentGestureIndex = 0;
         }
 
-        Debug.Log($"Gesture Index: {currentGestureIndex}");
+        //Debug.Log($"Gesture Index: {currentGestureIndex}");
 
         // Check if the currentGestureIndex is within the valid range
         if (currentGestureIndex >= 0 && currentGestureIndex < gestures.Count)
         {
             Gesture currentGesture = gestures.Values.ElementAt(currentGestureIndex);
             string gestureName = currentGesture.name;
-            Debug.Log($"Gesture Name: {gestureName}");
+            //Debug.Log($"Gesture Name: {gestureName}");
             gesturePlayback.PlayGesture(gestureName);
         }
         else
@@ -228,7 +228,7 @@ public class GestureDetect : MonoBehaviour
             }
             else
             {
-                Debug.Log("No hand detected");
+                //Debug.Log("No hand detected");
             }
         }
     }
@@ -254,7 +254,7 @@ public class GestureDetect : MonoBehaviour
             // Save each individual finger bone in fingerData
             foreach (OVRBone bone in fingerBones)
             {
-                Debug.Log($"Saving Bone: {bone.Id}");
+                //Debug.Log($"Saving Bone: {bone.Id}");
 
                 // Get the finger name based on the bone ID
                 //string fingerName = GetFingerName(bone.Id);
@@ -271,8 +271,8 @@ public class GestureDetect : MonoBehaviour
                 boneData.position = bone.Transform.localPosition;
                 boneData.rotation = bone.Transform.localRotation;
 
-                Debug.Log($"localPosition for Bone {boneName}: {boneData.position}");
-                Debug.Log($"localRotation for Bone {boneName}: {boneData.rotation}");
+                //Debug.Log($"localPosition for Bone {boneName}: {boneData.position}");
+                //Debug.Log($"localRotation for Bone {boneName}: {boneData.rotation}");
 
                 // Add the finger data to the list for the corresponding finger
                 g.fingerData[boneName] = boneData;
@@ -363,7 +363,7 @@ public class GestureDetect : MonoBehaviour
     {
         if (gestures.Count == 0)
         {
-            Debug.Log("gestures is empty");
+            //Debug.Log("gestures is empty");
             return;
         }
 
@@ -374,13 +374,13 @@ public class GestureDetect : MonoBehaviour
         });
 
         // check serialization...
-        Debug.Log("Number of serialized gestures: " + gestures.Count);
+        //Debug.Log("Number of serialized gestures: " + gestures.Count);
 
         string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
         string saveFile = directory + "savedGestures.json";
 
         // check json was saved
-        Debug.Log("Serialized gestures JSON: " + json);
+        // Debug.Log("Serialized gestures JSON: " + json);
 
         //If json directory does not exist, create it
         if (!Directory.Exists(directory))
@@ -405,7 +405,7 @@ public class GestureDetect : MonoBehaviour
     {
         string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
         string saveFile = directory + "savedGestures.json";
-        Debug.Log("JSON Path: " + saveFile);
+        //Debug.Log("JSON Path: " + saveFile);
 
         if (File.Exists(saveFile))
         {

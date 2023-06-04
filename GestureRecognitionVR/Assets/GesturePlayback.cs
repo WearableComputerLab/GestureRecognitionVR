@@ -86,7 +86,7 @@ public class GesturePlayback : MonoBehaviour
         {
             handModel.SetActive(true);
             Gesture currentGesture = gestureDetect.gestures[gestureName];
-            Debug.Log($"Playing gesture: {currentGesture.name}");
+            Debug.Log($"Playing Gesture: {currentGesture.name}");
 
             // Check if it's a motion gesture
             if (currentGesture.motionData != null && currentGesture.motionData.Count > 1)
@@ -98,7 +98,7 @@ public class GesturePlayback : MonoBehaviour
             else if (currentGesture.fingerData != null)
             {
                 // It's a static gesture
-                Debug.Log("It's a static gesture");
+                //Debug.Log("It's a static gesture");
 
 
                 // Iterate over each finger in the gesture data
@@ -150,8 +150,8 @@ public class GesturePlayback : MonoBehaviour
                         finger.localEulerAngles = wrappedEulerAngles;
 
 
-                        Debug.Log($"Updated Bone {finger.name} position: {finger.localPosition}");
-                        Debug.Log($"Updated Bone {finger.name} rotation: {finger.localEulerAngles}");
+                        //Debug.Log($"Updated Bone {finger.name} position: {finger.localPosition}");
+                        //Debug.Log($"Updated Bone {finger.name} rotation: {finger.localEulerAngles}");
                     }
                     else
                     {
