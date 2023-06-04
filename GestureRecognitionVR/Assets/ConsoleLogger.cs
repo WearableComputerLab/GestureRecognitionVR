@@ -14,22 +14,30 @@ public class ConsoleLogger : MonoBehaviour
 
     private void ApplicationOnlogMessageReceived(string condition, string stacktrace, LogType type)
     {
-        //
-        if (!condition.StartsWith("[OVRManager]") && !condition.StartsWith("[OculusXRFeature]") && !condition.StartsWith("The current") && !condition.StartsWith("<color=\"#FFFF00\">[WARNING] </color>"))
+        if (type != LogType.Warning)
         {
-            tmp.text += condition + "\n";
-            if (type == LogType.Exception)
+            //
+            if (!condition.Contains("OVR") && !condition.StartsWith("["))
             {
-                tmp.text += stacktrace + "\n";
-            }
-        }
+                if (!condition.StartsWith("[OVRManager]") && !condition.StartsWith("[OculusXRFeature]") &&
+                    !condition.StartsWith("The current") &&
+                    !condition.StartsWith("<color=\"#FFFF00\">[WARNING] </color>"))
+                {
+                    tmp.text += condition + "\n";
+                    if (type == LogType.Exception)
+                    {
+                        tmp.text += stacktrace + "\n";
+                    }
+                }
 
-        if (tmp.isTextOverflowing)
-        {
-            tmp.text = condition + "\n";
-            if (type == LogType.Exception)
-            {
-                tmp.text += stacktrace + "\n";
+                if (tmp.isTextOverflowing)
+                {
+                    tmp.text = condition + "\n";
+                    if (type == LogType.Exception)
+                    {
+                        tmp.text += stacktrace + "\n";
+                    }
+                }
             }
         }
     }

@@ -74,10 +74,10 @@ public class StateMachine : MonoBehaviour
 
     public void OpenKeyboard()
     {
-        Debug.Log("About to Open Keyboard");
+        //Debug.Log("About to Open Keyboard");
         keyboard = TouchScreenKeyboard.Open("", TouchScreenKeyboardType.Default, false, false, false, false,
             "Enter Name");
-        Debug.Log("Opened Keyboard");
+        //Debug.Log("Opened Keyboard");
     }
 }
 
@@ -226,7 +226,7 @@ public class RecordStart : State
         duration = GestureDetect.Instance.selectedRecordingTime;
         for (int i = 0; i < 3; i++)
         {
-            Debug.Log($"{3-i}");
+            Debug.Log($"Recording starting in {3-i}");
             yield return new WaitForSeconds(1f);
         }
     }
@@ -245,10 +245,11 @@ public class RecordStart : State
             List<List<Vector3>> fingerData = new List<List<Vector3>>();
             
             //If the duration is not static (motion), record for the specified duration
-            if (duration > 0f)
+            if (duration - GestureDetect.staticRecordingTime > 0.005f)
             {
                 DateTime start = DateTime.Now;
                 double countdown = 0;
+                int lastPrint = -1;
                 while (countdown < duration)
                 {
                     List<Vector3> currentFrame = new List<Vector3>();
@@ -266,11 +267,14 @@ public class RecordStart : State
                             .handToRecord.transform.position));
                    
                     // Save Motion Gestures at 20fps to save resources (fine-tune this)
-                    Debug.Log($"Time Remaining: {countdown}");
-                    Debug.Log(frameTime);
                     yield return new WaitForSeconds(frameTime);
                     countdown = (DateTime.Now - start).TotalSeconds;
-                    Debug.Log($"Time Remaining: {countdown}");
+                    int roundedCount = (int)countdown;
+                    if (lastPrint != roundedCount && roundedCount != 0)
+                    {
+                        Debug.Log($"Time Remaining: {((int)duration) - roundedCount}");
+                        lastPrint = roundedCount;
+                    }
                 }
             }
             //If the duration is static, record the frame
@@ -281,7 +285,7 @@ public class RecordStart : State
                 {
                     currentFrame.Add(
                         GestureDetect.Instance.handToRecord.transform.InverseTransformPoint(bone.Transform.position));
-                    Debug.Log(currentFrame.Last());
+                    //Debug.Log(currentFrame.Last());
                 }
 
                 fingerData.Add(currentFrame);

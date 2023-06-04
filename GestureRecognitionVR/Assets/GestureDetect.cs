@@ -115,7 +115,7 @@ public class GestureDetect : MonoBehaviour
     /// <summary>
     /// Set recording time default to 0.01 second (user should be able to change this)
     /// </summary>
-    public const float recordingTime = 0.01f;
+    public const float staticRecordingTime = 0.01f;
 
     public float selectedRecordingTime = float.MinValue;
 
@@ -219,7 +219,7 @@ public class GestureDetect : MonoBehaviour
         //If the confidence exists and is higher than threshold
         if (float.TryParse(response["intents"][0]["confidence"], out float conf) && conf >= confidence)
         {
-            Debug.Log(response["intents"][0]["name"].Value);
+            // Debug.Log(response["intents"][0]["name"].Value);
             //Switch for Intents
             switch (response["intents"][0]["name"].Value)
             {
@@ -227,14 +227,14 @@ public class GestureDetect : MonoBehaviour
                 case "record":
                     Debug.Log("Command Recognised: Record");
                     //setting default time to 0.01f as instantiated.
-                    float timeNorm = recordingTime;
+                    float timeNorm = staticRecordingTime;
                     try
                     {
                         //If the time is specified, set the time to the specified time.
                         //Clamps the time to be between 0.01 and 10 seconds to prevent errors/overclocking system.
                         timeNorm = Mathf.Clamp(
                             int.Parse(response["entities"]["wit$duration:duration"][0]["normalized"]["value"]),
-                            recordingTime, 10);
+                            staticRecordingTime, 10);
                         Debug.Log($"Length Specified: {timeNorm} seconds");
                     }
                     catch
