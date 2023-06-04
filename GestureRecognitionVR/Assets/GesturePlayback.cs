@@ -92,7 +92,7 @@ public class GesturePlayback : MonoBehaviour
             {
                 // It's a motion gesture
                 Debug.Log("It's a motion gesture");
-               // StartCoroutine(PlayGestureCoroutine(currentGesture.fingerData, currentGesture.motionData));
+                // StartCoroutine(PlayGestureCoroutine(currentGesture.fingerData, currentGesture.motionData));
             }
             else if (currentGesture.fingerData != null)
             {
@@ -126,7 +126,31 @@ public class GesturePlayback : MonoBehaviour
                         }
 
                         finger.localPosition = bone.position;
-                        finger.rotation = bone.rotation;
+                        //finger.localRotation = bone.rotation;
+
+                        Vector3 normalEulerAngles = new Vector3(
+                            bone.rotation.eulerAngles.x,
+                            bone.rotation.eulerAngles.y,
+                            bone.rotation.eulerAngles.z
+                        );
+
+                        //Vector3 scale = finger.localScale;
+                        //scale.x = -1;
+                        //scale.y = 1;
+                        //scale.z = -1;
+                        //finger.localScale = scale;
+
+                        Vector3 wrappedEulerAngles = new Vector3(
+                            WrapAngle(bone.rotation.eulerAngles.x),
+                            WrapAngle(bone.rotation.eulerAngles.y),
+                            WrapAngle(bone.rotation.eulerAngles.z)
+                        );
+
+                        finger.localEulerAngles = wrappedEulerAngles;
+
+
+                        Debug.Log($"Updated Bone {finger.name} position: {finger.localPosition}");
+                        Debug.Log($"Updated Bone {finger.name} rotation: {finger.localEulerAngles}");
                     }
                     else
                     {
@@ -155,7 +179,7 @@ public class GesturePlayback : MonoBehaviour
         }
     }
 
-   
+
 
     // Coroutine to Playback Motion gestureDetect.gestures on the hand model
     /*IEnumerator PlayGestureCoroutine(List<SerializedBoneData> bone, List<Vector3> handMotionFrames)
@@ -341,12 +365,23 @@ public class GesturePlayback : MonoBehaviour
     // For euler angles
     private float WrapAngle(float angle)
     {
-        angle %= 360f;
-        if (angle > 180f)
+        // Make sure that we get value between (-360, 360], we cannot use here module of 180 and call it a day, because we would get wrong values
+        angle %= 360;
+        if (angle > 180)
         {
-            angle -= 360f;
+            // If we get number above 180 we need to move the value around to get negative between (-180, 0]
+            return angle - 360;
         }
-        return angle;
+        else if (angle < -180)
+        {
+            // If we get a number below -180 we need to move the value around to get positive between (0, 180]
+            return angle + 360;
+        }
+        else
+        {
+            // We are between (-180, 180) so we just return the value
+            return angle;
+        }
     }
 
 
