@@ -162,6 +162,8 @@ public class GestureDetect : MonoBehaviour
     /// </summary>
     public AppVoiceExperience appVoiceExperience;
 
+    public SliderValue sliderValue;
+
     public void Awake()
     {
         if (Instance == null)
@@ -172,6 +174,22 @@ public class GestureDetect : MonoBehaviour
         {
             Destroy(this);
         }
+    }
+
+    public GameObject recordButton;
+    public GameObject durationSlider;
+
+    public void OnRecordButtonPressed()
+    {
+        recordButton.SetActive(false);
+        durationSlider.SetActive(true);
+    }
+
+    public void OnDurationButtonPressed()
+    {
+        currentAction = Waiting.InputAction.Record;
+        selectedRecordingTime = sliderValue.currentValue;
+        durationSlider.SetActive(false);
     }
 
     /// <summary>

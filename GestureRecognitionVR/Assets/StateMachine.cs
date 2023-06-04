@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data.Common;
 using UnityEngine;
 using Oculus.Voice;
 using System.Linq;
@@ -14,6 +15,8 @@ public class StateMachine : MonoBehaviour
     /// The Current State being handled by the State Machine
     /// </summary>
     private State _currentState;
+
+    public ToggleButton activateVoiceButton;
 
     /// <summary>
     /// Singleton Instance of the State Machine
@@ -68,11 +71,12 @@ public class StateMachine : MonoBehaviour
         yield return state.Start();
         yield return state.End();
     }
-    
+
     public void OpenKeyboard()
     {
         Debug.Log("About to Open Keyboard");
-        keyboard = TouchScreenKeyboard.Open("", TouchScreenKeyboardType.Default, false, false, false, false, "Enter Name");
+        keyboard = TouchScreenKeyboard.Open("", TouchScreenKeyboardType.Default, false, false, false, false,
+            "Enter Name");
         Debug.Log("Opened Keyboard");
     }
 }
@@ -163,11 +167,17 @@ public class Waiting : State
             GestureDetect.Instance.hands = GameObject.FindObjectsOfType<OVRSkeleton>();
             GestureDetect.Instance.FindHandToRecord();
 
-            //If the voice experience is not active, activate it.
-            if (!GestureDetect.Instance.appVoiceExperience.Active)
+            if (StateMachine.Instance.activateVoiceButton.isToggled)
             {
-                GestureDetect.Instance.appVoiceExperience.Activate();
+                //If the voice experience is not active, activate it.
+                if (!GestureDetect.Instance.appVoiceExperience.Active)
+                {
+                    GestureDetect.Instance.appVoiceExperience.Activate();
+                }
             }
+            GestureDetect.Instance.durationSlider.SetActive(GestureDetect.Instance.durationSlider.activeSelf && !StateMachine.Instance.activateVoiceButton.isToggled);
+            GestureDetect.Instance.recordButton.SetActive(!GestureDetect.Instance.durationSlider.activeSelf && !StateMachine.Instance.activateVoiceButton.isToggled);
+            
 
             //Check for Recognition 20 times a second, same as captured data (returns recognised Gesture if hand is in correct position)
             //NOTE: possible for recognise() to miss start of gesture (fine-tune frequency)
@@ -214,7 +224,11 @@ public class RecordStart : State
     public override IEnumerator Start()
     {
         duration = GestureDetect.Instance.selectedRecordingTime;
-        yield break;
+        for (int i = 0; i < 3; i++)
+        {
+            Debug.Log($"{3-i}");
+            yield return new WaitForSeconds(1f);
+        }
     }
 
     public override IEnumerator End()
@@ -229,13 +243,13 @@ public class RecordStart : State
         {
             List<Vector3> motionData = new List<Vector3>();
             List<List<Vector3>> fingerData = new List<List<Vector3>>();
-
-            //TODO: Pass finger data to NameGesture(fingerData)
+            
             //If the duration is not static (motion), record for the specified duration
             if (duration > 0f)
             {
                 DateTime start = DateTime.Now;
-                while ((DateTime.Now - start).TotalSeconds < duration)
+                double countdown = 0;
+                while (countdown < duration)
                 {
                     List<Vector3> currentFrame = new List<Vector3>();
                     //Save each individual finger bone in fingerData, save whole hand position in motionData
@@ -250,15 +264,13 @@ public class RecordStart : State
                     motionData.Add(
                         GestureDetect.Instance.handToRecord.transform.InverseTransformPoint(GestureDetect.Instance
                             .handToRecord.transform.position));
-
-
-                    // Update count down every second (if motion gesture)
-
-                    /*Debug.Log("Recording " + name + "... Time remaining: " +
-                              Mathf.FloorToInt(remainingTime).ToString() + " seconds");*/
-
+                   
                     // Save Motion Gestures at 20fps to save resources (fine-tune this)
+                    Debug.Log($"Time Remaining: {countdown}");
+                    Debug.Log(frameTime);
                     yield return new WaitForSeconds(frameTime);
+                    countdown = (DateTime.Now - start).TotalSeconds;
+                    Debug.Log($"Time Remaining: {countdown}");
                 }
             }
             //If the duration is static, record the frame
@@ -372,6 +384,7 @@ public class SelectResponse : State
             responseButton.GetComponentInChildren<TextMeshPro>().text = GestureDetect.Instance.responses[i].Name();
             buttons.Add(responseButton);
         }
+
         GestureDetect.Instance.responseButtonPosition.GetComponent<GridObjectCollection>().UpdateCollection();
 
         yield break;
