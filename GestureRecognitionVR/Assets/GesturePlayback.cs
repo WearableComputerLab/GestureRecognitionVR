@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.MixedReality.Toolkit;
-using Microsoft.MixedReality.Toolkit.Utilities.FigmaImporter;
+//using Microsoft.MixedReality.Toolkit.Utilities.FigmaImporter;
 using Newtonsoft.Json;
 using TMPro;
 using UnityEngine;
@@ -29,7 +29,7 @@ public class GesturePlayback : MonoBehaviour
         // Store the default position/rotation of the hand model for reference
         InitializeDefaultModelPositions();
         InitializeDefaultModelRotations();
-
+        handModel.SetActive(false);
 
         if (hand_R != null)
         {
@@ -84,6 +84,7 @@ public class GesturePlayback : MonoBehaviour
         // Check if the gestureDetect.gestures dictionary is not null and contains the specified gesture
         if (gestureDetect.gestures != null && gestureDetect.gestures.ContainsKey(gestureName))
         {
+            handModel.SetActive(true);
             Gesture currentGesture = gestureDetect.gestures[gestureName];
             Debug.Log($"Playing gesture: {currentGesture.name}");
 
