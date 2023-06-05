@@ -258,25 +258,17 @@ public class GestureDetect : MonoBehaviour
             // Save each individual finger bone in fingerData
             foreach (OVRBone bone in fingerBones)
             {
-                //Debug.Log($"Saving Bone: {bone.Id}");
 
                 // Get the finger name based on the bone ID
-                //string fingerName = GetFingerName(bone.Id);
                 string boneName = bone.Id.ToString();
 
                 // Create a SerializedBoneData object to store the bone position and rotation
                 SerializedBoneData boneData = new SerializedBoneData();
                 boneData.boneName = bone.Transform.name;
 
-                // TODO: check localPosition/rotation works (localPosition results in position always being 0,0,0 but seems to work for rotation)
-                // Using position saves same position for every bone??
-
                 // boneData.position = new Vector3(bone.Transform.position.x, bone.Transform.position.y, bone.Transform.position.z);
                 boneData.position = bone.Transform.localPosition;
                 boneData.rotation = bone.Transform.localRotation;
-
-                //Debug.Log($"localPosition for Bone {boneName}: {boneData.position}");
-                //Debug.Log($"localRotation for Bone {boneName}: {boneData.rotation}");
 
                 // Add the finger data to the list for the corresponding finger
                 g.fingerData[boneName] = boneData;
@@ -288,7 +280,7 @@ public class GestureDetect : MonoBehaviour
             {
                 // Storing the forward-facing point on the palm relative to the handToRecord object.
                 // This allows us to track the movement of the palm in local space.
-                //g.handMotion.Add(handToRecord.transform.InverseTransformPoint(handToRecord.transform.position));
+                // g.handMotion.Add(handToRecord.transform.InverseTransformPoint(handToRecord.transform.position));
             }
 
             yield return null;
@@ -311,47 +303,6 @@ public class GestureDetect : MonoBehaviour
 
         GesturesToJSON();
     }
-
-
-
-    //private string GetFingerName(OVRSkeleton.BoneId boneId)
-    //{
-    //    Dictionary<OVRSkeleton.BoneId, string> boneToFingerMap = new Dictionary<OVRSkeleton.BoneId, string>()
-    //{
-
-    //    { OVRSkeleton.BoneId.Hand_Index1, "Index" },
-    //    { OVRSkeleton.BoneId.Hand_Index2, "Index" },
-    //    { OVRSkeleton.BoneId.Hand_Index3, "Index" },
-    //    { OVRSkeleton.BoneId.Hand_IndexTip, "Index" },
-
-    //    { OVRSkeleton.BoneId.Hand_Middle1, "Middle" },
-    //    { OVRSkeleton.BoneId.Hand_Middle2, "Middle" },
-    //    { OVRSkeleton.BoneId.Hand_Middle3, "Middle" },
-    //    { OVRSkeleton.BoneId.Hand_MiddleTip, "Middle" },
-
-    //    { OVRSkeleton.BoneId.Hand_Pinky1, "Pinky" },
-    //    { OVRSkeleton.BoneId.Hand_Pinky2, "Pinky" },
-    //    { OVRSkeleton.BoneId.Hand_Pinky3, "Pinky" },
-    //    { OVRSkeleton.BoneId.Hand_PinkyTip, "Pinky" },
-
-    //    { OVRSkeleton.BoneId.Hand_Ring1, "Ring" },
-    //    { OVRSkeleton.BoneId.Hand_Ring2, "Ring" },
-    //    { OVRSkeleton.BoneId.Hand_Ring3, "Ring" },
-    //    { OVRSkeleton.BoneId.Hand_RingTip, "Ring" },
-
-    //    { OVRSkeleton.BoneId.Hand_Thumb2, "Thumb" },
-    //    { OVRSkeleton.BoneId.Hand_Thumb3, "Thumb" },
-    //    { OVRSkeleton.BoneId.Hand_ThumbTip, "Thumb" }
-
-    //};
-
-    //    if (boneToFingerMap.ContainsKey(boneId))
-    //    {
-    //        return boneToFingerMap[boneId];
-    //    }
-
-    //    return "Unknown";
-    //}
 
 
     public class SerializedBoneData
@@ -422,9 +373,6 @@ public class GestureDetect : MonoBehaviour
         }
     }
 
-
-
-
     /*
     private void OnValidate()
     {
@@ -492,7 +440,7 @@ public class GestureDetect : MonoBehaviour
         sphere.SetActive(false);
     }
 
-    //Check if current hand gesture is a recorded gesture. NOTE: NOT TESTED
+    // Check if current hand gesture is a recorded gesture. NOTE: NOT TESTED
     // velocityWeight allows us to finetune how sensitive recognition is concerning speed of gesture performance, could use detectionThreshold instead?
     private float velocityWeight = 0.5f;
     Gesture? Recognize()
