@@ -89,7 +89,7 @@ public class GesturePlayback : MonoBehaviour
             Debug.Log($"Playing Gesture: {currentGesture.name}");
 
             // Check if it's a motion gesture
-            if (currentGesture.motionData != null && currentGesture.motionData.Count > 1)
+            if (currentGesture.handMotion != null && currentGesture.handMotion.Count > 1)
             {
                 // It's a motion gesture
                 Debug.Log("It's a motion gesture");

@@ -21,18 +21,22 @@ public struct Gesture
 {
     public string name;
 
-    // ..
+    // fingerData represents a frame of SerializedBoneData for every finger
     public Dictionary<string, SerializedBoneData> fingerData;
+    // fingerMotion represents multiple frames of SerializedBoneData for every finger
+    public List<Dictionary<string, SerializedBoneData>> fingerMotion;
 
-    // motionData = List of hand position/rotation over time
-    public List<Vector3> motionData;
+    // handMotion represents a list of hand position/rotation over time
+    public List<SerializedBoneData> handMotion;
+
     public UnityEvent onRecognized;
 
-    public Gesture(string gestureName, Dictionary<string, SerializedBoneData> fingerData, List<Vector3> motionData, UnityAction func)
+    public Gesture(string gestureName, Dictionary<string, SerializedBoneData> fingerData, List<Dictionary< string, SerializedBoneData>> fingerMotion, List<SerializedBoneData> handMotion, UnityAction func)
     {
         this.name = gestureName;
         this.fingerData = fingerData;
-        this.motionData = motionData;
+        this.fingerMotion = fingerMotion;
+        this.handMotion = handMotion;
 
         onRecognized = new UnityEvent();
         onRecognized.AddListener(func);
@@ -245,7 +249,7 @@ public class GestureDetect : MonoBehaviour
         Gesture g = new Gesture();
         g.name = name;
         g.fingerData = new Dictionary<string, SerializedBoneData>();
-        g.motionData = new List<Vector3>();
+        g.handMotion = new List<SerializedBoneData>();
 
         float startTime = Time.time;
 
@@ -284,7 +288,7 @@ public class GestureDetect : MonoBehaviour
             {
                 // Storing the forward-facing point on the palm relative to the handToRecord object.
                 // This allows us to track the movement of the palm in local space.
-                g.motionData.Add(handToRecord.transform.InverseTransformPoint(handToRecord.transform.position));
+                //g.handMotion.Add(handToRecord.transform.InverseTransformPoint(handToRecord.transform.position));
             }
 
             yield return null;
@@ -553,17 +557,17 @@ public class GestureDetect : MonoBehaviour
             if (!discard)
             {
                 // Check if motionData is null or empty before processing
-                if (kvp.Value.motionData != null && kvp.Value.motionData.Count > 1)
+                if (kvp.Value.handMotion != null && kvp.Value.handMotion.Count > 1)
                 {
                     // Create Lists to store Velocity and Direction of the motionData (as Vector3s)
                     List<Vector3> velocities = new List<Vector3>();
                     List<Vector3> directions = new List<Vector3>();
 
                     // Calculate velocity and direction of movement for each item in motionData list
-                    for (int i = 0; i < kvp.Value.motionData.Count - 1; i++)
+                    for (int i = 0; i < kvp.Value.handMotion.Count - 1; i++)
                     {
                         // Calculate the displacement vector between consecutive motionData points
-                        Vector3 displacement = kvp.Value.motionData[i + 1] - kvp.Value.motionData[i];
+                        Vector3 displacement = kvp.Value.handMotion[i + 1].position - kvp.Value.handMotion[i].position;
 
                         // Calculate velocity by dividing displacement by time
                         Vector3 velocity = displacement / Time.deltaTime;
