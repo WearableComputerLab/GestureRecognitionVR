@@ -249,6 +249,7 @@ public class GestureDetect : MonoBehaviour
         Gesture g = new Gesture();
         g.name = name;
         g.fingerData = new Dictionary<string, SerializedBoneData>();
+        g.fingerMotion = new List<Dictionary<string, SerializedBoneData>>();
         g.handMotion = new List<SerializedBoneData>();
 
         float startTime = Time.time;
@@ -258,29 +259,48 @@ public class GestureDetect : MonoBehaviour
             // Save each individual finger bone in fingerData
             foreach (OVRBone bone in fingerBones)
             {
-
                 // Get the finger name based on the bone ID
                 string boneName = bone.Id.ToString();
 
                 // Create a SerializedBoneData object to store the bone position and rotation
                 SerializedBoneData boneData = new SerializedBoneData();
                 boneData.boneName = bone.Transform.name;
-
-                // boneData.position = new Vector3(bone.Transform.position.x, bone.Transform.position.y, bone.Transform.position.z);
                 boneData.position = bone.Transform.localPosition;
                 boneData.rotation = bone.Transform.localRotation;
 
                 // Add the finger data to the list for the corresponding finger
                 g.fingerData[boneName] = boneData;
-
             }
 
             // Record hand motion data if it's a motion gesture
             if (recordingTime > 0.01f)
             {
-                // Storing the forward-facing point on the palm relative to the handToRecord object.
-                // This allows us to track the movement of the palm in local space.
-                // g.handMotion.Add(handToRecord.transform.InverseTransformPoint(handToRecord.transform.position));
+                // Create a dictionary to store the motion data for the current frame
+                Dictionary<string, SerializedBoneData> frameData = new Dictionary<string, SerializedBoneData>();
+
+                // Store the bone data for each finger in the current frame
+                foreach (OVRBone bone in fingerBones)
+                {
+                    string boneName = bone.Id.ToString();
+
+                    SerializedBoneData boneData = new SerializedBoneData();
+                    boneData.boneName = bone.Transform.name;
+                    boneData.position = bone.Transform.localPosition;
+                    boneData.rotation = bone.Transform.localRotation;
+
+                    frameData[boneName] = boneData;
+                }
+
+                // Add the current frame's data to the fingerMotion list
+                g.fingerMotion.Add(frameData);
+
+                // Store the hand motion data for the current frame
+                SerializedBoneData handBoneData = new SerializedBoneData();
+                handBoneData.boneName = fingerBones[0].Transform.name;
+                handBoneData.position = fingerBones[0].Transform.localPosition;
+                handBoneData.rotation = fingerBones[0].Transform.localRotation;
+
+                g.handMotion.Add(handBoneData);
             }
 
             yield return null;
@@ -303,6 +323,7 @@ public class GestureDetect : MonoBehaviour
 
         GesturesToJSON();
     }
+
 
 
     public class SerializedBoneData

@@ -119,7 +119,7 @@ public class GesturePlayback : MonoBehaviour
                             Vector3 positionChange = localPosition - finger.localPosition;
 
                             // Set the finger's position using Lerp for smooth interpolation
-                            //finger.localPosition = positionChange;
+                            // finger.localPosition = positionChange;
                         }
                         else
                         {
@@ -135,12 +135,6 @@ public class GesturePlayback : MonoBehaviour
                             bone.rotation.eulerAngles.z
                         );
 
-                        //Vector3 scale = finger.localScale;
-                        //scale.x = -1;
-                        //scale.y = 1;
-                        //scale.z = -1;
-                        //finger.localScale = scale;
-
                         Vector3 wrappedEulerAngles = new Vector3(
                             WrapAngle(bone.rotation.eulerAngles.x),
                             WrapAngle(bone.rotation.eulerAngles.y),
@@ -149,9 +143,6 @@ public class GesturePlayback : MonoBehaviour
 
                         finger.localEulerAngles = wrappedEulerAngles;
 
-
-                        //Debug.Log($"Updated Bone {finger.name} position: {finger.localPosition}");
-                        //Debug.Log($"Updated Bone {finger.name} rotation: {finger.localEulerAngles}");
                     }
                     else
                     {
