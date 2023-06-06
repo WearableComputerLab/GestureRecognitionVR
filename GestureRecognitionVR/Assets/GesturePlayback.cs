@@ -89,7 +89,7 @@ public class GesturePlayback : MonoBehaviour
             Debug.Log($"Playing Gesture: {currentGesture.name}");
 
             // Check if it's a motion gesture
-            if (currentGesture.handMotion != null && currentGesture.handMotion.Count > 1)
+            if (currentGesture.fingerData != null && currentGesture.fingerData.Count > 1)
             {
                 // It's a motion gesture
                 Debug.Log("It's a motion gesture");
@@ -98,60 +98,59 @@ public class GesturePlayback : MonoBehaviour
             else if (currentGesture.fingerData != null)
             {
                 // It's a static gesture
-                //Debug.Log("It's a static gesture");
+                Debug.Log("It's a static gesture");
 
+                int frameIndex = 0;
 
                 // Iterate over each finger in the gesture data
-                foreach ((string fingerName, SerializedBoneData bone) in currentGesture.fingerData)
+                foreach (Dictionary<string, SerializedBoneData> frameData in currentGesture.fingerData)
                 {
-                    // Find the finger transform in the hand model hierarchy
-                    Transform finger = FindFingerTransform(hand_R, fingerName);
-
-                    if (finger != null)
+                    // Iterate over each bone in the frame data
+                    foreach (KeyValuePair<string, SerializedBoneData> kvp in frameData)
                     {
-                        // Ensure the finger has a parent transform
-                        if (finger.parent != null)
+                        string boneName = kvp.Key;
+                        SerializedBoneData boneData = kvp.Value;
+
+                        // Find the finger transform in the hand model hierarchy
+                        Transform finger = FindFingerTransform(hand_R, boneName);
+
+                        if (finger != null)
                         {
-                            // Transform the bone position from world space to local space of the finger's parent
-                            Vector3 localPosition = finger.parent.InverseTransformPoint(bone.position);
+                            // Ensure the finger has a parent transform
+                            if (finger.parent != null)
+                            {
+                                // Transform the bone position from world space to local space of the finger's parent
+                                Vector3 localPosition = finger.parent.InverseTransformPoint(boneData.position);
 
-                            // Calculate the change in position based on the default bone position
-                            Vector3 positionChange = localPosition - finger.localPosition;
+                                // Calculate the change in position based on the default bone position
+                                Vector3 positionChange = localPosition - finger.localPosition;
 
-                            // Set the finger's position using Lerp for smooth interpolation
-                            // finger.localPosition = positionChange;
+                                // TODO: Set the finger's position using Lerp for smooth interpolation
+                                // finger.localPosition = positionChange;
+                            }
+                            else
+                            {
+                                Debug.LogWarning("Finger '" + boneName + "' does not have a parent transform.");
+                            }
+
+                            finger.localPosition = boneData.position;
+
+                            Vector3 wrappedEulerAngles = new Vector3(
+                                WrapAngle(boneData.rotation.eulerAngles.x),
+                                WrapAngle(boneData.rotation.eulerAngles.y),
+                                WrapAngle(boneData.rotation.eulerAngles.z)
+                            );
+
+                            finger.localEulerAngles = wrappedEulerAngles;
                         }
                         else
                         {
-                            Debug.LogWarning("Finger '" + fingerName + "' does not have a parent transform.");
+                            Debug.LogWarning("Finger '" + boneName + "' not found in the hand model hierarchy");
                         }
-
-                        finger.localPosition = bone.position;
-                        //finger.localRotation = bone.rotation;
-
-                        Vector3 normalEulerAngles = new Vector3(
-                            bone.rotation.eulerAngles.x,
-                            bone.rotation.eulerAngles.y,
-                            bone.rotation.eulerAngles.z
-                        );
-
-                        Vector3 wrappedEulerAngles = new Vector3(
-                            WrapAngle(bone.rotation.eulerAngles.x),
-                            WrapAngle(bone.rotation.eulerAngles.y),
-                            WrapAngle(bone.rotation.eulerAngles.z)
-                        );
-
-                        finger.localEulerAngles = wrappedEulerAngles;
-
                     }
-                    else
-                    {
-                        Debug.LogWarning("Finger '" + fingerName + "' not found in the hand model hierarchy");
-                    }
+
+                    frameIndex++;
                 }
-
-
-
             }
             else
             {
@@ -173,19 +172,21 @@ public class GesturePlayback : MonoBehaviour
 
 
 
-    // Coroutine to Playback Motion gestureDetect.gestures on the hand model
-    private IEnumerator PlayGestureCoroutine(List<Dictionary<string, SerializedBoneData>> fingerMotion, List<SerializedBoneData> handMotion)
-    {
-        for (int frameIndex = 0; frameIndex < fingerMotion.Count; frameIndex++)
-        {
-            // Get the finger data for the current frame
-            Dictionary<string, SerializedBoneData> frameData = fingerMotion[frameIndex];
 
-            // Iterate over each finger in the frame data
-            foreach ((string fingerName, SerializedBoneData bone) in frameData)
+    // Coroutine to Playback Motion gestureDetect.gestures on the hand model
+    private IEnumerator PlayGestureCoroutine(List<Dictionary<string, SerializedBoneData>> fingerData)
+    {
+        for (int frameIndex = 0; frameIndex < fingerData.Count; frameIndex++)
+        {
+            Dictionary<string, SerializedBoneData> frameData = fingerData[frameIndex];
+
+            foreach (KeyValuePair<string, SerializedBoneData> kvp in frameData)
             {
+                string fingerName = kvp.Key;
+                SerializedBoneData boneData = kvp.Value;
+
                 // Find the finger transform in the hand model hierarchy
-                Transform finger = FindFingerTransform(hand_R, fingerName);
+                Transform finger = FindFingerTransform(handModel.transform, fingerName);
 
                 if (finger != null)
                 {
@@ -193,7 +194,7 @@ public class GesturePlayback : MonoBehaviour
                     if (finger.parent != null)
                     {
                         // Transform the bone position from world space to local space of the finger's parent
-                        Vector3 localPosition = finger.parent.InverseTransformPoint(bone.position);
+                        Vector3 localPosition = finger.parent.InverseTransformPoint(boneData.position);
 
                         // Calculate the change in position based on the default bone position
                         Vector3 positionChange = localPosition - finger.localPosition;
@@ -206,20 +207,12 @@ public class GesturePlayback : MonoBehaviour
                         Debug.LogWarning("Finger '" + fingerName + "' does not have a parent transform.");
                     }
 
-                    finger.localRotation = bone.rotation;
+                    finger.localRotation = boneData.rotation;
                 }
                 else
                 {
                     Debug.LogWarning("Finger '" + fingerName + "' not found in the hand model hierarchy");
                 }
-            }
-
-            // Update the hand motion for the current frame
-            if (handMotion != null && frameIndex < handMotion.Count)
-            {
-                SerializedBoneData handData = handMotion[frameIndex];
-                hand_R.position = handData.position;
-                hand_R.rotation = handData.rotation;
             }
 
             yield return new WaitForSeconds(1f / 20f);
@@ -233,16 +226,27 @@ public class GesturePlayback : MonoBehaviour
         Vector3 initialPosition = finger.localPosition;
         Vector3 targetPosition = initialPosition + positionChange;
 
+        // Loop until the elapsed time reaches the specified duration
         while (elapsedTime < duration)
         {
+            // Increment the elapsed time by the time passed since the last frame
             elapsedTime += Time.deltaTime;
+
+            // Calculate the interpolation factor for Lerp (t) based on the elapsed time and duration
             float t = Mathf.Clamp01(elapsedTime / duration);
+
+            // Interpolate the finger's position between the initial position and the target position
             finger.localPosition = Vector3.Lerp(initialPosition, targetPosition, t);
+
+            // Wait for the next frame
             yield return null;
         }
 
+        // Ensure the finger's position is set to the target position after the loop ends
         finger.localPosition = targetPosition;
     }
+
+
 
     // For euler angles
     private float WrapAngle(float angle)
