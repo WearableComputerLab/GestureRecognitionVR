@@ -174,70 +174,76 @@ public class GesturePlayback : MonoBehaviour
 
 
     // Coroutine to Playback Motion gestureDetect.gestures on the hand model
-    /*IEnumerator PlayGestureCoroutine(List<SerializedBoneData> bone, List<Vector3> handMotionFrames)
+    private IEnumerator PlayGestureCoroutine(List<Dictionary<string, SerializedBoneData>> fingerMotion, List<SerializedBoneData> handMotion)
     {
-        for (int frameIndex = 0; frameIndex < handMotionFrames.Count; frameIndex++)
+        for (int frameIndex = 0; frameIndex < fingerMotion.Count; frameIndex++)
         {
-            Vector3 handPosition = handMotionFrames[frameIndex];
+            // Get the finger data for the current frame
+            Dictionary<string, SerializedBoneData> frameData = fingerMotion[frameIndex];
 
-            // Update the hand position
-            handModel.transform.position = handPosition;
-
-            foreach (KeyValuePair<string, List<GestureDetect.SerializedFingerData>> fingerDataEntry in fingerDataFrames)
+            // Iterate over each finger in the frame data
+            foreach ((string fingerName, SerializedBoneData bone) in frameData)
             {
-                // Retrieve the finger name directly from the dictionary
-                string fingerName = fingerDataEntry.Key;
-
-                // Find the finger transform in the hand model
-                Transform finger = handModel.transform.Find(fingerName);
+                // Find the finger transform in the hand model hierarchy
+                Transform finger = FindFingerTransform(hand_R, fingerName);
 
                 if (finger != null)
                 {
-                    // Retrieve the finger positions and rotations for the current frame
-                    List<GestureDetect.SerializedFingerData> fingerDataFramesList = fingerDataEntry.Value;
-                    Dictionary<string, GestureDetect.SerializedFingerData> fingerData = fingerDataFramesList[frameIndex];
-
-                    // Not actually getting "rotation" data here, 
-                    // key "rotation" is used to access the corresponding GestureDetect.SerializedFingerData object from the fingerData dictionary.
-                    List<GestureDetect.SerializedBoneData> boneDataList = fingerData["rotation"].boneData;
-
-                    // Check if the number of finger positions matches the number of finger bones
-                    if (boneDataList.Count == finger.childCount)
+                    // Ensure the finger has a parent transform
+                    if (finger.parent != null)
                     {
-                        // Update the finger bone positions and rotations
-                        for (int boneIndex = 0; boneIndex < finger.childCount; boneIndex++)
-                        {
-                            Transform bone = finger.GetChild(boneIndex);
-                            string boneName = bone.gameObject.name;
+                        // Transform the bone position from world space to local space of the finger's parent
+                        Vector3 localPosition = finger.parent.InverseTransformPoint(bone.position);
 
-                            // Retrieve the bone data for the current frame
-                            GestureDetect.SerializedBoneData boneData = boneDataList[boneIndex];
+                        // Calculate the change in position based on the default bone position
+                        Vector3 positionChange = localPosition - finger.localPosition;
 
-                            // Set the local position of the finger bone
-                            bone.localPosition = boneData.position;
-
-                            // Set the local rotation of the finger bone
-                            Quaternion rotation = GetReferenceRotationForBone(boneName) * boneData.rotation;
-                            bone.localRotation = rotation;
-                        }
+                        // Set the finger's position using Lerp for smooth interpolation
+                        StartCoroutine(MoveFingerCoroutine(finger, positionChange, 1f / 20f));
                     }
                     else
                     {
-                        Debug.LogWarning("Incorrect number of finger positions in the current gesture frame for finger: " + fingerName);
+                        Debug.LogWarning("Finger '" + fingerName + "' does not have a parent transform.");
                     }
+
+                    finger.localRotation = bone.rotation;
                 }
                 else
                 {
-                    Debug.LogWarning("Unable to find finger: " + fingerName);
+                    Debug.LogWarning("Finger '" + fingerName + "' not found in the hand model hierarchy");
                 }
             }
 
-            // Wait for a short duration before proceeding to the next frame
-            yield return new WaitForSeconds(0.02f);
+            // Update the hand motion for the current frame
+            if (handMotion != null && frameIndex < handMotion.Count)
+            {
+                SerializedBoneData handData = handMotion[frameIndex];
+                hand_R.position = handData.position;
+                hand_R.rotation = handData.rotation;
+            }
+
+            yield return new WaitForSeconds(1f / 20f);
         }
     }
-*/
-   
+
+    // Coroutine for moving each individual finger with Lerp during motion gesture playback
+    private IEnumerator MoveFingerCoroutine(Transform finger, Vector3 positionChange, float duration)
+    {
+        float elapsedTime = 0f;
+        Vector3 initialPosition = finger.localPosition;
+        Vector3 targetPosition = initialPosition + positionChange;
+
+        while (elapsedTime < duration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsedTime / duration);
+            finger.localPosition = Vector3.Lerp(initialPosition, targetPosition, t);
+            yield return null;
+        }
+
+        finger.localPosition = targetPosition;
+    }
+
     // For euler angles
     private float WrapAngle(float angle)
     {

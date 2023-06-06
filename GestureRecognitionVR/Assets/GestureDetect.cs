@@ -31,7 +31,7 @@ public struct Gesture
 
     public UnityEvent onRecognized;
 
-    public Gesture(string gestureName, Dictionary<string, SerializedBoneData> fingerData, List<Dictionary< string, SerializedBoneData>> fingerMotion, List<SerializedBoneData> handMotion, UnityAction func)
+    public Gesture(string gestureName, Dictionary<string, SerializedBoneData> fingerData, List<Dictionary<string, SerializedBoneData>> fingerMotion, List<SerializedBoneData> handMotion, UnityAction func)
     {
         this.name = gestureName;
         this.fingerData = fingerData;
@@ -463,6 +463,17 @@ public class GestureDetect : MonoBehaviour
 
     // Check if current hand gesture is a recorded gesture. NOTE: NOT TESTED
     // velocityWeight allows us to finetune how sensitive recognition is concerning speed of gesture performance, could use detectionThreshold instead?
+
+    /*
+      Start by iterating over each gesture, both motion and static gestures.
+      For each gesture, compare the first frame of the recorded motion data with the current frame being played.
+      If there is a match, store a counter or a progression value to represent your progression through that specific gesture.
+      If no motion gesture matches, proceed to check static gestures.
+      For subsequent frames, compare the next frame of the recorded motion data with the current frame being played.
+      If there is a match, increment the counter or progression value for the corresponding motion gesture.       
+      If the current or next frame doesn't match the recorded motion data, reset the counter or progression value and continue checking for other gestures.
+   */
+
     private float velocityWeight = 0.5f;
     Gesture? Recognize()
     {
