@@ -374,7 +374,8 @@ public class NameGesture : State
         GestureDetect.Instance.appVoiceExperience.Deactivate();
         StateMachine.Instance.appVoiceExperienceName.Activate();
         Debug.Log("What would you like to name this gesture?");
-        StateMachine.Instance.OpenKeyboard();
+        //StateMachine.Instance.OpenKeyboard();
+        TNVirtualKeyboard.instance.ShowVirtualKeyboard();
         yield break;
     }
 
@@ -400,8 +401,8 @@ public class NameGesture : State
                 else
                 {
                     //GestureDetect.Instance.userInput = StateMachine.Instance.keyboard.text;
-                    GestureDetect.Instance.userInput = "fuck";
-                    break;
+                    /*GestureDetect.Instance.userInput = "fuck";
+                    break;*/
                 }
             }
             else
