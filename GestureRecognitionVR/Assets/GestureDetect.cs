@@ -434,62 +434,56 @@ public class GestureDetect : MonoBehaviour
 
     Gesture? Recognize()
     {
-        //Debug.Log("starting recog");
-
         Gesture? currentGesture = null;
         float currentMin = Mathf.Infinity;
+        int motionCounter = 0;
 
         foreach (KeyValuePair<string, Gesture> kvp in gestures)
         {
+            Gesture gesture = kvp.Value;
+
             float sumDistance = 0;
             bool discard = false;
+            bool isMotionGesture = kvp.Value.fingerData.Count > 1;
 
-            // Check if the gesture data exists for the current gesture
-            bool gestureDataExists = false;
-            foreach (var gestureData in kvp.Value.fingerData)
+            // Check if it's a motion gesture and reset the motion counter
+            if (isMotionGesture)
             {
-                if (gestureData.ContainsKey(handToRecord.name))
-                {
-                    Debug.Log("data do exist");
-                    gestureDataExists = true;
-                    break;
-                }
+                motionCounter = 0;
             }
 
-            if (!gestureDataExists)
-            {
-                continue;
-            }
-
-            // Iterate over each frame of the gesture data
-            foreach (var frameData in kvp.Value.fingerData)
+            // Iterate over each frame of the gesture's fingerData
+            foreach (var frameData in gesture.fingerData)
             {
                 // Get the finger data for the current frame
                 Dictionary<string, SerializedBoneData> gestureFingerData = frameData;
 
-                foreach (KeyValuePair<string, SerializedBoneData> kvp2 in gestureFingerData)
+                // Compare the finger bone positions with the user's current hand
+                for (int i = 0; i < fingerBones.Count; i++)
                 {
-                    string boneName = kvp2.Key;
-                    SerializedBoneData gestureBoneData = kvp2.Value;
+                    string boneName = fingerBones[i].ToString(); //this is always 'OVRBone'
 
                     // Check if the bone name exists in the current frame data
                     if (!gestureFingerData.ContainsKey(boneName))
                     {
+                        //Debug.Log($"Checking bone: {boneName}");
                         discard = true;
                         break;
                     }
 
-                    SerializedBoneData frameBoneData = gestureFingerData[boneName];
+                    SerializedBoneData gestureBoneData = gestureFingerData[boneName];
+                    Vector3 currentBonePosition = handToRecord.transform.InverseTransformPoint(fingerBones[i].Transform.position);
 
-                    // Compare the bone positions and rotations
-                    if (!CompareBoneData(frameBoneData, gestureBoneData))
+                    // Calculate the distance between the current frame data and the user's current hand position
+                    float distance = Vector3.Distance(currentBonePosition, gestureBoneData.position);
+
+                    // Check if the distance exceeds the detection threshold
+                    if (distance > detectionThreshold)
                     {
                         discard = true;
                         break;
                     }
 
-                    // Calculate the distance between the current frame data and gesture data
-                    float distance = Vector3.Distance(frameBoneData.position, gestureBoneData.position);
                     sumDistance += distance;
                 }
 
@@ -497,9 +491,32 @@ public class GestureDetect : MonoBehaviour
                 {
                     break;
                 }
+
+                // If it's a motion gesture, compare the frames and update the motion counter
+                if (isMotionGesture)
+                {
+                    if (motionCounter < kvp.Value.fingerData.Count)
+                    {
+                        Dictionary<string, SerializedBoneData> motionFrameData = kvp.Value.fingerData[motionCounter];
+                        if (MatchMotionFrameData(frameData, motionFrameData))
+                        {
+                            motionCounter++;
+                        }
+                        else
+                        {
+                            motionCounter = 0;
+                        }
+                    }
+                    else
+                    {
+                        // Motion gesture has been matched completely
+                        currentGesture = kvp.Value;
+                        break;
+                    }
+                }
             }
 
-            if (!discard && sumDistance < currentMin)
+            if (!discard && sumDistance < currentMin && !isMotionGesture)
             {
                 currentMin = sumDistance;
                 currentGesture = kvp.Value;
@@ -510,93 +527,53 @@ public class GestureDetect : MonoBehaviour
     }
 
 
+    private bool MatchMotionFrameData(Dictionary<string, SerializedBoneData> frameData, Dictionary<string, SerializedBoneData> motionFrameData)
+    {
+        Debug.Log("In MatchMotion method");
+        foreach (KeyValuePair<string, SerializedBoneData> kvp in motionFrameData)
+        {
+            string boneName = kvp.Key;
+            SerializedBoneData motionBoneData = kvp.Value;
+
+            // Check if the bone name exists in the current frame data
+            if (!frameData.ContainsKey(boneName))
+            {
+                return false;
+            }
+
+            SerializedBoneData frameBoneData = frameData[boneName];
+
+            // Compare the bone positions and rotations
+            if (!CompareBoneData(frameBoneData, motionBoneData))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
+
     // Compares the position and rotation values of two bones against detectionThreshold
     private bool CompareBoneData(SerializedBoneData boneData1, SerializedBoneData boneData2)
     {
         // Compare the bone positions
         if (Vector3.Distance(boneData1.position, boneData2.position) > detectionThreshold)
         {
+            Debug.Log("position dont match");
             return false;
         }
 
         // Compare the bone rotations
         if (Quaternion.Angle(boneData1.rotation, boneData2.rotation) > detectionThreshold)
         {
+            Debug.Log("rotation dont match");
             return false;
         }
 
+        //Debug.Log("bone match"); this is constantly logging
         return true;
-    }
-
-
-    // Checks to see if the current gesture matches saved static gesture
-    private bool MatchStaticGesture(Gesture gesture)
-    {
-        Dictionary<string, SerializedBoneData> gestureData = gesture.fingerData[0];
-
-        foreach (KeyValuePair<string, SerializedBoneData> kvp in gestureData)
-        {
-            string boneName = kvp.Key;
-            SerializedBoneData gestureBoneData = kvp.Value;
-
-            // Check if the bone name exists in the frame data
-            if (!gesture.fingerData[0].ContainsKey(boneName))
-            {
-                return false;
-            }
-
-            SerializedBoneData frameBoneData = gesture.fingerData[0][boneName];
-
-            // Compare the bone positions and rotations
-            if (!CompareBoneData(frameBoneData, gestureBoneData))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-
-
-    // Checks to see if current gesture is matching a saved motion gesture
-    private bool MatchMotionGesture(Gesture gesture)
-    {
-        // Iterate over each frame of the motion gesture
-        foreach (Dictionary<string, SerializedBoneData> motionFrame in gesture.fingerData)
-        {
-            bool match = true;
-
-            // Iterate over each finger bone in the frame data
-            foreach (KeyValuePair<string, SerializedBoneData> kvp in motionFrame)
-            {
-                string boneName = kvp.Key;
-                SerializedBoneData motionBoneData = kvp.Value;
-
-                // Check if the bone name exists in the current frame data
-                if (!gesture.fingerData[0].ContainsKey(boneName)) //why 0 here?
-                {
-                    match = false;
-                    break;
-                }
-
-                SerializedBoneData frameBoneData = gesture.fingerData[0][boneName];
-
-                // Compare the bone positions and rotations
-                if (!CompareBoneData(frameBoneData, motionBoneData))
-                {
-                    match = false;
-                    break;
-                }
-            }
-
-            if (match)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
 }
