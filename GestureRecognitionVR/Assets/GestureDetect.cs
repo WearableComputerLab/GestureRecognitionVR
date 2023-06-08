@@ -72,7 +72,7 @@ public class GestureDetect : MonoBehaviour
     [Header("Recording")][SerializeField] private OVRSkeleton handToRecord;
     // NOTE: fingerBones is currently including all 24 bones in the hand
     private List<OVRBone> fingerBones = new List<OVRBone>();
-    private float recordingTime = 0.01f; //set recording time default to 0.01 second (one frame, user should be able to change this)
+    private float recordingTime = 1f; //set recording time default to 0.01 second (one frame, user should be able to change this)
 
     //Keep track of which Gesture was most recently recognized
     private Gesture? currentGesture;
@@ -431,7 +431,8 @@ public class GestureDetect : MonoBehaviour
       For subsequent frames, compare the next frame of the recorded motion data with the current frame being played.
       If there is a match, increment the counter or progression value for the corresponding motion gesture.       
       If the current or next frame doesn't match the recorded motion data, reset the counter or progression value and continue checking for other gestures.
-   */
+   */ // Possibly use motionThreshold variable to accept gesture as recognized easier? OR change detectionThreshold when detecting motion.
+      // and what about whole hand world position?
 
     Gesture? Recognize()
     {
@@ -475,7 +476,7 @@ public class GestureDetect : MonoBehaviour
                     // Check if the bone name exists in the current frame data and in the user's hand bone data
                     if (!frameData.ContainsKey(boneName) || !fingerBonesDict.ContainsKey(boneName))
                     {
-                        Debug.Log($"Bone: {boneName} not found in gesture or user's hand");
+                        //Debug.Log($"Bone: {boneName} not found in gesture or user's hand");
                         discard = true;
                         break;
                     }
@@ -518,7 +519,20 @@ public class GestureDetect : MonoBehaviour
                 // If it's a motion gesture, compare the frames and update the motion counter
                 if (isMotionGesture)
                 {
-                    if (motionCounter < kvp.Value.fingerData.Count)
+                    detectionThresholdPosition = 0.5f;
+                    detectionThresholdRotation = 20f;
+                    //Debug.Log($"Counter: {motionCounter}");
+                    //Debug.Log($"Gesture length: {kvp.Value.fingerData.Count}");
+                    int motionGestureThreshold = Mathf.CeilToInt(kvp.Value.fingerData.Count * 0.5f);
+                   // Debug.Log($"Threshold: {motionGestureThreshold}");
+
+                    if (motionCounter >= motionGestureThreshold)
+                    {
+                        // Motion gesture has been matched completely
+                        currentGesture = kvp.Value;
+                        return currentGesture;
+                    }
+                    else if (motionCounter < kvp.Value.fingerData.Count)
                     {
                         Dictionary<string, SerializedBoneData> motionFrameData = kvp.Value.fingerData[motionCounter];
                         if (MatchMotionFrameData(frameData, motionFrameData))
@@ -530,12 +544,7 @@ public class GestureDetect : MonoBehaviour
                             motionCounter = 0;
                         }
                     }
-                    else
-                    {
-                        // Motion gesture has been matched completely
-                        currentGesture = kvp.Value;
-                        break;
-                    }
+
                 }
             }
 
@@ -548,6 +557,7 @@ public class GestureDetect : MonoBehaviour
 
         return currentGesture;
     }
+
 
     private bool MatchMotionFrameData(Dictionary<string, SerializedBoneData> frameData, Dictionary<string, SerializedBoneData> motionFrameData)
     {
