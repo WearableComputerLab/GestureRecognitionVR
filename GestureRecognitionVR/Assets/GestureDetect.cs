@@ -58,8 +58,8 @@ public class GestureDetect : MonoBehaviour
     private int currentGestureIndex = 0;
     public GesturePlayback gesturePlayback;
 
-    // Set detectionThreshold. Smaller threshold = more precise hand detection. Set to 0.5.
-    [SerializeField] private float detectionThreshold = 0.5f;
+    // Set detectionThreshold. Smaller threshold = more precise hand detection. Set to 0.5. (Was [SerializeField])
+    private float detectionThreshold = 0.5f;
 
     // Hands to record
     [SerializeField] private OVRSkeleton[] hands;
@@ -220,7 +220,7 @@ public class GestureDetect : MonoBehaviour
             if (handToRecord != null && handToRecord.Bones != null && handToRecord.Bones.Count > 0)
             {
                 // Need every bone in hand to determine local position of fingers
-                fingerBones = handToRecord.Bones.ToList();
+                fingerBones = new List<OVRBone>(handToRecord.Bones);
             }
             else
             {
@@ -438,6 +438,17 @@ public class GestureDetect : MonoBehaviour
         float currentMin = Mathf.Infinity;
         int motionCounter = 0;
 
+        // Create a dictionary to store finger bones by their bone names (a snapshot of the current position of users hand)
+        Dictionary<string, OVRBone> fingerBonesDict = new Dictionary<string, OVRBone>();
+
+        // Populate the fingerBonesDict dictionary with all bones in current hand
+        foreach (OVRBone bone in fingerBones)
+        {
+            string boneName = bone.Id.ToString();
+            fingerBonesDict[boneName] = bone;
+        }
+
+        // Going through each saved Gesture
         foreach (KeyValuePair<string, Gesture> kvp in gestures)
         {
             Gesture gesture = kvp.Value;
@@ -455,31 +466,41 @@ public class GestureDetect : MonoBehaviour
             // Iterate over each frame of the gesture's fingerData
             foreach (var frameData in gesture.fingerData)
             {
-                // Get the finger data for the current frame
-                Dictionary<string, SerializedBoneData> gestureFingerData = frameData;
-
+                
                 // Compare the finger bone positions with the user's current hand
-                for (int i = 0; i < fingerBones.Count; i++)
+                foreach (var boneEntry in frameData)
                 {
-                    string boneName = fingerBones[i].ToString(); //this is always 'OVRBone'
+                    string boneName = boneEntry.Key; 
 
-                    // Check if the bone name exists in the current frame data
-                    if (!gestureFingerData.ContainsKey(boneName))
+                    // Check if the bone name exists in the current frame data and in the user's hand bone data
+                    if (!frameData.ContainsKey(boneName) || !fingerBonesDict.ContainsKey(boneName))
                     {
-                        //Debug.Log($"Checking bone: {boneName}");
+                        Debug.Log($"Bone: {boneName} not found in gesture or user's hand");
                         discard = true;
                         break;
+                    }                    
+
+                    // Get the position of the saved bone and the position of the corresponding bone from the user's hand
+                    SerializedBoneData gestureBoneData = boneEntry.Value;
+                    Vector3 currentBonePosition = handToRecord.transform.InverseTransformPoint(fingerBonesDict[boneName].Transform.position);
+
+                    if(boneName == "Hand_Index3")
+                    {
+                        Debug.Log(boneName);
+                        Debug.Log($"Saved Position: {gestureBoneData.position}");
+                        Debug.Log($"Saved Rotation: {gestureBoneData.rotation.eulerAngles}");
+                        Debug.Log($"Current Position: {currentBonePosition}");
+                        Debug.Log($"Current Rotation: {handToRecord.transform.InverseTransformPoint(fingerBonesDict[boneName].Transform.rotation.eulerAngles)}");
                     }
-
-                    SerializedBoneData gestureBoneData = gestureFingerData[boneName];
-                    Vector3 currentBonePosition = handToRecord.transform.InverseTransformPoint(fingerBones[i].Transform.position);
-
+                                     
                     // Calculate the distance between the current frame data and the user's current hand position
                     float distance = Vector3.Distance(currentBonePosition, gestureBoneData.position);
+                    //Debug.Log(distance);
 
                     // Check if the distance exceeds the detection threshold
                     if (distance > detectionThreshold)
                     {
+                        Debug.Log($"Distance {distance} is larger than threshold {detectionThreshold}"); 
                         discard = true;
                         break;
                     }
@@ -525,6 +546,7 @@ public class GestureDetect : MonoBehaviour
 
         return currentGesture;
     }
+
 
 
     private bool MatchMotionFrameData(Dictionary<string, SerializedBoneData> frameData, Dictionary<string, SerializedBoneData> motionFrameData)
