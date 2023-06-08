@@ -59,7 +59,8 @@ public class GestureDetect : MonoBehaviour
     public GesturePlayback gesturePlayback;
 
     // Set detectionThreshold. Smaller threshold = more precise hand detection. Set to 0.5. (Was [SerializeField])
-    private float detectionThreshold = 0.5f;
+    private float detectionThresholdPosition = 0.5f;
+    private float detectionThresholdRotation = 10f;
 
     // Hands to record
     [SerializeField] private OVRSkeleton[] hands;
@@ -438,10 +439,10 @@ public class GestureDetect : MonoBehaviour
         float currentMin = Mathf.Infinity;
         int motionCounter = 0;
 
-        // Create a dictionary to store finger bones by their bone names (a snapshot of the current position of users hand)
+        // Create a dictionary to store finger bones by their bone names (a snapshot of the current position of the user's hand)
         Dictionary<string, OVRBone> fingerBonesDict = new Dictionary<string, OVRBone>();
 
-        // Populate the fingerBonesDict dictionary with all bones in current hand
+        // Populate the fingerBonesDict dictionary with all bones in the current hand
         foreach (OVRBone bone in fingerBones)
         {
             string boneName = bone.Id.ToString();
@@ -466,8 +467,7 @@ public class GestureDetect : MonoBehaviour
             // Iterate over each frame of the gesture's fingerData
             foreach (var frameData in gesture.fingerData)
             {
-
-                // Compare the finger bone positions with the user's current hand
+                // Compare the finger bone positions and rotations with the user's current hand
                 foreach (var boneEntry in frameData)
                 {
                     string boneName = boneEntry.Key;
@@ -480,24 +480,34 @@ public class GestureDetect : MonoBehaviour
                         break;
                     }
 
-                    // Get the position of the saved bone and the position of the corresponding bone from the user's hand
+                    // Get the position and rotation of the saved bone from the gesture data
                     SerializedBoneData gestureBoneData = boneEntry.Value;
+                    Vector3 gestureBonePosition = gestureBoneData.position;
+                    Quaternion gestureBoneRotation = gestureBoneData.rotation;
+
+                    // Get the position and rotation of the corresponding bone from the user's hand
                     Vector3 currentBonePosition = fingerBonesDict[boneName].Transform.localPosition;
+                    Quaternion currentBoneRotation = fingerBonesDict[boneName].Transform.localRotation;
 
-                    // Calculate the distance between the current frame data and the user's current hand position
-                    float distance = Vector3.Distance(currentBonePosition, gestureBoneData.position);
-                    // Debug.Log($"currentBonePosition: {currentBonePosition}");
-                    // Debug.Log($"savedBonePosition: {gestureBoneData.position}");
-
-                    // Check if the distance exceeds the detection threshold
-                    if (distance > detectionThreshold)
+                    // Compare the position and rotation of the bones using the CompareBoneData method
+                    if (!CompareBoneData(gestureBonePosition, gestureBoneRotation, currentBonePosition, currentBoneRotation))
                     {
-                        Debug.Log($"Distance {distance} is larger than threshold {detectionThreshold}");
                         discard = true;
                         break;
                     }
 
-                    sumDistance += distance;
+                    // Calculate the distance between the current frame data and the user's current hand position
+                    float positionDistance = Vector3.Distance(currentBonePosition, gestureBonePosition);
+                    float rotationAngle = Quaternion.Angle(currentBoneRotation, gestureBoneRotation);
+
+                    // Check if the position or rotation distance exceeds the detection threshold
+                    if (positionDistance > detectionThresholdPosition || rotationAngle > detectionThresholdRotation)
+                    {
+                        discard = true;
+                        break;
+                    }
+
+                    sumDistance += positionDistance + rotationAngle;
                 }
 
                 if (discard)
@@ -539,11 +549,8 @@ public class GestureDetect : MonoBehaviour
         return currentGesture;
     }
 
-
-
     private bool MatchMotionFrameData(Dictionary<string, SerializedBoneData> frameData, Dictionary<string, SerializedBoneData> motionFrameData)
     {
-        Debug.Log("In MatchMotion method");
         foreach (KeyValuePair<string, SerializedBoneData> kvp in motionFrameData)
         {
             string boneName = kvp.Key;
@@ -557,8 +564,8 @@ public class GestureDetect : MonoBehaviour
 
             SerializedBoneData frameBoneData = frameData[boneName];
 
-            // Compare the bone positions and rotations
-            if (!CompareBoneData(frameBoneData, motionBoneData))
+            // Compare the bone positions and rotations using the CompareBoneData method
+            if (!CompareBoneData(frameBoneData.position, frameBoneData.rotation, motionBoneData.position, motionBoneData.rotation))
             {
                 return false;
             }
@@ -567,28 +574,26 @@ public class GestureDetect : MonoBehaviour
         return true;
     }
 
-
-
     // Compares the position and rotation values of two bones against detectionThreshold
-    private bool CompareBoneData(SerializedBoneData boneData1, SerializedBoneData boneData2)
+    private bool CompareBoneData(Vector3 position1, Quaternion rotation1, Vector3 position2, Quaternion rotation2)
     {
         // Compare the bone positions
-        if (Vector3.Distance(boneData1.position, boneData2.position) > detectionThreshold)
+        if (Vector3.Distance(position1, position2) > detectionThresholdPosition)
         {
-            Debug.Log("position dont match");
+            //Debug.Log("Position don't match");
             return false;
         }
 
         // Compare the bone rotations
-        if (Quaternion.Angle(boneData1.rotation, boneData2.rotation) > detectionThreshold)
+        if (Quaternion.Angle(rotation1, rotation2) > detectionThresholdRotation)
         {
-            Debug.Log("rotation dont match");
+            //Debug.Log("Rotation don't match");
             return false;
         }
 
-        //Debug.Log("bone match"); this is constantly logging
         return true;
     }
+
 
 }
 
