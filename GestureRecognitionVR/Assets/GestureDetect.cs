@@ -466,11 +466,11 @@ public class GestureDetect : MonoBehaviour
             // Iterate over each frame of the gesture's fingerData
             foreach (var frameData in gesture.fingerData)
             {
-                
+
                 // Compare the finger bone positions with the user's current hand
                 foreach (var boneEntry in frameData)
                 {
-                    string boneName = boneEntry.Key; 
+                    string boneName = boneEntry.Key;
 
                     // Check if the bone name exists in the current frame data and in the user's hand bone data
                     if (!frameData.ContainsKey(boneName) || !fingerBonesDict.ContainsKey(boneName))
@@ -478,29 +478,21 @@ public class GestureDetect : MonoBehaviour
                         Debug.Log($"Bone: {boneName} not found in gesture or user's hand");
                         discard = true;
                         break;
-                    }                    
+                    }
 
                     // Get the position of the saved bone and the position of the corresponding bone from the user's hand
                     SerializedBoneData gestureBoneData = boneEntry.Value;
-                    Vector3 currentBonePosition = handToRecord.transform.InverseTransformPoint(fingerBonesDict[boneName].Transform.position);
+                    Vector3 currentBonePosition = fingerBonesDict[boneName].Transform.localPosition;
 
-                    if(boneName == "Hand_Index3")
-                    {
-                        Debug.Log(boneName);
-                        Debug.Log($"Saved Position: {gestureBoneData.position}");
-                        Debug.Log($"Saved Rotation: {gestureBoneData.rotation.eulerAngles}");
-                        Debug.Log($"Current Position: {currentBonePosition}");
-                        Debug.Log($"Current Rotation: {handToRecord.transform.InverseTransformPoint(fingerBonesDict[boneName].Transform.rotation.eulerAngles)}");
-                    }
-                                     
                     // Calculate the distance between the current frame data and the user's current hand position
                     float distance = Vector3.Distance(currentBonePosition, gestureBoneData.position);
-                    //Debug.Log(distance);
+                    // Debug.Log($"currentBonePosition: {currentBonePosition}");
+                    // Debug.Log($"savedBonePosition: {gestureBoneData.position}");
 
                     // Check if the distance exceeds the detection threshold
                     if (distance > detectionThreshold)
                     {
-                        Debug.Log($"Distance {distance} is larger than threshold {detectionThreshold}"); 
+                        Debug.Log($"Distance {distance} is larger than threshold {detectionThreshold}");
                         discard = true;
                         break;
                     }
