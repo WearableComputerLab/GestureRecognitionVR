@@ -93,7 +93,7 @@ public class GesturePlayback : MonoBehaviour
             {
                 // It's a motion gesture
                 Debug.Log("It's a motion gesture");
-                // StartCoroutine(PlayGestureCoroutine(currentGesture.fingerData, currentGesture.motionData));
+                StartCoroutine(PlayGestureCoroutine(currentGesture.fingerData));
             }
             else if (currentGesture.fingerData != null)
             {
@@ -128,7 +128,7 @@ public class GesturePlayback : MonoBehaviour
                                     // Calculate the change in position based on the default bone position
                                     Vector3 positionChange = localPosition - finger.localPosition;
 
-                                    // TODO: Set the finger's position using Lerp for smooth interpolation
+                                    // TODO: Set the finger's position using Lerp for smooth interpolation between Gestures
                                     // finger.localPosition = positionChange;
                                 }
                                 else
@@ -151,8 +151,6 @@ public class GesturePlayback : MonoBehaviour
                                 Debug.LogWarning("Finger '" + boneName + "' not found in the hand model hierarchy");
                             }
                         }
-
-
                     }
 
                     frameIndex++;
@@ -177,60 +175,80 @@ public class GesturePlayback : MonoBehaviour
     }
 
 
-
-
     // Coroutine to Playback Motion gestureDetect.gestures on the hand model
     private IEnumerator PlayGestureCoroutine(List<Dictionary<string, SerializedBoneData>> fingerData)
     {
+        Vector3 initialHandPosition = handModel.transform.position;
+
         for (int frameIndex = 0; frameIndex < fingerData.Count; frameIndex++)
         {
             Dictionary<string, SerializedBoneData> frameData = fingerData[frameIndex];
+
+            // Get the HandPosition from the frame data
+            SerializedBoneData handPositionData = frameData["HandPosition"];
+
+            // Set the hand model's position to match the saved HandPosition
+            handModel.transform.position = handPositionData.position;
 
             foreach (KeyValuePair<string, SerializedBoneData> kvp in frameData)
             {
                 string fingerName = kvp.Key;
                 SerializedBoneData boneData = kvp.Value;
 
-                // Find the finger transform in the hand model hierarchy
-                Transform finger = FindFingerTransform(handModel.transform, fingerName);
-
-                if (finger != null)
+                if (fingerName != "HandPosition")
                 {
-                    // Ensure the finger has a parent transform
-                    if (finger.parent != null)
+                    // Find the finger transform in the hand model hierarchy
+                    Transform finger = FindFingerTransform(handModel.transform, fingerName);
+
+                    if (finger != null)
                     {
-                        // Transform the bone position from world space to local space of the finger's parent
-                        Vector3 localPosition = finger.parent.InverseTransformPoint(boneData.position);
+                        // Ensure the finger has a parent transform
+                        if (finger.parent != null)
+                        {
+                            // Calculate the target position relative to the initial hand position
+                            Vector3 targetPosition = initialHandPosition + boneData.position;
 
-                        // Calculate the change in position based on the default bone position
-                        Vector3 positionChange = localPosition - finger.localPosition;
+                            // Transform the target position from world space to local space of the finger's parent
+                            Vector3 localTargetPosition = finger.parent.InverseTransformPoint(targetPosition);
 
-                        // Set the finger's position using Lerp for smooth interpolation
-                        StartCoroutine(MoveFingerCoroutine(finger, positionChange, 1f / 20f));
+                            // Calculate the position change relative to the finger's current position
+                            Vector3 positionChange = localTargetPosition - finger.localPosition;
+
+                            // Calculate the rotation change relative to the finger's current rotation
+                            Quaternion rotationChange = Quaternion.Inverse(finger.localRotation) * boneData.rotation;
+
+                            // Set the finger's position and rotation using Lerp for smooth interpolation
+                            StartCoroutine(MoveFingerCoroutine(finger, positionChange, rotationChange, 1f / 20f));
+
+                        }
+                        else
+                        {
+                            Debug.LogWarning("Finger '" + fingerName + "' does not have a parent transform.");
+                        }
                     }
                     else
                     {
-                        Debug.LogWarning("Finger '" + fingerName + "' does not have a parent transform.");
+                        Debug.LogWarning("Finger '" + fingerName + "' not found in the hand model hierarchy");
                     }
-
-                    finger.localRotation = boneData.rotation;
-                }
-                else
-                {
-                    Debug.LogWarning("Finger '" + fingerName + "' not found in the hand model hierarchy");
                 }
             }
 
-            yield return new WaitForSeconds(1f / 20f);
+            // Wait for the next frame
+            yield return null;
         }
+
+        // After playing all gestures, reset the hand model's position to the initial hand position
+        handModel.transform.position = initialHandPosition;
     }
 
     // Coroutine for moving each individual finger with Lerp during motion gesture playback
-    private IEnumerator MoveFingerCoroutine(Transform finger, Vector3 positionChange, float duration)
+    private IEnumerator MoveFingerCoroutine(Transform finger, Vector3 positionChange, Quaternion rotationChange, float duration)
     {
         float elapsedTime = 0f;
         Vector3 initialPosition = finger.localPosition;
+        Quaternion initialRotation = finger.localRotation;
         Vector3 targetPosition = initialPosition + positionChange;
+        Quaternion targetRotation = initialRotation * rotationChange;
 
         // Loop until the elapsed time reaches the specified duration
         while (elapsedTime < duration)
@@ -241,16 +259,20 @@ public class GesturePlayback : MonoBehaviour
             // Calculate the interpolation factor for Lerp (t) based on the elapsed time and duration
             float t = Mathf.Clamp01(elapsedTime / duration);
 
-            // Interpolate the finger's position between the initial position and the target position
+            // Interpolate the finger's position and rotation between the initial position/rotation and the target position/rotation
             finger.localPosition = Vector3.Lerp(initialPosition, targetPosition, t);
+            finger.localRotation = Quaternion.Slerp(initialRotation, targetRotation, t);
 
             // Wait for the next frame
             yield return null;
         }
 
-        // Ensure the finger's position is set to the target position after the loop ends
+        // Ensure the finger's position and rotation are set to the target position and rotation after the loop ends
         finger.localPosition = targetPosition;
+        finger.localRotation = targetRotation;
     }
+
+
 
 
 

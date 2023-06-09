@@ -540,7 +540,9 @@ public class GestureDetect : MonoBehaviour
                 {
                     detectionThresholdPosition = 0.5f;
                     detectionThresholdRotation = 20f;
-                    int motionGestureThreshold = Mathf.CeilToInt(kvp.Value.fingerData.Count * 0.5f);
+
+                    // Threshold for how far into a motion gesture before its recognised
+                    int motionGestureThreshold = Mathf.CeilToInt(kvp.Value.fingerData.Count * 0.95f);
 
                     //Debug.Log($"Counter: {motionCounter}");
                     //Debug.Log($"Gesture length: {kvp.Value.fingerData.Count}");
@@ -593,7 +595,9 @@ public class GestureDetect : MonoBehaviour
         SerializedBoneData motionHandData = motionFrameData["HandPosition"];
         Vector3 adjustedHandPosition = currentHandPosition - translationOffset;
 
-        // Debug.Log($"Comparing {adjustedHandPosition}, and {motionHandData.position}");
+        //Debug.Log($"Current Hand Position: {currentHandPosition}");
+        //Debug.Log($"Initial Hand Position: {initialHandPosition}");
+        //Debug.Log($"Translation Offset: {translationOffset}");
 
         if (!CompareHandPosition(adjustedHandPosition, motionHandData.position, detectionThresholdPosition))
         {
@@ -658,8 +662,12 @@ public class GestureDetect : MonoBehaviour
 
     private bool CompareHandPosition(Vector3 handPosition1, Vector3 handPosition2, float detectionThreshold)
     {
-        Debug.Log($"Comparing, {handPosition1}, and {handPosition2}");
         float positionDistance = Vector3.Distance(handPosition1, handPosition2);
+
+        //Debug.Log($"Current Hand Position: {handPosition1}");
+        //Debug.Log($"Motion Hand Position: {handPosition2}");
+        //Debug.Log($"Distance: {positionDistance}");
+
         return positionDistance <= detectionThreshold;
     }
 
