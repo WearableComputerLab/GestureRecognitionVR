@@ -540,9 +540,10 @@ public class GestureDetect : MonoBehaviour
                 {
                     detectionThresholdPosition = 0.5f;
                     detectionThresholdRotation = 20f;
+                    int motionGestureThreshold = Mathf.CeilToInt(kvp.Value.fingerData.Count * 0.5f);
+
                     //Debug.Log($"Counter: {motionCounter}");
                     //Debug.Log($"Gesture length: {kvp.Value.fingerData.Count}");
-                    int motionGestureThreshold = Mathf.CeilToInt(kvp.Value.fingerData.Count * 0.5f);
                     // Debug.Log($"Threshold: {motionGestureThreshold}");
 
                     if (motionCounter >= motionGestureThreshold)
@@ -554,9 +555,7 @@ public class GestureDetect : MonoBehaviour
                     else if (motionCounter < kvp.Value.fingerData.Count)
                     {
                         Dictionary<string, SerializedBoneData> motionFrameData = kvp.Value.fingerData[motionCounter];
-
-                        // Send bone data as well as current whole hand position and initial hand position as offset
-                        if (MatchMotionFrameData(frameData, motionFrameData, hands[2].transform.position, gesture.fingerData[0]["HandPosition"].position))
+                        if (MatchMotionFrameData(frameData, motionFrameData, hands[2].transform.position))
                         {
                             motionCounter++;
                         }
@@ -565,6 +564,8 @@ public class GestureDetect : MonoBehaviour
                             motionCounter = 0;
                         }
                     }
+
+
 
                 }
             }
@@ -580,19 +581,21 @@ public class GestureDetect : MonoBehaviour
     }
 
     // TODO: use HandPosition here to compare whole hand position across frames (introduce offset so position is independent of starting position)
-    private bool MatchMotionFrameData(Dictionary<string, SerializedBoneData> frameData, Dictionary<string, SerializedBoneData> motionFrameData, Vector3 currentHandPosition, Vector3 translationOffset)
+    private bool MatchMotionFrameData(Dictionary<string, SerializedBoneData> frameData, Dictionary<string, SerializedBoneData> motionFrameData, Vector3 currentHandPosition)
     {
-        // Apply the translation offset to the current hand position
+        // Get the initial hand position from the motion frame data
+        Vector3 initialHandPosition = motionFrameData["HandPosition"].position;
+
+        // Calculate the translation offset
+        Vector3 translationOffset = currentHandPosition - initialHandPosition;
+
+        // Compare the hand positions using the adjusted positions
+        SerializedBoneData motionHandData = motionFrameData["HandPosition"];
         Vector3 adjustedHandPosition = currentHandPosition - translationOffset;
 
-        // Compare the adjusted hand position with the motion frame hand position
-        SerializedBoneData motionHandData = motionFrameData["HandPosition"];
-        //Debug.Log($"Current Pos: {hands[2].transform.position}");
-        //Debug.Log($"Saved Pos: {adjustedHandPosition}");
-        // Maybe check for length of motion gesture? and only compare whole position if its over certain length?
+        // Debug.Log($"Comparing {adjustedHandPosition}, and {motionHandData.position}");
 
-        // Compare Hand Positions
-        if (!CompareHandPosition(currentHandPosition, motionHandData.position, detectionThresholdPosition))
+        if (!CompareHandPosition(adjustedHandPosition, motionHandData.position, detectionThresholdPosition))
         {
             return false;
         }
@@ -618,8 +621,11 @@ public class GestureDetect : MonoBehaviour
 
             SerializedBoneData frameBoneData = frameData[boneName];
 
-            // Compare the bone positions and rotations using the CompareBoneData method
-            if (!CompareBoneData(frameBoneData.position, frameBoneData.rotation, motionBoneData.position, motionBoneData.rotation))
+            // Apply the translation offset to the motion bone position
+            Vector3 adjustedBonePosition = frameBoneData.position - translationOffset;
+
+            // Compare the bone positions and rotations using the adjusted positions
+            if (!CompareBoneData(adjustedBonePosition, frameBoneData.rotation, motionBoneData.position, motionBoneData.rotation))
             {
                 return false;
             }
@@ -627,7 +633,6 @@ public class GestureDetect : MonoBehaviour
 
         return true;
     }
-
 
 
 
@@ -653,6 +658,7 @@ public class GestureDetect : MonoBehaviour
 
     private bool CompareHandPosition(Vector3 handPosition1, Vector3 handPosition2, float detectionThreshold)
     {
+        Debug.Log($"Comparing, {handPosition1}, and {handPosition2}");
         float positionDistance = Vector3.Distance(handPosition1, handPosition2);
         return positionDistance <= detectionThreshold;
     }
