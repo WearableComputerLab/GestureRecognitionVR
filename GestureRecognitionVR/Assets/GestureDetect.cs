@@ -589,12 +589,10 @@ public class GestureDetect : MonoBehaviour
         SerializedBoneData motionHandData = motionFrameData["HandPosition"];
         //Debug.Log($"Current Pos: {hands[2].transform.position}");
         //Debug.Log($"Saved Pos: {adjustedHandPosition}");
-        
-
         // Maybe check for length of motion gesture? and only compare whole position if its over certain length?
 
-        // Separate CompareBoneData so that rotation isnt factored?
-        if (!CompareBoneData(adjustedHandPosition, Quaternion.identity, motionHandData.position, motionHandData.rotation))
+        // Compare Hand Positions
+        if (!CompareHandPosition(currentHandPosition, motionHandData.position, detectionThresholdPosition))
         {
             return false;
         }
@@ -652,6 +650,13 @@ public class GestureDetect : MonoBehaviour
 
         return true;
     }
+
+    private bool CompareHandPosition(Vector3 handPosition1, Vector3 handPosition2, float detectionThreshold)
+    {
+        float positionDistance = Vector3.Distance(handPosition1, handPosition2);
+        return positionDistance <= detectionThreshold;
+    }
+
 
 
 }
