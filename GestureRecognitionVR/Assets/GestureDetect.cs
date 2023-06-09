@@ -554,7 +554,9 @@ public class GestureDetect : MonoBehaviour
                     else if (motionCounter < kvp.Value.fingerData.Count)
                     {
                         Dictionary<string, SerializedBoneData> motionFrameData = kvp.Value.fingerData[motionCounter];
-                        if (MatchMotionFrameData(frameData, motionFrameData))
+
+                        // Send bone data as well as current whole hand position and initial hand position as offset
+                        if (MatchMotionFrameData(frameData, motionFrameData, hands[2].transform.position, gesture.fingerData[0]["HandPosition"].position))
                         {
                             motionCounter++;
                         }
@@ -577,12 +579,37 @@ public class GestureDetect : MonoBehaviour
         return currentGesture;
     }
 
-    // TODO: use HandPosition here to compare whole hand position across frames
-    private bool MatchMotionFrameData(Dictionary<string, SerializedBoneData> frameData, Dictionary<string, SerializedBoneData> motionFrameData)
+    // TODO: use HandPosition here to compare whole hand position across frames (introduce offset so position is independent of starting position)
+    private bool MatchMotionFrameData(Dictionary<string, SerializedBoneData> frameData, Dictionary<string, SerializedBoneData> motionFrameData, Vector3 currentHandPosition, Vector3 translationOffset)
     {
+        // Apply the translation offset to the current hand position
+        Vector3 adjustedHandPosition = currentHandPosition - translationOffset;
+
+        // Compare the adjusted hand position with the motion frame hand position
+        SerializedBoneData motionHandData = motionFrameData["HandPosition"];
+        //Debug.Log($"Current Pos: {hands[2].transform.position}");
+        //Debug.Log($"Saved Pos: {adjustedHandPosition}");
+        
+
+        // Maybe check for length of motion gesture? and only compare whole position if its over certain length?
+
+        // Separate CompareBoneData so that rotation isnt factored?
+        if (!CompareBoneData(adjustedHandPosition, Quaternion.identity, motionHandData.position, motionHandData.rotation))
+        {
+            return false;
+        }
+
+        // Compare the bone positions and rotations
         foreach (KeyValuePair<string, SerializedBoneData> kvp in motionFrameData)
         {
             string boneName = kvp.Key;
+
+            // Skip the hand position bone
+            if (boneName == "HandPosition")
+            {
+                continue;
+            }
+
             SerializedBoneData motionBoneData = kvp.Value;
 
             // Check if the bone name exists in the current frame data
@@ -602,6 +629,9 @@ public class GestureDetect : MonoBehaviour
 
         return true;
     }
+
+
+
 
     // Compares the position and rotation values of two bones against detectionThreshold
     private bool CompareBoneData(Vector3 position1, Quaternion rotation1, Vector3 position2, Quaternion rotation2)
