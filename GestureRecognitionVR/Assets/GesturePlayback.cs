@@ -114,39 +114,45 @@ public class GesturePlayback : MonoBehaviour
                         // Find the finger transform in the hand model hierarchy
                         Transform finger = FindFingerTransform(hand_R, boneName);
 
-                        if (finger != null)
+                        // Ignore whole hand position while going through bones
+                        if (boneName != "HandPosition")
                         {
-                            // Ensure the finger has a parent transform
-                            if (finger.parent != null)
+                            if (finger != null)
                             {
-                                // Transform the bone position from world space to local space of the finger's parent
-                                Vector3 localPosition = finger.parent.InverseTransformPoint(boneData.position);
+                                // Ensure the finger has a parent transform
+                                if (finger.parent != null)
+                                {
+                                    // Transform the bone position from world space to local space of the finger's parent
+                                    Vector3 localPosition = finger.parent.InverseTransformPoint(boneData.position);
 
-                                // Calculate the change in position based on the default bone position
-                                Vector3 positionChange = localPosition - finger.localPosition;
+                                    // Calculate the change in position based on the default bone position
+                                    Vector3 positionChange = localPosition - finger.localPosition;
 
-                                // TODO: Set the finger's position using Lerp for smooth interpolation
-                                // finger.localPosition = positionChange;
+                                    // TODO: Set the finger's position using Lerp for smooth interpolation
+                                    // finger.localPosition = positionChange;
+                                }
+                                else
+                                {
+                                    Debug.LogWarning("Finger '" + boneName + "' does not have a parent transform.");
+                                }
+
+                                finger.localPosition = boneData.position;
+
+                                Vector3 wrappedEulerAngles = new Vector3(
+                                    WrapAngle(boneData.rotation.eulerAngles.x),
+                                    WrapAngle(boneData.rotation.eulerAngles.y),
+                                    WrapAngle(boneData.rotation.eulerAngles.z)
+                                );
+
+                                finger.localEulerAngles = wrappedEulerAngles;
                             }
                             else
                             {
-                                Debug.LogWarning("Finger '" + boneName + "' does not have a parent transform.");
+                                Debug.LogWarning("Finger '" + boneName + "' not found in the hand model hierarchy");
                             }
-
-                            finger.localPosition = boneData.position;
-
-                            Vector3 wrappedEulerAngles = new Vector3(
-                                WrapAngle(boneData.rotation.eulerAngles.x),
-                                WrapAngle(boneData.rotation.eulerAngles.y),
-                                WrapAngle(boneData.rotation.eulerAngles.z)
-                            );
-
-                            finger.localEulerAngles = wrappedEulerAngles;
                         }
-                        else
-                        {
-                            Debug.LogWarning("Finger '" + boneName + "' not found in the hand model hierarchy");
-                        }
+
+
                     }
 
                     frameIndex++;
