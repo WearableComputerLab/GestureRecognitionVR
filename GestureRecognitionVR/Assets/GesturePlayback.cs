@@ -179,6 +179,7 @@ public class GesturePlayback : MonoBehaviour
     private IEnumerator PlayGestureCoroutine(List<Dictionary<string, SerializedBoneData>> fingerData)
     {
         Vector3 initialHandPosition = handModel.transform.position;
+        Quaternion initialHandRotation = handModel.transform.rotation;
 
         for (int frameIndex = 0; frameIndex < fingerData.Count; frameIndex++)
         {
@@ -187,8 +188,9 @@ public class GesturePlayback : MonoBehaviour
             // Get the HandPosition from the frame data
             SerializedBoneData handPositionData = frameData["HandPosition"];
 
-            // Set the hand model's position to match the saved HandPosition
+            // Set the hand model's position and rotation to match the saved HandPosition
             handModel.transform.position = handPositionData.position;
+            handModel.transform.rotation = handPositionData.rotation;
 
             foreach (KeyValuePair<string, SerializedBoneData> kvp in frameData)
             {
@@ -205,8 +207,8 @@ public class GesturePlayback : MonoBehaviour
                         // Ensure the finger has a parent transform
                         if (finger.parent != null)
                         {
-                            // Calculate the target position relative to the initial hand position
-                            Vector3 targetPosition = initialHandPosition + boneData.position;
+                            // Calculate the target position relative to the finger's parent
+                            Vector3 targetPosition = finger.parent.TransformPoint(boneData.position);
 
                             // Transform the target position from world space to local space of the finger's parent
                             Vector3 localTargetPosition = finger.parent.InverseTransformPoint(targetPosition);
@@ -214,12 +216,12 @@ public class GesturePlayback : MonoBehaviour
                             // Calculate the position change relative to the finger's current position
                             Vector3 positionChange = localTargetPosition - finger.localPosition;
 
-                            // Calculate the rotation change relative to the finger's current rotation
-                            Vector3 rotationChange = boneData.rotation.eulerAngles - finger.localEulerAngles;
+                            // Calculate the target rotation relative to the finger's current rotation
+                            Vector3 targetRotation = boneData.rotation.eulerAngles;
+                            Vector3 rotationChange = targetRotation - finger.localEulerAngles;
 
                             // Set the finger's position and rotation using Lerp for smooth interpolation
                             StartCoroutine(MoveFingerCoroutine(finger, positionChange, rotationChange, 1f / 20f));
-
                         }
                         else
                         {
@@ -237,9 +239,13 @@ public class GesturePlayback : MonoBehaviour
             yield return null;
         }
 
-        // After playing all gestures, reset the hand model's position to the initial hand position
+        // After playing all gestures, reset the hand model's position and rotation to the initial values
         handModel.transform.position = initialHandPosition;
+        handModel.transform.rotation = initialHandRotation;
     }
+
+
+
 
 
     // Coroutine for moving each individual finger with Lerp during motion gesture playback
@@ -247,9 +253,9 @@ public class GesturePlayback : MonoBehaviour
     {
         float elapsedTime = 0f;
         Vector3 initialPosition = finger.localPosition;
-        Vector3 initialRotation = finger.localEulerAngles;
-        Vector3 targetPosition = initialPosition + positionChange;
-        Vector3 targetRotation = initialRotation + rotationChange;
+        Quaternion initialRotation = finger.localRotation;
+        Vector3 targetPosition = finger.localPosition + positionChange;
+        Quaternion targetRotation = Quaternion.Euler(finger.localEulerAngles + rotationChange);
 
         // Loop until the elapsed time reaches the specified duration
         while (elapsedTime < duration)
@@ -262,7 +268,7 @@ public class GesturePlayback : MonoBehaviour
 
             // Interpolate the finger's position and rotation between the initial position/rotation and the target position/rotation
             finger.localPosition = Vector3.Lerp(initialPosition, targetPosition, t);
-            finger.localEulerAngles = Vector3.Lerp(initialRotation, targetRotation, t);
+            finger.localRotation = Quaternion.Lerp(initialRotation, targetRotation, t);
 
             // Wait for the next frame
             yield return null;
@@ -270,8 +276,11 @@ public class GesturePlayback : MonoBehaviour
 
         // Ensure the finger's position and rotation are set to the target position and rotation after the loop ends
         finger.localPosition = targetPosition;
-        finger.localEulerAngles = targetRotation;
+        finger.localRotation = targetRotation;
     }
+
+
+
 
 
 
