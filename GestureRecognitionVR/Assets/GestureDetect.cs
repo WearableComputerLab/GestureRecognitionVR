@@ -538,11 +538,11 @@ public class GestureDetect : MonoBehaviour
                 // If it's a motion gesture, compare the frames and update the motion counter
                 if (isMotionGesture)
                 {
-                    detectionThresholdPosition = 0.5f;
+                    detectionThresholdPosition = 1f;
                     detectionThresholdRotation = 20f;
 
                     // Threshold for how far into a motion gesture before its recognised
-                    int motionGestureThreshold = Mathf.CeilToInt(kvp.Value.fingerData.Count * 0.95f);
+                    int motionGestureThreshold = Mathf.CeilToInt(kvp.Value.fingerData.Count * 0.9f);
 
                     //Debug.Log($"Counter: {motionCounter}");
                     //Debug.Log($"Gesture length: {kvp.Value.fingerData.Count}");

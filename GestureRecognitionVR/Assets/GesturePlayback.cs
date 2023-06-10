@@ -215,7 +215,7 @@ public class GesturePlayback : MonoBehaviour
                             Vector3 positionChange = localTargetPosition - finger.localPosition;
 
                             // Calculate the rotation change relative to the finger's current rotation
-                            Quaternion rotationChange = Quaternion.Inverse(finger.localRotation) * boneData.rotation;
+                            Vector3 rotationChange = boneData.rotation.eulerAngles - finger.localEulerAngles;
 
                             // Set the finger's position and rotation using Lerp for smooth interpolation
                             StartCoroutine(MoveFingerCoroutine(finger, positionChange, rotationChange, 1f / 20f));
@@ -241,14 +241,15 @@ public class GesturePlayback : MonoBehaviour
         handModel.transform.position = initialHandPosition;
     }
 
+
     // Coroutine for moving each individual finger with Lerp during motion gesture playback
-    private IEnumerator MoveFingerCoroutine(Transform finger, Vector3 positionChange, Quaternion rotationChange, float duration)
+    private IEnumerator MoveFingerCoroutine(Transform finger, Vector3 positionChange, Vector3 rotationChange, float duration)
     {
         float elapsedTime = 0f;
         Vector3 initialPosition = finger.localPosition;
-        Quaternion initialRotation = finger.localRotation;
+        Vector3 initialRotation = finger.localEulerAngles;
         Vector3 targetPosition = initialPosition + positionChange;
-        Quaternion targetRotation = initialRotation * rotationChange;
+        Vector3 targetRotation = initialRotation + rotationChange;
 
         // Loop until the elapsed time reaches the specified duration
         while (elapsedTime < duration)
@@ -261,7 +262,7 @@ public class GesturePlayback : MonoBehaviour
 
             // Interpolate the finger's position and rotation between the initial position/rotation and the target position/rotation
             finger.localPosition = Vector3.Lerp(initialPosition, targetPosition, t);
-            finger.localRotation = Quaternion.Slerp(initialRotation, targetRotation, t);
+            finger.localEulerAngles = Vector3.Lerp(initialRotation, targetRotation, t);
 
             // Wait for the next frame
             yield return null;
@@ -269,10 +270,8 @@ public class GesturePlayback : MonoBehaviour
 
         // Ensure the finger's position and rotation are set to the target position and rotation after the loop ends
         finger.localPosition = targetPosition;
-        finger.localRotation = targetRotation;
+        finger.localEulerAngles = targetRotation;
     }
-
-
 
 
 
