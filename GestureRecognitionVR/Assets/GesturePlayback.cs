@@ -236,6 +236,7 @@ public class GesturePlayback : MonoBehaviour
             // Get the current frame's HandPosition data
             SerializedBoneData currentHandPositionData = frameData["HandPosition"];
             Vector3 currentGesturePosition = currentHandPositionData.position;
+            Quaternion currentGestureRotation = currentHandPositionData.rotation;
 
             // Calculate the interpolated hand position relative to the initial hand position
             Vector3 interpolatedHandPosition = initialHandPosition + (currentGesturePosition - initialGesturePosition);
@@ -243,8 +244,13 @@ public class GesturePlayback : MonoBehaviour
             // Calculate the position change relative to the hand's current position
             Vector3 handPositionChange = interpolatedHandPosition - handModel.transform.position;
 
+            // Calculate the rotation change as an Euler angle
+            Vector3 handRotationChange = (currentGestureRotation * Quaternion.Inverse(initialHandRotation)).eulerAngles;
+
             // Set the hand's position and rotation using Lerp for smooth interpolation
             StartCoroutine(MoveHandCoroutine(handModel.transform, handPositionChange, Vector3.zero, 1f / 20f));
+
+
 
             // Wait for the next frame
             yield return null;
@@ -288,7 +294,7 @@ public class GesturePlayback : MonoBehaviour
         finger.localRotation = targetRotation;
     }
 
-    // Coroutine for moving whole hand model with Lerp during motion gesture playback
+    // Coroutine for moving the whole hand model with Lerp during motion gesture playback
     private IEnumerator MoveHandCoroutine(Transform handModel, Vector3 positionChange, Vector3 rotationChange, float duration)
     {
         float elapsedTime = 0f;
@@ -300,9 +306,12 @@ public class GesturePlayback : MonoBehaviour
             elapsedTime += Time.deltaTime;
             float t = Mathf.Clamp01(elapsedTime / duration);
 
-            // Calculate the interpolated position and rotation
+            // Calculate the interpolated position
             Vector3 newPosition = initialPosition + positionChange * t;
-            Quaternion newRotation = Quaternion.Euler(initialRotation.eulerAngles + rotationChange * t);
+
+            // Calculate the interpolated rotation
+            Vector3 newRotationEulerAngles = initialRotation.eulerAngles + rotationChange * t;
+            Quaternion newRotation = Quaternion.Euler(newRotationEulerAngles);
 
             // Set the hand model's position and rotation
             handModel.localPosition = newPosition;
@@ -315,6 +324,8 @@ public class GesturePlayback : MonoBehaviour
         handModel.localPosition = initialPosition + positionChange;
         handModel.localRotation = initialRotation * Quaternion.Euler(rotationChange);
     }
+
+
 
 
 
