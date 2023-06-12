@@ -99,11 +99,12 @@ public class GestureDetect : MonoBehaviour
         // Initialize the gestures dictionary with default gestures
         gestures = new Dictionary<string, Gesture>();
 
-        // Save the gestures dictionary to JSON
-        GesturesToJSON();
         //Read any previously saved Gestures from existing json data
         readGesturesFromJSON();
-
+        // Save the gestures dictionary to JSON
+        GesturesToJSON();
+        
+        
         //Set 3 default gestures at startup 
         gestureNames = new Dictionary<string, UnityAction>()
         {
@@ -360,11 +361,13 @@ public class GestureDetect : MonoBehaviour
 
         if (File.Exists(saveFile))
         {
+            //Debug.Log("File exists");
             string contents = File.ReadAllText(saveFile);
             gestures = JsonConvert.DeserializeObject<Dictionary<string, Gesture>>(contents);
         }
         else
         {
+            //Debug.Log("Cant find json");
             gestures = new Dictionary<string, Gesture>();
         }
     }

@@ -21,16 +21,21 @@ public class GesturePlayback : MonoBehaviour
     private Dictionary<string, Quaternion> defaultBoneRotations = new Dictionary<string, Quaternion>();
     private Dictionary<string, Vector3> defaultBonePositions = new Dictionary<string, Vector3>();
     private Vector3 defaultHandPosition;
-
+    private Quaternion defaultHandRotation;
 
     private void Start()
     {
         Debug.Log("STARTED!!");
 
-        // Store the default position/rotation of the hand model for reference
+        // Store the default position/rotation of the finger bones in model for reference
         InitializeDefaultModelPositions();
         InitializeDefaultModelRotations();
         handModel.SetActive(false);
+
+
+        // Set the start position/rotation of the whole hand model to reset between gestures
+        defaultHandPosition = handModel.transform.position;
+        defaultHandRotation = handModel.transform.rotation;
 
         if (hand_R != null)
         {
@@ -250,15 +255,26 @@ public class GesturePlayback : MonoBehaviour
             // Set the hand's position and rotation using Lerp for smooth interpolation
             StartCoroutine(MoveHandCoroutine(handModel.transform, handPositionChange, Vector3.zero, 1f / 20f));
 
-
-
             // Wait for the next frame
             yield return null;
         }
 
-        // After playing all gestures, reset the hand model's position and rotation to the initial values
+        // After playing all frames, reset the hand model's position and rotation to the initial values
+        StartCoroutine(ResetHandModelCoroutine(initialHandPosition, initialHandRotation));
+    }
+
+
+    // Coroutine called after playing back a motion gesture (PlayGestureCoroutine), which resets the hand models position
+    private IEnumerator ResetHandModelCoroutine(Vector3 initialHandPosition, Quaternion initialHandRotation)
+    {
+        // Delay for a short duration to allow any ongoing movements to complete
+        yield return new WaitForSeconds(0.1f);
+
+        // Reset the hand model's position and rotation to the initial values
         handModel.transform.position = initialHandPosition;
         handModel.transform.rotation = initialHandRotation;
+
+       // Debug.Log("Motion Gesture Finished");
     }
 
 
