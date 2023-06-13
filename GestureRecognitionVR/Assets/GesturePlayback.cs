@@ -23,9 +23,12 @@ public class GesturePlayback : MonoBehaviour
     private Vector3 defaultHandPosition;
     private Quaternion defaultHandRotation;
 
+    private bool isGestureSelected = false;
+
+
     private void Start()
     {
-        Debug.Log("STARTED!!");
+        //Debug.Log("STARTED!!");
 
         // Store the default position/rotation of the finger bones in model for reference
         InitializeDefaultModelPositions();
@@ -261,6 +264,36 @@ public class GesturePlayback : MonoBehaviour
 
         // After playing all frames, reset the hand model's position and rotation to the initial values
         StartCoroutine(ResetHandModelCoroutine(initialHandPosition, initialHandRotation));
+    }
+
+    // Call this method to start the continuous gesture playback loop
+    public void StartGesturePlaybackLoop()
+    {
+        isGestureSelected = false;
+        StartCoroutine(PlayGesturesLoop());
+    }
+
+    // Call this method to stop the continuous gesture playback loop
+    public void StopGesturePlaybackLoop()
+    {
+        isGestureSelected = true;
+    }
+
+    // Coroutine to continuously playback motion gestures until a new gesture is selected
+    private IEnumerator PlayGesturesLoop()
+    {
+        while (!isGestureSelected)
+        {
+            string gestureName = "YourGestureName";  // Replace with the name of the gesture you want to play
+            PlayGesture(gestureName);
+
+            // Reset the hand model's position and rotation to the initial values
+            handModel.transform.position = defaultHandPosition;
+            handModel.transform.rotation = defaultHandRotation;
+
+            // Wait for a short delay before playing the next gesture
+            yield return new WaitForSeconds(1f);  // Adjust the delay duration as needed
+        }
     }
 
 

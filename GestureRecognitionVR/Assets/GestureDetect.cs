@@ -72,7 +72,7 @@ public class GestureDetect : MonoBehaviour
     [Header("Recording")][SerializeField] private OVRSkeleton handToRecord;
     // NOTE: fingerBones is currently including all 24 bones in the hand
     private List<OVRBone> fingerBones = new List<OVRBone>();
-    private float recordingTime = 1.5f; //set recording time default to 0.01 second (one frame, user should be able to change this)
+    private float recordingTime = 0.01f; //set recording time default to 0.01 second (one frame, user should be able to change this)
 
     //Keep track of which Gesture was most recently recognized
     private Gesture? currentGesture;
@@ -247,11 +247,21 @@ public class GestureDetect : MonoBehaviour
         Gesture g = new Gesture();
         g.name = name;
         g.fingerData = new List<Dictionary<string, SerializedBoneData>>();
-
         float startTime = Time.time;
+        int lastSecondDisplayed = Mathf.FloorToInt(startTime);
 
         while (Time.time - startTime < recordingTime)
         {
+            int currentSecond = Mathf.FloorToInt(Time.time);
+            if (currentSecond > lastSecondDisplayed)
+            {
+                float remainingTime = recordingTime - (Time.time - startTime);
+                string sec = " seconds";
+                if (remainingTime < 2) { sec = " second"; }
+                Debug.Log("Recording: " + Mathf.FloorToInt(remainingTime).ToString() + sec);
+                lastSecondDisplayed = currentSecond;
+            }
+
             // Save each individual finger bone in fingerData
             Dictionary<string, SerializedBoneData> frameData = new Dictionary<string, SerializedBoneData>();
 
@@ -541,10 +551,11 @@ public class GestureDetect : MonoBehaviour
                 // If it's a motion gesture, compare the frames and update the motion counter
                 if (isMotionGesture)
                 {
+                    // Separate Thresholds for Recognizing Motion Gestures (1f and 20f)
                     detectionThresholdPosition = 1f;
                     detectionThresholdRotation = 20f;
 
-                    // Threshold for how far into a motion gesture before its recognised
+                    // Threshold for how far into a motion gesture before its recognised (90%)
                     int motionGestureThreshold = Mathf.CeilToInt(kvp.Value.fingerData.Count * 0.9f);
 
                     //Debug.Log($"Counter: {motionCounter}");
