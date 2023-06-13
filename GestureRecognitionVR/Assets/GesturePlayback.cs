@@ -24,7 +24,7 @@ public class GesturePlayback : MonoBehaviour
     private Vector3 defaultHandPosition;
     private Quaternion defaultHandRotation;
     private String gestName;
-    public TextMeshProUGUI textMeshPro;
+    public TextMeshProUGUI userMessage;
     public Microsoft.MixedReality.Toolkit.UI.Interactable replayButton;
 
 
@@ -101,7 +101,7 @@ public class GesturePlayback : MonoBehaviour
     {
         gestName = gestureName;
         replayButton.gameObject.SetActive(false);
-        textMeshPro.text = "Playing " + gestureName;
+        userMessage.text = "Playing " + gestureName;
         // Check if the gestureDetect.gestures dictionary is not null and contains the specified gesture
         if (gestureDetect.gestures != null && gestureDetect.gestures.ContainsKey(gestureName))
         {

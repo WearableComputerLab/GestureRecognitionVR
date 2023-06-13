@@ -1279,7 +1279,7 @@ MonoBehaviour:
   handModel: {fileID: 651315002}
   hand_R: {fileID: 651315001}
   gestureDetect: {fileID: 1652884387}
-  textMeshPro: {fileID: 2050624998}
+  userMessage: {fileID: 2050624998}
   replayButton: {fileID: 34703005}
 --- !u!4 &805709333
 Transform:
@@ -2218,6 +2218,7 @@ MonoBehaviour:
   gesturePlayback: {fileID: 805709332}
   hands: []
   handToRecord: {fileID: 328062953}
+  userMessage: {fileID: 2050624998}
   cube: {fileID: 4969057824542013875}
   cubeRenderer: {fileID: 4969057824542013876}
   newColour: {r: 0, g: 0.16586089, b: 1, a: 0}
@@ -2737,7 +2738,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 
+  m_text: welcome
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -2771,7 +2772,7 @@ MonoBehaviour:
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 32
-  m_HorizontalAlignment: 1
+  m_HorizontalAlignment: 2
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: -3.44
@@ -2800,7 +2801,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 367.9, y: -1355.0952, z: 293.76642, w: 1763.2261}
+  m_margin: {x: 222.36728, y: -1355.0952, z: 140.58002, w: 1763.2261}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
