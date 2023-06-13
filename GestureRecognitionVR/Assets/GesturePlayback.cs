@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.MixedReality.Toolkit;
+using Microsoft.MixedReality.Toolkit.UI;
 //using Microsoft.MixedReality.Toolkit.Utilities.FigmaImporter;
 using Newtonsoft.Json;
 using TMPro;
@@ -22,13 +23,15 @@ public class GesturePlayback : MonoBehaviour
     private Dictionary<string, Vector3> defaultBonePositions = new Dictionary<string, Vector3>();
     private Vector3 defaultHandPosition;
     private Quaternion defaultHandRotation;
+    private String gestName;
     public TextMeshProUGUI textMeshPro;
+    public Microsoft.MixedReality.Toolkit.UI.Interactable replayButton;
 
 
     private void Start()
     {
         //Debug.Log("STARTED!!");
-
+        replayButton.gameObject.SetActive(false);
         // Store the default position/rotation of the finger bones in model for reference
         InitializeDefaultModelPositions();
         InitializeDefaultModelRotations();
@@ -51,6 +54,13 @@ public class GesturePlayback : MonoBehaviour
         {
             Debug.LogWarning("Hand object not found in the hand model hierarchy");
         }
+
+        replayButton.OnClick.AddListener(ReplayGesture);
+    }
+
+    private void ReplayGesture()
+    {
+        PlayGesture(gestName);
     }
 
     // Set the initial/default reference rotations for the hand model bones
@@ -89,6 +99,8 @@ public class GesturePlayback : MonoBehaviour
 
     public void PlayGesture(string gestureName)
     {
+        gestName = gestureName;
+        replayButton.gameObject.SetActive(false);
         textMeshPro.text = "Playing " + gestureName;
         // Check if the gestureDetect.gestures dictionary is not null and contains the specified gesture
         if (gestureDetect.gestures != null && gestureDetect.gestures.ContainsKey(gestureName))
@@ -262,6 +274,7 @@ public class GesturePlayback : MonoBehaviour
             yield return null;
         }
 
+        replayButton.gameObject.SetActive(true);
         // After playing all frames, reset the hand model's position and rotation to the initial values
         StartCoroutine(ResetHandModelCoroutine(initialHandPosition, initialHandRotation));
     }
