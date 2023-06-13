@@ -5,10 +5,15 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
+  - enabled: 0
+    path: Assets/Samples/Mixed Reality Toolkit Examples/2.8.3/Demos - HandTracking/Scenes/HandInteractionExamples.unity
+    guid: 3dd4a396b5225f8469b9a1eb608bfa57
+  - enabled: 0
+    path: Assets/Scenes/OVRWorking.unity
+    guid: 9fc0d4010bbf28b4594072e72b8655ab
   - enabled: 1
     path: Assets/Scenes/SampleScene.unity
-    guid: 9fc0d4010bbf28b4594072e72b8655ab
+    guid: 0514068da07326c4384dcface1adc3bb
   m_configObjects:
-    Unity.XR.Oculus.Settings: {fileID: 11400000, guid: 75f7cfe9ada37e7449f75208d52095d0, type: 2}
-    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 9f735556ba58b0b45ab24697a72d3dce, type: 2}
-    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: aa912fe804d99724d9af3d19545d239e, type: 2}
+    Unity.XR.Oculus.Settings: {fileID: 11400000, guid: d13cda304f3f49549a8de9348c3c013c, type: 2}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: ea1941e7d34b67a42922356852fa0739, type: 2}

@@ -175,16 +175,21 @@ MonoBehaviour:
       - formal
       - fast
       - projected
+    composer:
+      canvases: []
   _configurationId: ad0a973c-da54-481d-9a43-eafa3a4170fd
   timeoutMS: 10000
   endpointConfiguration:
-    uriScheme: 
-    authority: 
-    port: 0
-    witApiVersion: 
-    speech: 
-    message: 
-    dictation: 
+    _uriScheme: 
+    _authority: 
+    _port: 0
+    _witApiVersion: 
+    _message: 
+    _speech: 
+    _dictation: 
+    _synthesize: 
+    _event: 
+    _converse: 
   isDemoOnly: 0
   useConduit: 0
   _manifestLocalPath: ConduitManifest-534f5d54-45cd-4491-960b-abd8967482c0.json

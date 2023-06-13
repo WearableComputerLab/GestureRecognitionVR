@@ -153,7 +153,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 37168d1a7b8671247a1f1f3d36c355b7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mrtkKeyboard: {fileID: 0}
 --- !u!4 &200040476
 Transform:
   m_ObjectHideFlags: 0
@@ -252,7 +251,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83d9acc7968244a8886f3af591305bcb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  activeProfile: {fileID: 11400000, guid: 31a611a779d3499e8e35f1a2018ca841, type: 2}
+  activeProfile: {fileID: 11400000, guid: 9cf7638c6594b5e4f81db9f741ad7beb, type: 2}
 --- !u!4 &970638769
 Transform:
   m_ObjectHideFlags: 0
