@@ -22,8 +22,7 @@ public class GesturePlayback : MonoBehaviour
     private Dictionary<string, Vector3> defaultBonePositions = new Dictionary<string, Vector3>();
     private Vector3 defaultHandPosition;
     private Quaternion defaultHandRotation;
-
-    private bool isGestureSelected = false;
+    public TextMeshProUGUI textMeshPro;
 
 
     private void Start()
@@ -90,6 +89,7 @@ public class GesturePlayback : MonoBehaviour
 
     public void PlayGesture(string gestureName)
     {
+        textMeshPro.text = "Playing " + gestureName;
         // Check if the gestureDetect.gestures dictionary is not null and contains the specified gesture
         if (gestureDetect.gestures != null && gestureDetect.gestures.ContainsKey(gestureName))
         {
@@ -265,37 +265,7 @@ public class GesturePlayback : MonoBehaviour
         // After playing all frames, reset the hand model's position and rotation to the initial values
         StartCoroutine(ResetHandModelCoroutine(initialHandPosition, initialHandRotation));
     }
-
-    // Call this method to start the continuous gesture playback loop
-    public void StartGesturePlaybackLoop()
-    {
-        isGestureSelected = false;
-        StartCoroutine(PlayGesturesLoop());
-    }
-
-    // Call this method to stop the continuous gesture playback loop
-    public void StopGesturePlaybackLoop()
-    {
-        isGestureSelected = true;
-    }
-
-    // Coroutine to continuously playback motion gestures until a new gesture is selected
-    private IEnumerator PlayGesturesLoop()
-    {
-        while (!isGestureSelected)
-        {
-            string gestureName = "YourGestureName";  // Replace with the name of the gesture you want to play
-            PlayGesture(gestureName);
-
-            // Reset the hand model's position and rotation to the initial values
-            handModel.transform.position = defaultHandPosition;
-            handModel.transform.rotation = defaultHandRotation;
-
-            // Wait for a short delay before playing the next gesture
-            yield return new WaitForSeconds(1f);  // Adjust the delay duration as needed
-        }
-    }
-
+       
 
     // Coroutine called after playing back a motion gesture (PlayGestureCoroutine), which resets the hand models position
     private IEnumerator ResetHandModelCoroutine(Vector3 initialHandPosition, Quaternion initialHandRotation)
