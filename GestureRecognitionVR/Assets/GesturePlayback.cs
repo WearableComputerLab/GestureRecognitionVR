@@ -266,9 +266,12 @@ public class GesturePlayback : MonoBehaviour
 
             // Calculate the rotation change as an Euler angle
             Vector3 handRotationChange = (currentGestureRotation * Quaternion.Inverse(initialHandRotation)).eulerAngles;
+            Debug.Log($"handRotationChange: {handRotationChange}");
+            Debug.Log($"currentGestureRotation: {currentGestureRotation}");
+            //Debug.Log($"initialHandRotation: {initialHandRotation}");
 
-            // Set the hand's position and rotation using Lerp for smooth interpolation
-            StartCoroutine(MoveHandCoroutine(handModel.transform, handPositionChange, Vector3.zero, 1f / 20f));
+            // Set the hand's position and rotation using Lerp for smooth interpolation (Vector3.zero for handRotationChange until rotation issue is fixed)
+            StartCoroutine(MoveHandCoroutine(handModel.transform, handPositionChange, handRotationChange, 1f / 20f));
 
             // Wait for the next frame
             yield return null;
@@ -326,12 +329,15 @@ public class GesturePlayback : MonoBehaviour
         finger.localRotation = targetRotation;
     }
 
+    // TODO: Fix whole hand rotation (spinning issue)
     // Coroutine for moving the whole hand model with Lerp during motion gesture playback
     private IEnumerator MoveHandCoroutine(Transform handModel, Vector3 positionChange, Vector3 rotationChange, float duration)
     {
         float elapsedTime = 0f;
         Vector3 initialPosition = handModel.localPosition;
         Quaternion initialRotation = handModel.localRotation;
+
+        // Quaternion targetRotation = Quaternion.Euler(rotationChange) * initialRotation;
 
         while (elapsedTime < duration)
         {
@@ -341,9 +347,12 @@ public class GesturePlayback : MonoBehaviour
             // Calculate the interpolated position
             Vector3 newPosition = initialPosition + positionChange * t;
 
-            // Calculate the interpolated rotation
+            // Calculate the interpolated rotation (SPINNING CAUSED BY SOMETHING HERE!)
             Vector3 newRotationEulerAngles = initialRotation.eulerAngles + rotationChange * t;
             Quaternion newRotation = Quaternion.Euler(newRotationEulerAngles);
+
+            // Calculate the interpolated rotation using Slerp for smooth interpolation
+            // Quaternion newRotation = Quaternion.Slerp(initialRotation, Quaternion.Euler(rotationChange), t);
 
             // Set the hand model's position and rotation
             handModel.localPosition = newPosition;
@@ -355,14 +364,10 @@ public class GesturePlayback : MonoBehaviour
         // Ensure the hand model reaches the final position and rotation exactly
         handModel.localPosition = initialPosition + positionChange;
         handModel.localRotation = initialRotation * Quaternion.Euler(rotationChange);
+        // handModel.localRotation = targetRotation;
     }
 
-
-
-
-
-
-
+    
     // For euler angles
     private float WrapAngle(float angle)
     {
