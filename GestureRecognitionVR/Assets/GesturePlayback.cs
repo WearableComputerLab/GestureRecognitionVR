@@ -279,6 +279,40 @@ public class GesturePlayback : MonoBehaviour
     }
 
 
+    // TODO: Fix whole hand rotation 
+    // Coroutine for moving the whole hand model with Lerp during motion gesture playback
+    private IEnumerator MoveHandCoroutine(Transform handModel, Vector3 positionChange, Vector3 rotationChange, float duration)
+    {
+        float elapsedTime = 0f;
+        // Get local position/rotation because we are now relative to hand model
+        Vector3 initialPosition = handModel.localPosition;
+        Quaternion initialRotation = handModel.localRotation;
+        Quaternion targetRotation = Quaternion.Euler(rotationChange) * initialRotation;
+
+        // Rotate by 180 degrees around the y-axis (so its facing user correctly)
+        targetRotation *= Quaternion.Euler(0f, 180f, 0f); 
+
+        while (elapsedTime < duration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsedTime / duration);
+
+            // Calculate the interpolated position
+            Vector3 newPosition = initialPosition + positionChange * t;
+
+            // Set the hand model's position and rotation
+            handModel.localPosition = newPosition;
+            handModel.localRotation = Quaternion.Slerp(initialRotation, targetRotation, t);
+
+            yield return null;
+        }
+
+        // Ensure the hand model reaches the final position and rotation exactly
+        handModel.localPosition = initialPosition + positionChange;
+        handModel.localRotation = targetRotation;
+    }
+
+
     // Coroutine called after playing back a motion gesture (PlayGestureCoroutine), which resets the hand models position
     private IEnumerator ResetHandModelCoroutine(Vector3 initialHandPosition, Quaternion initialHandRotation)
     {
@@ -323,35 +357,6 @@ public class GesturePlayback : MonoBehaviour
         // Ensure the finger's position and rotation are set to the target position and rotation after the loop ends
         finger.localPosition = targetPosition;
         finger.localRotation = targetRotation;
-    }
-
-    // TODO: Fix whole hand rotation 
-    // Coroutine for moving the whole hand model with Lerp during motion gesture playback
-    private IEnumerator MoveHandCoroutine(Transform handModel, Vector3 positionChange, Vector3 rotationChange, float duration)
-    {
-        float elapsedTime = 0f;
-        Vector3 initialPosition = handModel.localPosition;
-        Quaternion initialRotation = handModel.localRotation;
-        Quaternion targetRotation = Quaternion.Euler(rotationChange) * initialRotation;
-
-        while (elapsedTime < duration)
-        {
-            elapsedTime += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsedTime / duration);
-
-            // Calculate the interpolated position
-            Vector3 newPosition = initialPosition + positionChange * t;
-
-            // Set the hand model's position and rotation
-            handModel.localPosition = newPosition;
-            handModel.localRotation = Quaternion.Slerp(initialRotation, targetRotation, t);
-
-            yield return null;
-        }
-
-        // Ensure the hand model reaches the final position and rotation exactly
-        handModel.localPosition = initialPosition + positionChange;
-        handModel.localRotation = targetRotation;
     }
 
 
