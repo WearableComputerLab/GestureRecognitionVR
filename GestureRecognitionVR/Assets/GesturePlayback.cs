@@ -58,10 +58,12 @@ public class GesturePlayback : MonoBehaviour
         replayButton.OnClick.AddListener(ReplayGesture);
     }
 
+
     private void ReplayGesture()
     {
         PlayGesture(gestName);
     }
+
 
     // Set the initial/default reference rotations for the hand model bones
     private void InitializeDefaultModelRotations()
@@ -289,7 +291,7 @@ public class GesturePlayback : MonoBehaviour
         Quaternion targetRotation = Quaternion.Euler(WrapEulerAngles(rotationChange)) * initialRotation;
 
         // Rotate hand by 180 degrees to face user. 
-        targetRotation *= Quaternion.Euler(-180f, 0f, 0f); 
+        targetRotation *= Quaternion.Euler(180f, 0f, 0f); 
 
         while (elapsedTime < duration)
         {
@@ -298,7 +300,7 @@ public class GesturePlayback : MonoBehaviour
 
             // Calculate the interpolated position
             Vector3 newPosition = initialPosition + positionChange * t;
-
+            
             // Calculate the interpolated rotation using wrapped Euler angles
             Quaternion newRotation = Quaternion.Slerp(initialRotation, targetRotation, t);
             Vector3 wrappedEulerAngles = WrapEulerAngles(newRotation.eulerAngles);
@@ -500,94 +502,5 @@ public class GesturePlayback : MonoBehaviour
         return null;
     }
 
-    // Helper function to find the bone transform by name
-    private Transform FindBoneTransform(Transform parent, string boneName)
-    {
-        Transform bone = null;
-
-        // Iterate over each child transform of the parent
-        for (int i = 0; i < parent.childCount; i++)
-        {
-            Transform child = parent.GetChild(i);
-
-            // Debug log to see the child's name
-            // Debug.Log("Child name: " + child.name);
-
-            // Check if the child's name matches the boneName
-            if (child.name.Equals(boneName))
-            {
-                // Bone found!
-                bone = child;
-                break;
-            }
-            else
-            {
-                // Recursively search for the bone in the child's hierarchy
-                bone = FindBoneTransform(child, boneName);
-
-                // If bone is found, exit the loop
-                if (bone != null)
-                    break;
-            }
-        }
-
-        return bone;
-    }
-
-
-
-    // Recursively count the number of child bones under the finger transform
-    private int GetChildBoneCountRecursive(Transform fingerBone)
-    {
-        int count = 0;
-
-        // Check if the fingerBone has children
-        if (fingerBone.childCount > 0)
-        {
-            // Iterate through the children and count the bones
-            foreach (Transform child in fingerBone)
-            {
-                count++;
-                count += GetChildBoneCountRecursive(child); // Recursively count child bones
-            }
-        }
-
-        return count;
-    }
-
-    // Check if a transform represents a finger bone
-    bool IsFingerBone(Transform transform)
-    {
-        return transform.name.EndsWith("_R");
-    }
-
-
-    // Get the bone index based on a finger bone transform
-    private int GetBoneIndex(Transform boneTransform, List<Vector3> gestureBonePositions)
-    {
-        Vector3 bonePosition = boneTransform.position;
-        float minDistance = float.MaxValue;
-        int boneIndex = -1;
-
-        for (int i = 0; i < gestureBonePositions.Count; i++)
-        {
-            float distance = Vector3.Distance(bonePosition, gestureBonePositions[i]);
-            if (distance < minDistance)
-            {
-                minDistance = distance;
-                boneIndex = i;
-            }
-        }
-
-        if (boneIndex != -1)
-        {
-            return boneIndex;
-        }
-        else
-        {
-            Debug.LogWarning("Failed to find matching bone index for transform: " + boneTransform.name);
-            return -1; // or another appropriate default value
-        }
-    }
 
 }
