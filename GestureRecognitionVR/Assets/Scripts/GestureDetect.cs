@@ -1,35 +1,47 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Meta.WitAi.Json;
 using Newtonsoft.Json;
 using UnityEngine;
-using UnityEngine.Events;
 using Oculus.Voice;
 using JsonConvert = Newtonsoft.Json.JsonConvert;
 using System.Linq;
-using Oculus.Platform;
+using System.Xml.Serialization;
 using UnityEngine.Serialization;
 using Application = UnityEngine.Application;
+using TMPro;
 
-[System.Serializable]
+[JsonObject(MemberSerialization.OptIn)]
 public struct Gesture
 {
-    public string name;
+    [Newtonsoft.Json.JsonProperty] public string name;
+    [Newtonsoft.Json.JsonProperty] public List<Dictionary<string, SerializedBoneData>> fingerData;
+    [Newtonsoft.Json.JsonProperty] public string responseName;
+    private Response _response;
 
-    public List<List<Vector3>> fingerData;
+    public Response response
+    {
+        get
+        {
+            if (_response == null)
+            {
+                string rName = responseName;
+                _response = GestureDetect.Instance.responses.First(r => string.Equals(r.Name(),
+                    rName, StringComparison.CurrentCultureIgnoreCase));
+            }
 
-    // motionData = List of hand position/rotation over time
-    public List<Vector3> motionData;
-    public Response response;
+            return _response;
+        }
+        set { _response = value; }
+    }
 
-    public Gesture(string name)
+    public Gesture(string name, List<Dictionary<string, SerializedBoneData>> fingerData, Response response)
     {
         this.name = name;
-        fingerData = null;
-        motionData = null;
-        response = null;
+        this.fingerData = fingerData;
+        this._response = response;
+        this.responseName = response.Name();
     }
 
     /// <summary>
@@ -51,6 +63,12 @@ public struct Gesture
     }
 }
 
+public class SerializedBoneData
+{
+    public string boneName;
+    public Vector3 position;
+    public Quaternion rotation;
+}
 
 [System.Serializable]
 public class SerializableList<T>
@@ -63,7 +81,7 @@ public class GestureDetect : MonoBehaviour
     public static GestureDetect Instance;
 
     // TODO
-    public GameObject handModel;
+    //public GameObject handModel;
     public Microsoft.MixedReality.Toolkit.UI.Interactable nextButton;
     public Microsoft.MixedReality.Toolkit.UI.Interactable prevButton;
     public int currentGestureIndex = 0;
@@ -78,7 +96,9 @@ public class GestureDetect : MonoBehaviour
     /// <summary>
     /// Set detectionThreshold. Smaller threshold = more precise hand detection. Set to 0.5.
     /// </summary>
-    [SerializeField] public float detectionThreshold = 0.5f;
+    private float detectionThresholdPosition = 0.5f;
+
+    private float detectionThresholdRotation = 10f;
 
     /// <summary>
     /// Hands to record
@@ -95,6 +115,9 @@ public class GestureDetect : MonoBehaviour
     /// </summary>
     [Header("Recording")] [SerializeField] public OVRSkeleton handToRecord;
 
+    /// <summary>
+    /// NOTE: fingerBones is currently including all 24 bones in the hand
+    /// </summary>
     public List<OVRBone> fingerBones = new List<OVRBone>();
 
     /// <summary>
@@ -105,12 +128,17 @@ public class GestureDetect : MonoBehaviour
     /// <summary>
     /// delay of one second after recording before gesture can be recognized
     /// </summary>
-    public float delay = 1.0f;
+    public float delay = 2.0f;
 
     /// <summary>
     /// isRecording is used to ensure a gesture isnt recognised as soon as it is recorded.
     /// </summary>
     public bool isRecording = false;
+
+    /// <summary>
+    /// Text on Table for important messages
+    /// </summary>
+    public TextMeshProUGUI userMessage;
 
     /// <summary>
     /// Set recording time default to 0.01 second (user should be able to change this)
@@ -153,9 +181,11 @@ public class GestureDetect : MonoBehaviour
     /// <summary>
     /// TODO
     /// </summary>
-    [FormerlySerializedAs("gestureNamerPrefab")] public GameObject responseButtonPrefab;
+    [FormerlySerializedAs("gestureNamerPrefab")]
+    public GameObject responseButtonPrefab;
 
-    [FormerlySerializedAs("gestureNamerPosition")] public GameObject responseButtonPosition;
+    [FormerlySerializedAs("gestureNamerPosition")]
+    public GameObject responseButtonPosition;
 
     /// <summary>
     /// Voice Recognition Controller
@@ -280,14 +310,20 @@ public class GestureDetect : MonoBehaviour
     /// </summary>
     public void NextGesture()
     {
+        // If there are no gestures recorded, return or handle the case appropriately
+        if (gestures.Count == 0)
+        {
+            Debug.LogWarning("No gestures recorded.");
+            return;
+        }
         // currentGestureIndex is used to cycle through recorded gestures
         currentGestureIndex++;
         //If end of gesture list is reached, start from the start
-        if (currentGestureIndex >= responses.Count)
+        if (currentGestureIndex >= gestures.Count)
         {
             currentGestureIndex = 0;
         }
-
+        
         //Get current gesture name, playback the gesture
         Gesture currentGesture = gestures.Values.ElementAt(currentGestureIndex);
         string gestureName = currentGesture.name;
@@ -299,15 +335,22 @@ public class GestureDetect : MonoBehaviour
     /// </summary>
     public void PrevGesture()
     {
-        // currentGestureIndex is used to cycle through recorded gestures
-        currentGestureIndex--;
-        //If user goes back past first gesture, goto end of gesture list
-        if (currentGestureIndex < 0)
+        // If there are no gestures recorded, return or handle the case appropriately
+        if (gestures.Count == 0)
         {
-            currentGestureIndex = gesturePlayback.gestures.Count - 1;
+            Debug.LogWarning("No gestures recorded.");
+            return;
         }
 
-        //Get current gesture name, playback the gesture
+        // currentGestureIndex is used to cycle through recorded gestures
+        currentGestureIndex--;
+        // If user goes back past the first gesture, go to the end of the gesture list
+        if (currentGestureIndex < 0)
+        {
+            currentGestureIndex = gestures.Count - 1;
+        }
+
+        // Get current gesture name, playback the gesture
         Gesture currentGesture = gestures.Values.ElementAt(currentGestureIndex);
         string gestureName = currentGesture.name;
         gesturePlayback.PlayGesture(gestureName);
@@ -331,30 +374,20 @@ public class GestureDetect : MonoBehaviour
     {
         if (hands.Length > 0)
         {
+            // Hand Menu works when handToRecord is hands[0] (the GhostHand)
+            // hands[2] = OVRRightHandPrefab
             handToRecord = hands[0];
-            fingerBones = new List<OVRBone>(handToRecord.Bones);
+
+            if (handToRecord != null && handToRecord.Bones != null && handToRecord.Bones.Count > 0)
+            {
+                // Need every bone in hand to determine local position of fingers
+                fingerBones = new List<OVRBone>(handToRecord.Bones);
+            }
+            else
+            {
+                //Debug.Log("No hand detected");
+            }
         }
-    }
-
-    // TODO - LEWIS FILL IN YOUR SUMMARY COMMENT PLEASE
-    /// <summary>
-    /// Save coroutine for motion gestures
-    /// </summary>
-    /// <param name="name"></param>
-    /// <param name="recordingTime"></param>
-    /// <returns></returns>
-    public void SaveGesture(List<List<Vector3>> fingerData, List<Vector3> motionData, string name, Response response)
-    {
-        Gesture g = new Gesture(name)
-        {
-            fingerData = fingerData,
-            motionData = motionData,
-            response = response
-        };
-
-        // Add gesture to Gesture List
-        gestures[name] = g;
-        Debug.Log($"Saved Gesture {name}");
     }
 
 
@@ -386,16 +419,6 @@ public class GestureDetect : MonoBehaviour
         File.WriteAllText(saveFile, json);
     }
 
-    /*
-    public void OnValidate()
-    {
-        // update JSON if any changes to the gesture list have been made
-        if (gestures.list.Count > 0)
-        {
-            GesturesToJSON();
-        }
-    }
-    */
 
     /// <summary>
     /// Reads json data from existing json files, saves in gesture dictionary
@@ -428,87 +451,228 @@ public class GestureDetect : MonoBehaviour
     public Gesture? Recognize()
     {
         Gesture? currentGesture = null;
-
-        // Check that a gesture is not currently being recorded, and that at least one second (delay) has passed from when last gesture was recorded.
-        // if (!isRecording && Time.time > lastRecordTime + delay)
-        // {
         float currentMin = Mathf.Infinity;
+        int motionCounter = 0;
 
-        foreach (KeyValuePair<string, Gesture> kvp in gestures)
+        // Create a dictionary to store finger bones by their bone names (a snapshot of the current position of the user's hand)
+        Dictionary<string, OVRBone> fingerBonesDict = new Dictionary<string, OVRBone>();
+
+        // Populate the fingerBonesDict dictionary with all bones in the current hand
+        foreach (OVRBone bone in fingerBones)
         {
-            float sumDistance = 0;
-            bool discard = false;
+            string boneName = bone.Id.ToString();
+            fingerBonesDict[boneName] = bone;
+        }
 
-            // Create Lists to store Velocity and Direction of the motionData (as Vector3s)
-            List<Vector3> velocities = new List<Vector3>();
-            List<Vector3> directions = new List<Vector3>();
-
-            // Calculate velocity and direction of movement for each item in motionData list
-            for (int i = 0; i < kvp.Value.motionData.Count - 1; i++)
+        // Check that gesture is not currently being recorded, and that one second (delay) has passed from when gesture was recorded.
+        if (!isRecording && Time.time > lastRecordTime + delay)
+        {
+            // Going through each saved Gesture
+            foreach (KeyValuePair<string, Gesture> kvp in gestures)
             {
-                // velocity = displacement / time
-                Vector3 displacement = kvp.Value.motionData[i + 1] - kvp.Value.motionData[i];
-                Vector3 velocity = displacement / Time.deltaTime;
-                velocities.Add(velocity.normalized);
-                // Normalize displacement to store vector representing the direction the hand is moving
-                directions.Add(displacement.normalized);
-            }
+                Gesture gesture = kvp.Value;
 
-            // Compare finger positions for each frame in fingerData
-            for (int i = 0; i < kvp.Value.fingerData.Count; i++)
-            {
-                for (int j = 0; j < fingerBones.Count; j++)
+                float sumDistance = 0;
+                bool discard = false;
+                bool isMotionGesture = kvp.Value.fingerData.Count > 1;
+
+                // Check if it's a motion gesture and reset the motion counter
+                if (isMotionGesture)
                 {
-                    Vector3 currentData =
-                        handToRecord.transform.InverseTransformPoint(fingerBones[j].Transform.position);
-                    float fingerDistance = Vector3.Distance(currentData, kvp.Value.fingerData[i][j]);
-                    if (fingerDistance > detectionThreshold)
+                    motionCounter = 0;
+                }
+
+                // Iterate over each frame of the gesture's fingerData
+                foreach (var frameData in gesture.fingerData)
+                {
+                    // Compare the finger bone positions and rotations with the user's current hand
+                    foreach (var boneEntry in frameData)
                     {
-                        discard = true;
+                        string boneName = boneEntry.Key;
+
+                        // Ignore position of whole hand when looking through bones
+                        if (boneName != "HandPosition")
+                        {
+                            // Check if the bone name exists in the current frame data and in the user's hand bone data
+                            if (!frameData.ContainsKey(boneName) || !fingerBonesDict.ContainsKey(boneName))
+                            {
+                                //Debug.Log($"Bone: {boneName} not found in gesture or user's hand");
+                                discard = true;
+                                break;
+                            }
+
+                            // Get the position and rotation of the saved bone from the gesture data
+                            SerializedBoneData gestureBoneData = boneEntry.Value;
+                            Vector3 gestureBonePosition = gestureBoneData.position;
+                            Quaternion gestureBoneRotation = gestureBoneData.rotation;
+
+                            // Get the position and rotation of the corresponding bone from the user's hand
+                            Vector3 currentBonePosition = fingerBonesDict[boneName].Transform.localPosition;
+                            Quaternion currentBoneRotation = fingerBonesDict[boneName].Transform.localRotation;
+
+                            // Compare the position and rotation of the bones using the CompareBoneData method
+                            if (!CompareBoneData(gestureBonePosition, gestureBoneRotation, currentBonePosition,
+                                    currentBoneRotation))
+                            {
+                                discard = true;
+                                break;
+                            }
+
+                            // Calculate the distance between the current frame data and the user's current hand position
+                            float positionDistance = Vector3.Distance(currentBonePosition, gestureBonePosition);
+                            float rotationAngle = Quaternion.Angle(currentBoneRotation, gestureBoneRotation);
+
+                            // Check if the position or rotation distance exceeds the detection threshold
+                            if (positionDistance > detectionThresholdPosition ||
+                                rotationAngle > detectionThresholdRotation)
+                            {
+                                discard = true;
+                                break;
+                            }
+
+                            sumDistance += positionDistance + rotationAngle;
+                        }
+                    }
+
+                    if (discard)
+                    {
                         break;
                     }
 
-                    sumDistance += fingerDistance;
+                    // If it's a motion gesture, compare the frames and update the motion counter
+                    if (isMotionGesture)
+                    {
+                        // Separate Thresholds for Recognizing Motion Gestures (1f and 20f)
+                        detectionThresholdPosition = 1f;
+                        detectionThresholdRotation = 20f;
+
+                        // Threshold for how far into a motion gesture before its recognised (90%)
+                        int motionGestureThreshold = Mathf.CeilToInt(kvp.Value.fingerData.Count * 0.9f);
+
+                        //Debug.Log($"Counter: {motionCounter}");
+                        //Debug.Log($"Gesture length: {kvp.Value.fingerData.Count}");
+                        // Debug.Log($"Threshold: {motionGestureThreshold}");
+
+                        if (motionCounter >= motionGestureThreshold)
+                        {
+                            // Motion gesture has been matched completely
+                            currentGesture = kvp.Value;
+                            return currentGesture;
+                        }
+                        else if (motionCounter < kvp.Value.fingerData.Count)
+                        {
+                            Dictionary<string, SerializedBoneData>
+                                motionFrameData = kvp.Value.fingerData[motionCounter];
+                            if (MatchMotionFrameData(frameData, motionFrameData, hands[2].transform.position))
+                            {
+                                motionCounter++;
+                            }
+                            else
+                            {
+                                motionCounter = 0;
+                            }
+                        }
+                    }
                 }
 
-                if (discard)
+                if (!discard && sumDistance < currentMin && !isMotionGesture)
                 {
-                    break;
+                    currentMin = sumDistance;
+                    currentGesture = kvp.Value;
                 }
             }
+        }
 
-            //If fingerData is not correct, skip checking motionData
-            if (discard)
+        return currentGesture;
+    }
+
+    // TODO: use HandPosition here to compare whole hand position across frames (introduce offset so position is independent of starting position)
+    private bool MatchMotionFrameData(Dictionary<string, SerializedBoneData> frameData,
+        Dictionary<string, SerializedBoneData> motionFrameData, Vector3 currentHandPosition)
+    {
+        // Get the initial hand position from the motion frame data
+        Vector3 initialHandPosition = motionFrameData["HandPosition"].position;
+
+        // Calculate the translation offset
+        Vector3 translationOffset = currentHandPosition - initialHandPosition;
+
+        // Compare the hand positions using the adjusted positions
+        SerializedBoneData motionHandData = motionFrameData["HandPosition"];
+        Vector3 adjustedHandPosition = currentHandPosition - translationOffset;
+
+        //Debug.Log($"Current Hand Position: {currentHandPosition}");
+        //Debug.Log($"Initial Hand Position: {initialHandPosition}");
+        //Debug.Log($"Translation Offset: {translationOffset}");
+
+        if (!CompareHandPosition(adjustedHandPosition, motionHandData.position, detectionThresholdPosition))
+        {
+            return false;
+        }
+
+        // Compare the bone positions and rotations
+        foreach (KeyValuePair<string, SerializedBoneData> kvp in motionFrameData)
+        {
+            string boneName = kvp.Key;
+
+            // Skip the hand position bone
+            if (boneName == "HandPosition")
             {
                 continue;
             }
 
-            // Compare velocity and direction vectors for motionData
-            for (int i = 0; i < directions.Count; i++)
+            SerializedBoneData motionBoneData = kvp.Value;
+
+            // Check if the bone name exists in the current frame data
+            if (!frameData.ContainsKey(boneName))
             {
-                // Use Dot Product of vectors to compare velocity, and Vector Angles to compare direction
-                float dotProduct = Vector3.Dot(velocities[i], handToRecord.transform.forward);
-                float angle = Vector3.Angle(velocities[i], handToRecord.transform.forward);
-                // Get combined 'distance' between vectors, using velocityWeight to determine importance of velocity in gesture
-                float combinedDistance = angle + (dotProduct * velocityWeight);
-
-                if (combinedDistance > detectionThreshold)
-                {
-                    discard = true;
-                    break;
-                }
-
-                sumDistance += combinedDistance;
+                return false;
             }
 
-            if (!discard && sumDistance < currentMin)
+            SerializedBoneData frameBoneData = frameData[boneName];
+
+            // Apply the translation offset to the motion bone position
+            Vector3 adjustedBonePosition = frameBoneData.position - translationOffset;
+
+            // Compare the bone positions and rotations using the adjusted positions
+            if (!CompareBoneData(adjustedBonePosition, frameBoneData.rotation, motionBoneData.position,
+                    motionBoneData.rotation))
             {
-                currentMin = sumDistance;
-                currentGesture = kvp.Value;
+                return false;
             }
         }
-        //}
 
-        return currentGesture;
+        return true;
+    }
+
+
+    // Compares the position and rotation values of two bones against detectionThreshold
+    private bool CompareBoneData(Vector3 position1, Quaternion rotation1, Vector3 position2, Quaternion rotation2)
+    {
+        // Compare the bone positions
+        if (Vector3.Distance(position1, position2) > detectionThresholdPosition)
+        {
+            //Debug.Log("Position don't match");
+            return false;
+        }
+
+        // Compare the bone rotations
+        if (Quaternion.Angle(rotation1, rotation2) > detectionThresholdRotation)
+        {
+            //Debug.Log("Rotation don't match");
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool CompareHandPosition(Vector3 handPosition1, Vector3 handPosition2, float detectionThreshold)
+    {
+        float positionDistance = Vector3.Distance(handPosition1, handPosition2);
+
+        //Debug.Log($"Current Hand Position: {handPosition1}");
+        //Debug.Log($"Motion Hand Position: {handPosition2}");
+        //Debug.Log($"Distance: {positionDistance}");
+
+        return positionDistance <= detectionThreshold;
     }
 }

@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Data.Common;
 using UnityEngine;
 using Oculus.Voice;
 using System.Linq;
@@ -110,8 +109,11 @@ public class StartScene : State
     /// <returns></returns>
     public override IEnumerator Start()
     {
+        GestureDetect.Instance.userMessage.text = "Welcome";
+        
         //Read any previously saved Gestures from existing json data
         GestureDetect.Instance.ReadGesturesFromJSON();
+        
 
         //Set 3 default responses at startup
         GestureDetect.Instance.responses = new List<Response>()
@@ -177,25 +179,21 @@ public class Waiting : State
             }
             GestureDetect.Instance.durationSlider.SetActive(GestureDetect.Instance.durationSlider.activeSelf && !StateMachine.Instance.activateVoiceButton.isToggled);
             GestureDetect.Instance.recordButton.SetActive(!GestureDetect.Instance.durationSlider.activeSelf && !StateMachine.Instance.activateVoiceButton.isToggled);
-            
 
-            //Check for Recognition 20 times a second, same as captured data (returns recognised Gesture if hand is in correct position)
-            //NOTE: possible for recognise() to miss start of gesture (fine-tune frequency)
-            // if (Time.time > lastUpdateTime + UpdateFrequency)
-            // {
-            //     currentGesture = Recognize();
-            //     lastUpdateTime = Time.time;
-            // }
+            // Check for Recognition (returns recognized Gesture if hand is in correct position)
             GestureDetect.Instance.currentGesture = GestureDetect.Instance.Recognize();
 
             bool hasRecognized = GestureDetect.Instance.currentGesture.HasValue;
-            //Check if gesture is recognisable and new, log recognised gesture
+            
+            // Check if gesture is recognisable and new, log recognized gesture
             if (hasRecognized && (!GestureDetect.Instance.previousGesture.HasValue ||
                                   !GestureDetect.Instance.currentGesture.Value.Equals(GestureDetect.Instance
                                       .previousGesture.Value)))
             {
-                Debug.Log("Gesture Recognized: " + GestureDetect.Instance.currentGesture.Value.name);
+                //Debug.Log("Gesture Recognized: " + GestureDetect.Instance.currentGesture.Value.name);
+                GestureDetect.Instance.userMessage.text = $"Recognized: {GestureDetect.Instance.currentGesture.Value.name}";
                 GestureDetect.Instance.previousGesture = GestureDetect.Instance.currentGesture;
+                
                 GestureDetect.Instance.currentGesture.Value.response.StartRoutine();
             }
 
@@ -231,6 +229,34 @@ public class RecordStart : State
         }
     }
 
+    private static Dictionary<string, SerializedBoneData> SaveFrame()
+    {
+        Dictionary<string, SerializedBoneData> frameData = new Dictionary<string, SerializedBoneData>();
+        // Save each individual finger bone in fingerData
+        foreach (OVRBone bone in GestureDetect.Instance.fingerBones)
+        {
+            string boneName = bone.Id.ToString();
+
+            SerializedBoneData boneData = new SerializedBoneData();
+            boneData.boneName = bone.Transform.name;
+            boneData.position = bone.Transform.localPosition;
+            boneData.rotation = bone.Transform.localRotation;
+
+            frameData[boneName] = boneData;
+        }
+
+        // Add the hand position data to the frameData dictionary
+        Vector3 handPosition = GestureDetect.Instance.hands[2].transform.position;
+        Quaternion handRotation = GestureDetect.Instance.hands[2].transform.rotation;
+        SerializedBoneData handData = new SerializedBoneData();
+        handData.boneName = "hand_R";
+        handData.position = handPosition;
+        handData.rotation = handRotation;
+        frameData["HandPosition"] = handData;
+
+        return frameData;
+    }
+
     public override IEnumerator End()
     {
         //TODO: Get finger data from SaveGesture
@@ -241,8 +267,7 @@ public class RecordStart : State
         //If no name is passed, the gesture finger data will be saved
         if (selectedName == "")
         {
-            List<Vector3> motionData = new List<Vector3>();
-            List<List<Vector3>> fingerData = new List<List<Vector3>>();
+            List<Dictionary<string, SerializedBoneData>> fingerData = new List<Dictionary<string, SerializedBoneData>>();
             
             //If the duration is not static (motion), record for the specified duration
             if (duration - GestureDetect.staticRecordingTime > 0.005f)
@@ -252,22 +277,14 @@ public class RecordStart : State
                 int lastPrint = -1;
                 while (countdown < duration)
                 {
-                    List<Vector3> currentFrame = new List<Vector3>();
-                    //Save each individual finger bone in fingerData, save whole hand position in motionData
-                    foreach (OVRBone bone in GestureDetect.Instance.fingerBones)
-                    {
-                        currentFrame.Add(
-                            GestureDetect.Instance.handToRecord.transform
-                                .InverseTransformPoint(bone.Transform.position));
-                    }
+                    Dictionary<string, SerializedBoneData> frameData = SaveFrame();
 
-                    fingerData.Add(currentFrame);
-                    motionData.Add(
-                        GestureDetect.Instance.handToRecord.transform.InverseTransformPoint(GestureDetect.Instance
-                            .handToRecord.transform.position));
+                    // Add the frame data to the fingerData list
+                    fingerData.Add(frameData);
                    
                     // Save Motion Gestures at 20fps to save resources (fine-tune this)
                     yield return new WaitForSeconds(frameTime);
+                    
                     countdown = (DateTime.Now - start).TotalSeconds;
                     int roundedCount = (int)countdown;
                     if (lastPrint != roundedCount && roundedCount != 0)
@@ -280,18 +297,11 @@ public class RecordStart : State
             //If the duration is static, record the frame
             else
             {
-                List<Vector3> currentFrame = new List<Vector3>();
-                foreach (OVRBone bone in GestureDetect.Instance.fingerBones)
-                {
-                    currentFrame.Add(
-                        GestureDetect.Instance.handToRecord.transform.InverseTransformPoint(bone.Transform.position));
-                    //Debug.Log(currentFrame.Last());
-                }
-
-                fingerData.Add(currentFrame);
+                Dictionary<string, SerializedBoneData> frameData = SaveFrame();
+                fingerData.Add(frameData);
             }
 
-            StateMachine.SetState(new NameGesture(fingerData, motionData));
+            StateMachine.SetState(new NameGesture(fingerData));
         }
         else
         {
@@ -305,13 +315,11 @@ public class RecordStart : State
 /// </summary>
 public class NameGesture : State
 {
-    private List<List<Vector3>> fingerData;
-    private List<Vector3> motionData;
+    private List<Dictionary<string, SerializedBoneData>> fingerData;
 
-    public NameGesture(List<List<Vector3>> fingerData, List<Vector3> motionData)
+    public NameGesture(List<Dictionary<string, SerializedBoneData>> fingerData)
     {
         this.fingerData = fingerData;
-        this.motionData = motionData;
     }
 
     public override IEnumerator Start()
@@ -345,7 +353,7 @@ public class NameGesture : State
 
         string name = GestureDetect.Instance.userInput;
         GestureDetect.Instance.userInput = "";
-        StateMachine.SetState(new SelectResponse(fingerData, motionData, name));
+        StateMachine.SetState(new SelectResponse(fingerData, name));
     }
 }
 
@@ -354,15 +362,13 @@ public class NameGesture : State
 /// </summary>
 public class SelectResponse : State
 {
-    private List<List<Vector3>> fingerData;
-    private List<Vector3> motionData;
+    private List<Dictionary<string, SerializedBoneData>> fingerData;
     private string name;
     private List<GameObject> buttons;
 
-    public SelectResponse(List<List<Vector3>> fingerData, List<Vector3> motionData, string name)
+    public SelectResponse(List<Dictionary<string, SerializedBoneData>> fingerData, string name)
     {
         this.fingerData = fingerData;
-        this.motionData = motionData;
         this.name = name;
     }
 
@@ -429,7 +435,7 @@ public class SelectResponse : State
             GameObject.Destroy(button);
         }
 
-        StateMachine.SetState(new SaveGesture(fingerData, motionData, name, r));
+        StateMachine.SetState(new SaveGesture(fingerData, name, r));
     }
 }
 
@@ -438,22 +444,22 @@ public class SelectResponse : State
 /// </summary>
 public class SaveGesture : State
 {
-    private List<List<Vector3>> fingerData;
-    private List<Vector3> motionData;
+    private List<Dictionary<string, SerializedBoneData>> fingerData;
     private string name;
     private Response response;
 
-    public SaveGesture(List<List<Vector3>> fingerData, List<Vector3> motionData, string name, Response response)
+    public SaveGesture(List<Dictionary<string, SerializedBoneData>> fingerData,  string name, Response response)
     {
         this.fingerData = fingerData;
-        this.motionData = motionData;
         this.name = name;
         this.response = response;
     }
 
     public override IEnumerator Start()
     {
-        GestureDetect.Instance.SaveGesture(fingerData, motionData, name, response);
+        // Add gesture to Gesture List
+        GestureDetect.Instance.gestures[name] = new Gesture(name, fingerData, response);
+        GestureDetect.Instance.GesturesToJSON();
         yield break;
     }
 
