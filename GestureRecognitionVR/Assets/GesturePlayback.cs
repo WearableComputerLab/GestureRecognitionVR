@@ -279,18 +279,17 @@ public class GesturePlayback : MonoBehaviour
     }
 
 
-    // TODO: Fix whole hand rotation 
+    // TODO: Fix whole hand rotation.  
     // Coroutine for moving the whole hand model with Lerp during motion gesture playback
     private IEnumerator MoveHandCoroutine(Transform handModel, Vector3 positionChange, Vector3 rotationChange, float duration)
     {
         float elapsedTime = 0f;
-        // Get local position/rotation because we are now relative to hand model
         Vector3 initialPosition = handModel.localPosition;
         Quaternion initialRotation = handModel.localRotation;
-        Quaternion targetRotation = Quaternion.Euler(rotationChange) * initialRotation;
+        Quaternion targetRotation = Quaternion.Euler(WrapEulerAngles(rotationChange)) * initialRotation;
 
-        // Rotate by 180 degrees around the y-axis (so its facing user correctly)
-        targetRotation *= Quaternion.Euler(0f, 180f, 0f); 
+        // Rotate hand by 180 degrees to face user. 
+        targetRotation *= Quaternion.Euler(-180f, 0f, 0f); 
 
         while (elapsedTime < duration)
         {
@@ -300,9 +299,13 @@ public class GesturePlayback : MonoBehaviour
             // Calculate the interpolated position
             Vector3 newPosition = initialPosition + positionChange * t;
 
+            // Calculate the interpolated rotation using wrapped Euler angles
+            Quaternion newRotation = Quaternion.Slerp(initialRotation, targetRotation, t);
+            Vector3 wrappedEulerAngles = WrapEulerAngles(newRotation.eulerAngles);
+
             // Set the hand model's position and rotation
             handModel.localPosition = newPosition;
-            handModel.localRotation = Quaternion.Slerp(initialRotation, targetRotation, t);
+            handModel.localRotation = Quaternion.Euler(wrappedEulerAngles);
 
             yield return null;
         }
@@ -313,6 +316,17 @@ public class GesturePlayback : MonoBehaviour
     }
 
 
+    // Wrap Euler angles to the range of -180 to 180 degrees
+    private Vector3 WrapEulerAngles(Vector3 eulerAngles)
+    {
+        return new Vector3(
+            WrapAngle(eulerAngles.x),
+            WrapAngle(eulerAngles.y),
+            WrapAngle(eulerAngles.z)
+        );
+    }
+
+   
     // Coroutine called after playing back a motion gesture (PlayGestureCoroutine), which resets the hand models position
     private IEnumerator ResetHandModelCoroutine(Vector3 initialHandPosition, Quaternion initialHandRotation)
     {
