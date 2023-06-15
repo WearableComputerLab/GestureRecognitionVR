@@ -206,8 +206,6 @@ public class GesturePlayback : MonoBehaviour
         SerializedBoneData initialHandPositionData = fingerData[0]["HandPosition"];
         Vector3 initialGesturePosition = initialHandPositionData.position;
 
-        Quaternion interpolatedHandRotation = initialHandRotation;
-
         for (int frameIndex = 0; frameIndex < fingerData.Count; frameIndex++)
         {
             Dictionary<string, SerializedBoneData> frameData = fingerData[frameIndex];
@@ -260,31 +258,25 @@ public class GesturePlayback : MonoBehaviour
             Vector3 currentGesturePosition = currentHandPositionData.position;
             Quaternion currentGestureRotation = currentHandPositionData.rotation;
 
-            // Calculate the interpolated hand position relative to the initial hand position
+            // Calculate the interpolated hand position relative to the initial gesture position
             Vector3 interpolatedHandPosition = initialHandPosition + (currentGesturePosition - initialGesturePosition);
 
             // Calculate the position change relative to the hand's current position
             Vector3 handPositionChange = interpolatedHandPosition - handModel.transform.position;
+            // Quaternion.Inverse determines the rotation change required to transition from the initial hand rotation to the current gesture rotation
+            Quaternion handRotationChange = currentGestureRotation * Quaternion.Inverse(handModel.transform.rotation);
 
-            // Calculate the rotation change as a quaternion
-            Quaternion handRotationChange = currentGestureRotation * Quaternion.Inverse(interpolatedHandRotation);
-
-            // Update the interpolated hand rotation based on the current frame's gesture rotation
-            interpolatedHandRotation *= handRotationChange;
-
-            // Set the hand's position and rotation using Lerp for smooth interpolation
+            // Set the hand's position and rotation using Lerp for smooth interpolation (Vector3.zero for handRotationChange until rotation issue is fixed)
             StartCoroutine(MoveHandCoroutine(handModel.transform, handPositionChange, handRotationChange.eulerAngles, 1f / 20f));
 
             // Wait for the next frame
             yield return null;
-
         }
 
         replayButton.gameObject.SetActive(true);
         // After playing all frames, reset the hand model's position and rotation to the initial values
         StartCoroutine(ResetHandModelCoroutine(initialHandPosition, initialHandRotation));
     }
-
 
 
     // Coroutine called after playing back a motion gesture (PlayGestureCoroutine), which resets the hand models position
