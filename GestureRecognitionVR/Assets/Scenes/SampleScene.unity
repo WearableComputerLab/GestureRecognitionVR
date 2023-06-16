@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.00000033978532, g: 0.000049117458, b: 0.000000450272, a: 1}
+  m_IndirectSpecularColor: {r: 0.007501046, g: 0.009350479, b: 0.00419504, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -6724,7 +6724,27 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1055909473010358, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
       propertyPath: m_Name
-      value: Hand_Index
+      value: Hand_Index1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1073802471101866, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_Thumb0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1102361899082002, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_Thumb1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1121530367872790, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_Pinky2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1153038631775868, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_Middle2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263930307255416, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_Pinky3
       objectReference: {fileID: 0}
     - target: {fileID: 1367616435690710, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
       propertyPath: m_Name
@@ -6734,13 +6754,77 @@ PrefabInstance:
       propertyPath: m_Name
       value: Hand_Start
       objectReference: {fileID: 0}
+    - target: {fileID: 1430541181625126, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_Middle3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1460556292968306, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_Ring2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1474613188913336, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_IndexTip
+      objectReference: {fileID: 0}
+    - target: {fileID: 1503877996444186, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_Thumb2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1521037339739344, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_Index2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1537640236240474, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_PinkyTip
+      objectReference: {fileID: 0}
+    - target: {fileID: 1538552291812218, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_Ring3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1603907026097434, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_ThumbTip
+      objectReference: {fileID: 0}
+    - target: {fileID: 1616847770321604, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_MiddleTip
+      objectReference: {fileID: 0}
     - target: {fileID: 1651920366775336, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
       propertyPath: m_Name
       value: Hand_ForearmStub
       objectReference: {fileID: 0}
+    - target: {fileID: 1696555216213342, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_Index3
+      objectReference: {fileID: 0}
     - target: {fileID: 1732268206786806, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
       propertyPath: m_Name
       value: HandModel3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1791933322066870, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_Middle1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1829571907382640, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_Thumb3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1894459976662924, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_Pinky0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1946567125134520, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_Ring1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1965702014429150, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_RingTip
+      objectReference: {fileID: 0}
+    - target: {fileID: 1999977758266682, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
+      propertyPath: m_Name
+      value: Hand_Pinky1
       objectReference: {fileID: 0}
     - target: {fileID: 4927695388962516, guid: c6a74181d4000004887343fb87b3c53a, type: 3}
       propertyPath: m_RootOrder
