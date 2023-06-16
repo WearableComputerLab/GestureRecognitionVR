@@ -211,6 +211,10 @@ public class GesturePlayback : MonoBehaviour
         // Get the initial HandPosition from the first frame of finger data
         SerializedBoneData initialHandPositionData = fingerData[0]["HandPosition"];
         Vector3 initialGesturePosition = initialHandPositionData.position;
+        Quaternion initialGestureRotation = initialHandPositionData.rotation;
+
+        // Rotation offset so hand model performs gesture towards user
+        Quaternion rotationOffset = Quaternion.Euler(180f, 90f, 0f);
 
         for (int frameIndex = 0; frameIndex < fingerData.Count; frameIndex++)
         {
@@ -267,15 +271,19 @@ public class GesturePlayback : MonoBehaviour
             // Calculate the interpolated hand position relative to the initial hand position
             Vector3 interpolatedHandPosition = initialHandPosition + (currentGesturePosition - initialGesturePosition);
 
+            // New interpolatedHandPosition method to add rotationOffset
+            Quaternion interpolatedHandRotation = currentGestureRotation * Quaternion.Inverse(initialGestureRotation) * rotationOffset;
+
             // Calculate the position change relative to the hand's current position
             Vector3 handPositionChange = interpolatedHandPosition - handModel.transform.position;
 
-            // Calculate the rotation change as an Euler angle
-            //Vector3 handRotationChange = (currentGestureRotation * Quaternion.Inverse(initialHandRotation)).eulerAngles; // THIS CAUSES SPINNING?
-            Quaternion handRotationChange = currentGestureRotation * Quaternion.Inverse(handModel.transform.rotation);
+            // Calculate the rotation change as an Euler angle 
+            //Vector3 handRotationChange = interpolatedHandRotation.eulerAngles; // CAUSES SPINNING
+            Quaternion handRotationChange = currentGestureRotation * Quaternion.Inverse(handModel.transform.rotation); // Works (no spinning)
+
 
             // Set the hand's position and rotation using Lerp for smooth interpolation
-            StartCoroutine(MoveHandCoroutine(handModel.transform, handPositionChange, Vector3.zero, 1f / 20f));
+            StartCoroutine(MoveHandCoroutine(handModel.transform, handPositionChange, handRotationChange.eulerAngles, 1f / 20f));
 
             // Wait for the next frame
             yield return null;
@@ -295,8 +303,8 @@ public class GesturePlayback : MonoBehaviour
         Quaternion initialRotation = handModel.localRotation;
         Quaternion targetRotation = Quaternion.Euler(WrapEulerAngles(rotationChange)) * initialRotation;
 
-        //// Rotate hand by 180 degrees to face user. 
-        //targetRotation *= Quaternion.Euler(180f, 0f, 0f);
+        //// 0, 90, 0 cancels out a rotation. Causes issues, maybe try offsetting rotation in PlayGestureCoroutine instead? 
+        // targetRotation *= Quaternion.Euler(0f, 90f, 0f);
 
         while (elapsedTime < duration)
         {
