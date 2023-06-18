@@ -25,6 +25,7 @@ public class StateMachine : MonoBehaviour
     public AppVoiceExperience appVoiceExperienceName;
 
     public TouchScreenKeyboard keyboard;
+    
 
     /// <summary>
     /// Runs before start to set up Singleton.
@@ -338,9 +339,20 @@ public class NameGesture : State
         {
             if (string.IsNullOrEmpty(GestureDetect.Instance.userInput))
             {
-                if (!StateMachine.Instance.appVoiceExperienceName.Active)
+                if (StateMachine.Instance.activateVoiceButton.isToggled)
                 {
-                    StateMachine.Instance.appVoiceExperienceName.Activate();
+                    if (!StateMachine.Instance.appVoiceExperienceName.Active)
+                    {
+                        StateMachine.Instance.appVoiceExperienceName.Activate();
+                    }
+                }
+                else
+                {
+                    StateMachine.Instance.appVoiceExperienceName.Deactivate();
+                    if (StateMachine.Instance.keyboard != null)
+                    {
+                        GestureDetect.Instance.userInput = StateMachine.Instance.keyboard.text;
+                    }
                 }
 
                 yield return new WaitForEndOfFrame();
@@ -393,6 +405,7 @@ public class SelectResponse : State
             }));
             responseButton.GetComponentInChildren<TextMeshPro>().text = t.Name();
             buttons.Add(responseButton);
+            responseButton.SetActive(false);
         }
 
         GestureDetect.Instance.responseButtonPosition.GetComponent<GridObjectCollection>().UpdateCollection();
@@ -407,9 +420,16 @@ public class SelectResponse : State
         {
             if (string.IsNullOrEmpty(GestureDetect.Instance.userInput))
             {
-                if (!StateMachine.Instance.appVoiceExperienceName.Active)
+                if (StateMachine.Instance.activateVoiceButton.isToggled)
                 {
-                    StateMachine.Instance.appVoiceExperienceName.Activate();
+                    if (!StateMachine.Instance.appVoiceExperienceName.Active)
+                    {
+                        StateMachine.Instance.appVoiceExperienceName.Activate();
+                    }
+                }
+                else
+                {
+                    buttons.ForEach(button => button.SetActive(true));
                 }
 
                 yield return new WaitForEndOfFrame();
@@ -467,5 +487,55 @@ public class SaveGesture : State
     {
         yield return new WaitForSeconds(1f);
         StateMachine.SetState(new Waiting());
+    }
+}
+/// <summary>
+/// State that will deal with recording gestures for rock paper scissors game
+/// </summary>
+public class PlayGame : State
+{
+    //TODO: Implement State for recording Rock, Paper and Scissors
+    public override IEnumerator Start()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override IEnumerator End()
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// State that sets up the AI for the rock paper scissors game
+/// </summary>
+public class GameSetup : State
+{
+    //TODO: Implement State for recording Rock, Paper and Scissors
+    public override IEnumerator Start()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override IEnumerator End()
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// State that will control game scores and end game
+/// </summary>
+public class GameStart : State
+{
+    //TODO: Implement State for recording Rock, Paper and Scissors
+    public override IEnumerator Start()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override IEnumerator End()
+    {
+        throw new NotImplementedException();
     }
 }
