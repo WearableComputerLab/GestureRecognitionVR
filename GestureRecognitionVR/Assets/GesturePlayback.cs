@@ -213,9 +213,6 @@ public class GesturePlayback : MonoBehaviour
         Vector3 initialGesturePosition = initialHandPositionData.position;
         Quaternion initialGestureRotation = initialHandPositionData.rotation;
 
-        // Rotation offset so hand model performs gesture towards user
-        Quaternion rotationOffset = Quaternion.Euler(180f, 90f, 0f);
-
         for (int frameIndex = 0; frameIndex < fingerData.Count; frameIndex++)
         {
             Dictionary<string, SerializedBoneData> frameData = fingerData[frameIndex];
@@ -271,23 +268,28 @@ public class GesturePlayback : MonoBehaviour
             // Calculate the interpolated hand position relative to the initial hand position
             Vector3 interpolatedHandPosition = initialHandPosition + (currentGesturePosition - initialGesturePosition);
 
-            // New interpolatedHandPosition method to add rotationOffset
-            Quaternion interpolatedHandRotation = currentGestureRotation * Quaternion.Inverse(initialGestureRotation) * rotationOffset;
-
             // Calculate the position change relative to the hand's current position
             Vector3 handPositionChange = interpolatedHandPosition - handModel.transform.position;
 
-            // Calculate the rotation change as an Euler angle 
-            //Vector3 handRotationChange = interpolatedHandRotation.eulerAngles; // CAUSES SPINNING
-            Quaternion handRotationChange = currentGestureRotation * Quaternion.Inverse(handModel.transform.rotation); // Works (no spinning)
+            // Calculate the rotation change as a quaternion
+            Quaternion handRotationChange = currentGestureRotation * Quaternion.Inverse(handModel.transform.rotation);
 
+            // Calculate the scale change relative to the hand's current scale (to make hand model face user)
+            Vector3 handScaleChange = new Vector3(-1f, 1f, 1f) - handModel.transform.localScale;
+            // Apply scale changes to the hand model
+            handModel.transform.localScale += handScaleChange;
 
-            // Set the hand's position and rotation using Lerp for smooth interpolation
+            // Call MoveHandCoroutine with the updated position and rotation
             StartCoroutine(MoveHandCoroutine(handModel.transform, handPositionChange, handRotationChange.eulerAngles, 1f / 20f));
 
             // Wait for the next frame
             yield return null;
         }
+
+        // Reset scale change relative to the hand's current scale
+        Vector3 handScale = new Vector3(1f, 1f, -1f) - handModel.transform.localScale;
+        // Apply scale changes to the hand model
+        handModel.transform.localScale += handScale;
 
         replayButton.gameObject.SetActive(true);
         // After playing all frames, reset the hand model's position and rotation to the initial values
