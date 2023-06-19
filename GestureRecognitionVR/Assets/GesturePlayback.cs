@@ -268,7 +268,7 @@ public class GesturePlayback : MonoBehaviour
             // Calculate the interpolated hand position relative to the initial hand position
             Vector3 interpolatedHandPosition = initialHandPosition + (currentGesturePosition - initialGesturePosition);
 
-            // Calculate the rotation offset
+            // Calculate the rotation offset (30, 0, -180 works well)
             Quaternion rotationOffset = Quaternion.Euler(30f, 0f, -180f);
 
             // Calculate the scale change relative to the hand's current scale
