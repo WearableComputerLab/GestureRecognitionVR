@@ -268,22 +268,26 @@ public class GesturePlayback : MonoBehaviour
             // Calculate the interpolated hand position relative to the initial hand position
             Vector3 interpolatedHandPosition = initialHandPosition + (currentGesturePosition - initialGesturePosition);
 
-            // Calculate the position change relative to the hand's current position
-            Vector3 handPositionChange = interpolatedHandPosition - handModel.transform.position;
+            // Calculate the rotation offset
+            Quaternion rotationOffset = Quaternion.Euler(30f, 0f, -180f);
 
-            // Calculate the rotation change as a quaternion
-            Quaternion handRotationChange = currentGestureRotation * Quaternion.Inverse(handModel.transform.rotation);
-
-            // Calculate the scale change relative to the hand's current scale (to make hand model face user) (-1,-1,-1 represents orientation of recording)
-            Vector3 handScaleChange = new Vector3(-1f, 1f, 1f) - handModel.transform.localScale;
+            // Calculate the scale change relative to the hand's current scale
+            Vector3 handScaleChange = new Vector3(1f, 1f, 1f) - handModel.transform.localScale;
             // Apply scale changes to the hand model
             handModel.transform.localScale += handScaleChange;
 
+            // Calculate the position change relative to the hand's current position
+            Vector3 handPositionChange = interpolatedHandPosition - handModel.transform.position;
+
+            // Calculate the rotation change as a quaternion without applying the offset
+            Quaternion handRotationChange = currentGestureRotation * Quaternion.Inverse(handModel.transform.rotation);
+
             // Call MoveHandCoroutine with the updated position and rotation
-            StartCoroutine(MoveHandCoroutine(handModel.transform, handPositionChange, handRotationChange.eulerAngles, 1f / 20f));
+            StartCoroutine(MoveHandCoroutine(handModel.transform, handPositionChange, (rotationOffset * handRotationChange).eulerAngles, 1f / 20f));
 
             // Wait for the next frame
             yield return null;
+
         }
 
         replayButton.gameObject.SetActive(true);
@@ -342,7 +346,7 @@ public class GesturePlayback : MonoBehaviour
         yield return new WaitForSeconds(0.1f);
 
         // Reset scale change relative to the hand's current scale
-        Vector3 handScale = new Vector3(1f, 1f, -1f) - handModel.transform.localScale;
+        Vector3 handScale = new Vector3(1f, 1f, 1f) - handModel.transform.localScale;
         // Apply scale changes to the hand model
         handModel.transform.localScale += handScale;
 
