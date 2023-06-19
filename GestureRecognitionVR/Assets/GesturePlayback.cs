@@ -274,7 +274,7 @@ public class GesturePlayback : MonoBehaviour
             // Calculate the rotation change as a quaternion
             Quaternion handRotationChange = currentGestureRotation * Quaternion.Inverse(handModel.transform.rotation);
 
-            // Calculate the scale change relative to the hand's current scale (to make hand model face user)
+            // Calculate the scale change relative to the hand's current scale (to make hand model face user) (-1,-1,-1 represents orientation of recording)
             Vector3 handScaleChange = new Vector3(-1f, 1f, 1f) - handModel.transform.localScale;
             // Apply scale changes to the hand model
             handModel.transform.localScale += handScaleChange;
@@ -285,11 +285,6 @@ public class GesturePlayback : MonoBehaviour
             // Wait for the next frame
             yield return null;
         }
-
-        // Reset scale change relative to the hand's current scale
-        Vector3 handScale = new Vector3(1f, 1f, -1f) - handModel.transform.localScale;
-        // Apply scale changes to the hand model
-        handModel.transform.localScale += handScale;
 
         replayButton.gameObject.SetActive(true);
         // After playing all frames, reset the hand model's position and rotation to the initial values
@@ -345,6 +340,11 @@ public class GesturePlayback : MonoBehaviour
     {
         // Delay for a short duration to allow any ongoing movements to complete
         yield return new WaitForSeconds(0.1f);
+
+        // Reset scale change relative to the hand's current scale
+        Vector3 handScale = new Vector3(1f, 1f, -1f) - handModel.transform.localScale;
+        // Apply scale changes to the hand model
+        handModel.transform.localScale += handScale;
 
         // Reset the hand model's position and rotation to the initial values
         handModel.transform.position = initialHandPosition;
