@@ -75,7 +75,7 @@ public class GestureDetect : MonoBehaviour
     private List<OVRBone> fingerBones = new List<OVRBone>();
 
     // set recording time default to 0.01 second (one frame, user should be able to change this)
-    private float recordingTime = 0.01f;
+    private float recordingTime = 3f;
     // lastRecordingTime, isRecording, and delay are used to ensure a gesture isnt recognised as soon as it is recorded.
     private float lastRecordTime = 0f;
     private float delay = 2.0f; //delay of 2 seconds after recording before gesture can be recognized
@@ -263,8 +263,27 @@ public class GestureDetect : MonoBehaviour
         float startTime = Time.time;
         int lastSecondDisplayed = Mathf.FloorToInt(startTime);
 
+        // Find the OVRRightHandPrefab in the hands array (the hand we'll be recording)
+        OVRSkeleton rightHand = null;
+        foreach (OVRSkeleton hand in hands)
+        {
+            if (hand.transform.name == "OVRRightHandPrefab")
+            {
+                rightHand = hand;
+                break;
+            }
+        }
+
+        // If right hand cant be found, error
+        if (rightHand == null)
+        {
+            Debug.LogError("Failed to find OVRRightHandPrefab in the hands array.");
+            yield break;
+        }
+
         while (Time.time - startTime < recordingTime)
         {
+            // Timer countdown for time left to record
             int currentSecond = Mathf.FloorToInt(Time.time);
             if (currentSecond > lastSecondDisplayed)
             {
@@ -290,9 +309,11 @@ public class GestureDetect : MonoBehaviour
                 frameData[boneName] = boneData;
             }
 
-            // Add the hand position data to the frameData dictionary
-            Vector3 handPosition = hands[2].transform.position;
-            Quaternion handRotation = hands[2].transform.rotation;
+            // Get the hand position and rotation data of hand being recorded
+            Vector3 handPosition = rightHand.transform.position;
+            Quaternion handRotation = rightHand.transform.rotation;
+
+            // Set the handData with handPosition and handRotation for each frame
             SerializedBoneData handData = new SerializedBoneData();
             handData.boneName = "hand_R";
             handData.position = handPosition;

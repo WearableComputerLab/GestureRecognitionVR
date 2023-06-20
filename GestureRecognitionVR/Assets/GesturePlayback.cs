@@ -213,15 +213,19 @@ public class GesturePlayback : MonoBehaviour
         Vector3 initialGesturePosition = initialHandPositionData.position;
         Quaternion initialGestureRotation = initialHandPositionData.rotation;
 
+        // For each frame in the motion gesture...
         for (int frameIndex = 0; frameIndex < fingerData.Count; frameIndex++)
         {
+            // Store the data for the current frame in frameData
             Dictionary<string, SerializedBoneData> frameData = fingerData[frameIndex];
 
+            // For every bone in the frame, get the name and data
             foreach (KeyValuePair<string, SerializedBoneData> kvp in frameData)
             {
                 string fingerName = kvp.Key;
                 SerializedBoneData boneData = kvp.Value;
 
+                // Ignore HandPosition as we focus on moving fingers first
                 if (fingerName != "HandPosition")
                 {
                     // Find the finger transform in the hand model hierarchy
@@ -304,20 +308,14 @@ public class GesturePlayback : MonoBehaviour
         Quaternion initialRotation = handModel.localRotation;
         Quaternion targetRotation = Quaternion.Euler(WrapEulerAngles(rotationChange)) * initialRotation;
 
-        //// 0, 90, 0 cancels out a rotation. Causes issues, maybe try offsetting rotation in PlayGestureCoroutine instead? 
-        // targetRotation *= Quaternion.Euler(0f, 90f, 0f);
-
         while (elapsedTime < duration)
         {
+            // calculate time for Lerp
             elapsedTime += Time.deltaTime;
             float t = Mathf.Clamp01(elapsedTime / duration);
 
             // Calculate the interpolated position
             Vector3 newPosition = initialPosition + positionChange * t;
-
-            //// Calculate the interpolated rotation - OLD
-            //Vector3 newRotationEulerAngles = initialRotation.eulerAngles + rotationChange * t;
-            //Quaternion newRotation = Quaternion.Euler(newRotationEulerAngles);
 
             // Calculate the interpolated rotation using wrapped Euler angles 
             Quaternion newRotation = Quaternion.Slerp(initialRotation, targetRotation, t);
@@ -326,8 +324,6 @@ public class GesturePlayback : MonoBehaviour
             // Set the hand model's position and rotation
             handModel.localPosition = newPosition;
             handModel.localRotation = newRotation;
-            // handModel.localRotation = Quaternion.Euler(wrappedEulerAngles);
-
 
             yield return null;
         }
@@ -335,7 +331,6 @@ public class GesturePlayback : MonoBehaviour
         // Ensure the hand model reaches the final position and rotation exactly
         handModel.localPosition = initialPosition + positionChange;
         handModel.localRotation = initialRotation * Quaternion.Euler(rotationChange);
-        //handModel.localRotation = targetRotation;
     }
 
 
@@ -345,16 +340,10 @@ public class GesturePlayback : MonoBehaviour
         // Delay for a short duration to allow any ongoing movements to complete
         yield return new WaitForSeconds(0.1f);
 
-        // Reset scale change relative to the hand's current scale
-        Vector3 handScale = new Vector3(1f, 1f, 1f) - handModel.transform.localScale;
-        // Apply scale changes to the hand model
-        handModel.transform.localScale += handScale;
-
         // Reset the hand model's position and rotation to the initial values
         handModel.transform.position = initialHandPosition;
         handModel.transform.rotation = initialHandRotation;
 
-        // Debug.Log("Motion Gesture Finished");
     }
 
 
