@@ -651,7 +651,7 @@ public class GestureDetect : MonoBehaviour
     // TODO: use HandPosition here to compare whole hand position across frames (introduce offset so position is independent of starting position)
     private bool MatchMotionFrameData(Dictionary<string, SerializedBoneData> frameData, Dictionary<string, SerializedBoneData> motionFrameData, Vector3 currentHandPosition, Quaternion currentHandRotation)
     {
-        // Get the initial hand position from the motion frame data
+        // Get the initial hand position from the motion frame data // is this right? just put motionFrameData["HandPosition"].position in CompareHandPosition
         Vector3 initialHandPosition = motionFrameData["HandPosition"].position;
 
         // Calculate the translation offset
@@ -660,15 +660,13 @@ public class GestureDetect : MonoBehaviour
         // Compare the hand positions using the adjusted positions
         SerializedBoneData motionHandData = motionFrameData["HandPosition"];
         Vector3 adjustedHandPosition = currentHandPosition - translationOffset;
-
         if (!CompareHandPosition(adjustedHandPosition, motionHandData.position, detectionThresholdPosition))
         {
             return false;
         }
 
         // Compare the hand rotations
-        Quaternion motionHandRotation = motionHandData.rotation;
-
+        Quaternion motionHandRotation = motionFrameData["HandPosition"].rotation;
         if (!CompareRotationData(currentHandRotation, motionHandRotation, detectionThresholdRotation))
         {
             return false;
@@ -728,6 +726,7 @@ public class GestureDetect : MonoBehaviour
         return true;
     }
 
+    // Method to compare 2 different hand positions using detectionThreshold
     private bool CompareHandPosition(Vector3 handPosition1, Vector3 handPosition2, float detectionThreshold)
     {
 
@@ -740,16 +739,27 @@ public class GestureDetect : MonoBehaviour
         return positionDistance <= detectionThreshold;
     }
 
+    // Method to compare 2 different hand rotations, change detectionThreshold to 50 degrees for whole hand rotations
     private bool CompareRotationData(Quaternion rotation1, Quaternion rotation2, float detectionThreshold)
     {
-        float rotationAngle = Quaternion.Angle(rotation1, rotation2);
+        detectionThreshold = 50f;
+
+        Quaternion deltaRotation = Quaternion.Inverse(rotation1) * rotation2;
+        float rotationAngle = Quaternion.Angle(Quaternion.identity, deltaRotation);
 
         //Debug.Log($"Current Hand Rotation: {rotation1}");
         //Debug.Log($"Saved Hand Rotation: {rotation2}");
+        //Debug.Log($"Delta Rotation: {deltaRotation}");
         //Debug.Log($"Angle: {rotationAngle}");
+
+        if (rotationAngle > detectionThreshold)
+        {
+            //Debug.Log("angle is bigger than threshold");
+        }
 
         return rotationAngle <= detectionThreshold;
     }
+
 
 
 }
