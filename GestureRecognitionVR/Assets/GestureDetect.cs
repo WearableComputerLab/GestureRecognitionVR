@@ -607,7 +607,7 @@ public class GestureDetect : MonoBehaviour
                     {
                         // Separate Thresholds for Recognizing Motion Gestures (1f and 20f)
                         detectionThresholdPosition = 1f;
-                        detectionThresholdRotation = 20f;
+                        detectionThresholdRotation = 35f;
 
                         // Threshold for how far into a motion gesture before it's recognized (90%)
                         int motionGestureThreshold = Mathf.CeilToInt(kvp.Value.fingerData.Count * 0.9f);
