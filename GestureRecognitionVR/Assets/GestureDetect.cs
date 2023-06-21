@@ -75,7 +75,7 @@ public class GestureDetect : MonoBehaviour
     private List<OVRBone> fingerBones = new List<OVRBone>();
 
     // set recording time default to 0.01 second (one frame, user should be able to change this)
-    private float recordingTime = 3f;
+    private float recordingTime = 1f;
     // lastRecordingTime, isRecording, and delay are used to ensure a gesture isnt recognised as soon as it is recorded.
     private float lastRecordTime = 0f;
     private float delay = 2.0f; //delay of 2 seconds after recording before gesture can be recognized
@@ -507,6 +507,17 @@ public class GestureDetect : MonoBehaviour
         float currentMin = Mathf.Infinity;
         int motionCounter = 0;
 
+        // Find the OVRRightHandPrefab in the hands array (the hand we'll be recognising)
+        OVRSkeleton rightHand = null;
+        foreach (OVRSkeleton hand in hands)
+        {
+            if (hand.transform.name == "OVRRightHandPrefab")
+            {
+                rightHand = hand;
+                break;
+            }
+        }
+
         // Create a dictionary to store finger bones by their bone names (a snapshot of the current position of the user's hand)
         Dictionary<string, OVRBone> fingerBonesDict = new Dictionary<string, OVRBone>();
 
@@ -598,7 +609,7 @@ public class GestureDetect : MonoBehaviour
                         detectionThresholdPosition = 1f;
                         detectionThresholdRotation = 20f;
 
-                        // Threshold for how far into a motion gesture before its recognised (90%)
+                        // Threshold for how far into a motion gesture before it's recognized (90%)
                         int motionGestureThreshold = Mathf.CeilToInt(kvp.Value.fingerData.Count * 0.9f);
 
                         //Debug.Log($"Counter: {motionCounter}");
@@ -614,7 +625,7 @@ public class GestureDetect : MonoBehaviour
                         else if (motionCounter < kvp.Value.fingerData.Count)
                         {
                             Dictionary<string, SerializedBoneData> motionFrameData = kvp.Value.fingerData[motionCounter];
-                            if (MatchMotionFrameData(frameData, motionFrameData, hands[2].transform.position))
+                            if (MatchMotionFrameData(frameData, motionFrameData, rightHand.transform.position, rightHand.transform.rotation))
                             {
                                 motionCounter++;
                             }
@@ -623,9 +634,6 @@ public class GestureDetect : MonoBehaviour
                                 motionCounter = 0;
                             }
                         }
-
-
-
                     }
                 }
 
@@ -641,7 +649,7 @@ public class GestureDetect : MonoBehaviour
     }
 
     // TODO: use HandPosition here to compare whole hand position across frames (introduce offset so position is independent of starting position)
-    private bool MatchMotionFrameData(Dictionary<string, SerializedBoneData> frameData, Dictionary<string, SerializedBoneData> motionFrameData, Vector3 currentHandPosition)
+    private bool MatchMotionFrameData(Dictionary<string, SerializedBoneData> frameData, Dictionary<string, SerializedBoneData> motionFrameData, Vector3 currentHandPosition, Quaternion currentHandRotation)
     {
         // Get the initial hand position from the motion frame data
         Vector3 initialHandPosition = motionFrameData["HandPosition"].position;
@@ -653,11 +661,15 @@ public class GestureDetect : MonoBehaviour
         SerializedBoneData motionHandData = motionFrameData["HandPosition"];
         Vector3 adjustedHandPosition = currentHandPosition - translationOffset;
 
-        //Debug.Log($"Current Hand Position: {currentHandPosition}");
-        //Debug.Log($"Initial Hand Position: {initialHandPosition}");
-        //Debug.Log($"Translation Offset: {translationOffset}");
-
         if (!CompareHandPosition(adjustedHandPosition, motionHandData.position, detectionThresholdPosition))
+        {
+            return false;
+        }
+
+        // Compare the hand rotations
+        Quaternion motionHandRotation = motionHandData.rotation;
+
+        if (!CompareRotationData(currentHandRotation, motionHandRotation, detectionThresholdRotation))
         {
             return false;
         }
@@ -696,8 +708,6 @@ public class GestureDetect : MonoBehaviour
         return true;
     }
 
-
-
     // Compares the position and rotation values of two bones against detectionThreshold
     private bool CompareBoneData(Vector3 position1, Quaternion rotation1, Vector3 position2, Quaternion rotation2)
     {
@@ -720,15 +730,26 @@ public class GestureDetect : MonoBehaviour
 
     private bool CompareHandPosition(Vector3 handPosition1, Vector3 handPosition2, float detectionThreshold)
     {
+
         float positionDistance = Vector3.Distance(handPosition1, handPosition2);
 
         //Debug.Log($"Current Hand Position: {handPosition1}");
-        //Debug.Log($"Motion Hand Position: {handPosition2}");
+        //Debug.Log($"Saved Hand Position: {handPosition2}");
         //Debug.Log($"Distance: {positionDistance}");
 
         return positionDistance <= detectionThreshold;
     }
 
+    private bool CompareRotationData(Quaternion rotation1, Quaternion rotation2, float detectionThreshold)
+    {
+        float rotationAngle = Quaternion.Angle(rotation1, rotation2);
+
+        //Debug.Log($"Current Hand Rotation: {rotation1}");
+        //Debug.Log($"Saved Hand Rotation: {rotation2}");
+        //Debug.Log($"Angle: {rotationAngle}");
+
+        return rotationAngle <= detectionThreshold;
+    }
 
 
 }
