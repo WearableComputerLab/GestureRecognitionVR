@@ -511,36 +511,31 @@ public class SaveGesture : State
 /// </summary>
 public class PlayGame : State
 {
-    public GameObject handModel;
 
-    // TODO: write countdown/result text on the existing canvas
-    public Text countdownText;
-    public Text resultText;
-    public float countdownDuration = 3f;
-
-    private GestureDetect gestureDetect;
+    //private GestureDetect gestureDetect; // Using GestureDetect.Instance instead
     private GesturePlayback gesturePlayback;
 
     public override IEnumerator Start()
     {
+        // TODO: Make these not debug logs but a nice notification or something on the table canvas
         // Display welcome message
-        countdownText.text = "Welcome to Rock Paper Scissors";
+        Debug.Log("Welcome to Rock Paper Scissors");
         yield return new WaitForSeconds(1f);
 
         // Display countdown messages
-        countdownText.text = "Get ready!";
+        Debug.Log("Get ready!");
         yield return new WaitForSeconds(2f);
 
-        countdownText.text = "Rock...";
+        Debug.Log("Rock...");
         yield return new WaitForSeconds(1f);
 
-        countdownText.text = "Paper...";
+        Debug.Log("Paper...");
         yield return new WaitForSeconds(1f);
 
-        countdownText.text = "Scissors...";
+        Debug.Log("Scissors...");
         yield return new WaitForSeconds(1f);
 
-        countdownText.text = "Go!";
+        Debug.Log("Go!");
         yield return new WaitForSeconds(1f);
 
         // Recognize player gesture and get computer gesture
@@ -548,7 +543,7 @@ public class PlayGame : State
         Gesture? computerGesture = GetComputerGesture();
 
         // Display player and computer gestures
-        resultText.text = $"Player: {playerGesture.Value.name} - Computer: {computerGesture.Value.name}";
+        Debug.Log($"Player: {playerGesture.Value.name} - Computer: {computerGesture.Value.name}");
 
         // Determine the winner
         DetermineWinner(playerGesture, computerGesture);
@@ -569,8 +564,28 @@ public class PlayGame : State
     // Use gestureDetect to recognize and return the player's gesture
     private Gesture? Recognize()
     {
-        return gestureDetect.Recognize();
+        if (GestureDetect.Instance != null)
+        {
+            Gesture? gesture = GestureDetect.Instance.Recognize();
+            if (gesture == null)
+            {
+                Debug.Log("No gesture recognized.");
+                // Perform some action when no gesture is recognized (waiting state?)
+                StateMachine.SetState(new ExitState());
+            }
+            else
+            {
+                return gesture;
+            }
+        }
+        else
+        {
+            Debug.Log("GestureDetect.Instance is null");
+        }
+
+        return null;
     }
+
 
     // Select random gesture (from rock paper or scissors) for computer and play it back using gesturePlayback
     private Gesture? GetComputerGesture()
@@ -581,7 +596,7 @@ public class PlayGame : State
         // Find valid gestures from gestureDetect
         foreach (string gestureName in validGestureNames)
         {
-            if (gestureDetect.gestures.ContainsKey(gestureName))
+            if (GestureDetect.Instance.gestures.ContainsKey(gestureName))
             {
                 validGestures.Add(gestureName);
             }
@@ -591,7 +606,7 @@ public class PlayGame : State
         {
             // Select a random gesture and play it using gesturePlayback
             string randomGestureName = validGestures[UnityEngine.Random.Range(0, validGestures.Count)];
-            Gesture randomGesture = gestureDetect.gestures[randomGestureName];
+            Gesture randomGesture = GestureDetect.Instance.gestures[randomGestureName];
             gesturePlayback.PlayGesture(randomGesture.name);
             return randomGesture;
         }
@@ -607,36 +622,36 @@ public class PlayGame : State
     {
         if (playerGesture == null)
         {
-            resultText.text += "\nInvalid player gesture!";
+            Debug.Log("\nInvalid player gesture!");
             return;
         }
 
         if (computerGesture == null)
         {
-            resultText.text += "\nInvalid computer gesture!";
+            Debug.Log("\nInvalid computer gesture!");
             return;
         }
 
         if (playerGesture.Value.name == computerGesture.Value.name)
         {
-            resultText.text += "\nIt's a tie!";
+            Debug.Log("\nIt's a tie!");
         }
         else if ((playerGesture.Value.name == "Rock" && computerGesture.Value.name == "Scissors") ||
                  (playerGesture.Value.name == "Paper" && computerGesture.Value.name == "Rock") ||
                  (playerGesture.Value.name == "Scissors" && computerGesture.Value.name == "Paper"))
         {
-            resultText.text += "\nPlayer wins!";
+            Debug.Log("\nPlayer wins!");
         }
         else
         {
-            resultText.text += "\nComputer wins!";
+            Debug.Log("\nComputer wins!");
         }
     }
 
     // Ask user to play again (TODO: change input to voice recog or virtual keyboard? instead of Console.Readline (which is used as placeholder))
     private IEnumerator PlayAgain()
     {
-        resultText.text += "Do you want to play again? (yes/no)";
+        Debug.Log("Do you want to play again? (yes/no)");
         string input = Console.ReadLine().ToLower();
         if (input == "yes")
         {
@@ -699,6 +714,7 @@ public class GameStart : State
 
     public override IEnumerator End()
     {
-        throw new NotImplementedException();
+        Debug.Log("GameStart ended");
+        yield break;
     }
 }
