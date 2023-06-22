@@ -17,6 +17,8 @@ public class StateMachine : MonoBehaviour
     private State _currentState;
 
     public ToggleButton activateVoiceButton;
+    public PressableButtonHoloLens2 playGameButton;
+    
 
     /// <summary>
     /// Singleton Instance of the State Machine
@@ -128,7 +130,18 @@ public class StartScene : State
         //Add listeners to the Next and Previous MRTK buttons
         GestureDetect.Instance.nextButton.OnClick.AddListener(GestureDetect.Instance.NextGesture);
         GestureDetect.Instance.prevButton.OnClick.AddListener(GestureDetect.Instance.PrevGesture);
+
+        // Initialize the PlayGameButton and add listener to start the game
+        PressableButtonHoloLens2 startGame = StateMachine.Instance.playGameButton;
+        startGame.ButtonPressed.AddListener(StartGame);
+
         yield break;
+    }
+
+    // When PlayGameButton is pressed, change state to GameStart
+    public void StartGame()
+    {
+        StateMachine.SetState(new GameStart());
     }
 
     public override IEnumerator End()
@@ -136,6 +149,8 @@ public class StartScene : State
         StateMachine.SetState(new Waiting());
         yield break;
     }
+
+
 }
 
 /// <summary>
@@ -510,11 +525,11 @@ public class PlayGame : State
     {
         // Display welcome message
         countdownText.text = "Welcome to Rock Paper Scissors";
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(1f);
 
         // Display countdown messages
         countdownText.text = "Get ready!";
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(2f);
 
         countdownText.text = "Rock...";
         yield return new WaitForSeconds(1f);
@@ -677,7 +692,9 @@ public class GameStart : State
     //TODO: Implement State for recording Rock, Paper and Scissors
     public override IEnumerator Start()
     {
-        throw new NotImplementedException();
+        Debug.Log("Game time started");
+        StateMachine.SetState(new PlayGame());
+        yield return null;
     }
 
     public override IEnumerator End()
