@@ -7,6 +7,7 @@ using System.Linq;
 using Microsoft.MixedReality.Toolkit.UI;
 using Microsoft.MixedReality.Toolkit.Utilities;
 using TMPro;
+using UnityEngine.UI;
 
 public class StateMachine : MonoBehaviour
 {
@@ -489,22 +490,167 @@ public class SaveGesture : State
         StateMachine.SetState(new Waiting());
     }
 }
+
 /// <summary>
 /// State that will deal with recording gestures for rock paper scissors game
 /// </summary>
 public class PlayGame : State
 {
-    //TODO: Implement State for recording Rock, Paper and Scissors
+    public GameObject handModel;
+
+    // TODO: write countdown/result text on the existing canvas
+    public Text countdownText;
+    public Text resultText;
+    public float countdownDuration = 3f;
+
+    private GestureDetect gestureDetect;
+    private GesturePlayback gesturePlayback;
+
     public override IEnumerator Start()
     {
-        throw new NotImplementedException();
+        // Display welcome message
+        countdownText.text = "Welcome to Rock Paper Scissors";
+        yield return new WaitForSeconds(2f);
+
+        // Display countdown messages
+        countdownText.text = "Get ready!";
+        yield return new WaitForSeconds(1f);
+
+        countdownText.text = "Rock...";
+        yield return new WaitForSeconds(1f);
+
+        countdownText.text = "Paper...";
+        yield return new WaitForSeconds(1f);
+
+        countdownText.text = "Scissors...";
+        yield return new WaitForSeconds(1f);
+
+        countdownText.text = "Go!";
+        yield return new WaitForSeconds(1f);
+
+        // Recognize player gesture and get computer gesture
+        Gesture? playerGesture = Recognize();
+        Gesture? computerGesture = GetComputerGesture();
+
+        // Display player and computer gestures
+        resultText.text = $"Player: {playerGesture.Value.name} - Computer: {computerGesture.Value.name}";
+
+        // Determine the winner
+        DetermineWinner(playerGesture, computerGesture);
+
+        yield return new WaitForSeconds(2f);
+
+        // Transition to the GameStart state
+        StateMachine.SetState(new GameStart());
     }
 
+    // Call PlayAgain coroutine to ask the user if they want to play again
     public override IEnumerator End()
     {
-        throw new NotImplementedException();
+        yield return new WaitForSeconds(1f);
+        PlayAgain(); 
+    }
+
+    // Use gestureDetect to recognize and return the player's gesture
+    private Gesture? Recognize()
+    {
+        return gestureDetect.Recognize();
+    }
+
+    // Select random gesture (from rock paper or scissors) for computer and play it back using gesturePlayback
+    private Gesture? GetComputerGesture()
+    {
+        string[] validGestureNames = { "rock", "paper", "scissors" };
+        List<string> validGestures = new List<string>();
+
+        // Find valid gestures from gestureDetect
+        foreach (string gestureName in validGestureNames)
+        {
+            if (gestureDetect.gestures.ContainsKey(gestureName))
+            {
+                validGestures.Add(gestureName);
+            }
+        }
+
+        if (validGestures.Count > 0)
+        {
+            // Select a random gesture and play it using gesturePlayback
+            string randomGestureName = validGestures[UnityEngine.Random.Range(0, validGestures.Count)];
+            Gesture randomGesture = gestureDetect.gestures[randomGestureName];
+            gesturePlayback.PlayGesture(randomGesture.name);
+            return randomGesture;
+        }
+        else
+        {
+            Debug.LogWarning("No valid gestures found for rock, paper, or scissors.");
+            return null;
+        }
+    }
+
+    // Logic to compare player and computer gestures and determine the winner
+    private void DetermineWinner(Gesture? playerGesture, Gesture? computerGesture)
+    {
+        if (playerGesture == null)
+        {
+            resultText.text += "\nInvalid player gesture!";
+            return;
+        }
+
+        if (computerGesture == null)
+        {
+            resultText.text += "\nInvalid computer gesture!";
+            return;
+        }
+
+        if (playerGesture.Value.name == computerGesture.Value.name)
+        {
+            resultText.text += "\nIt's a tie!";
+        }
+        else if ((playerGesture.Value.name == "Rock" && computerGesture.Value.name == "Scissors") ||
+                 (playerGesture.Value.name == "Paper" && computerGesture.Value.name == "Rock") ||
+                 (playerGesture.Value.name == "Scissors" && computerGesture.Value.name == "Paper"))
+        {
+            resultText.text += "\nPlayer wins!";
+        }
+        else
+        {
+            resultText.text += "\nComputer wins!";
+        }
+    }
+
+    // Ask user to play again (TODO: change input to voice recog or virtual keyboard? instead of Console.Readline (which is used as placeholder))
+    private IEnumerator PlayAgain()
+    {
+        resultText.text += "Do you want to play again? (yes/no)";
+        string input = Console.ReadLine().ToLower();
+        if (input == "yes")
+        {
+            StateMachine.SetState(new PlayGame());
+        }
+        else
+        {
+            StateMachine.SetState(new ExitState());
+        }
+        yield return null;
+    }
+
+    // Exit State when player does not want to play again (back to Waiting state)
+    private class ExitState : State
+    {
+        public override IEnumerator Start()
+        {
+            Debug.Log("Exiting game...");
+            yield return null;
+        }
+
+        public override IEnumerator End()
+        {
+            yield return new WaitForSeconds(1f);
+            StateMachine.SetState(new Waiting());
+        }
     }
 }
+
 
 /// <summary>
 /// State that sets up the AI for the rock paper scissors game
