@@ -7,6 +7,8 @@ using UnityEngine;
 
 public class GesturePlayback : MonoBehaviour
 {
+    public static GesturePlayback Instance;
+
     public GameObject handModel;
     public Transform hand_R;
     public GestureDetect gestureDetect;
@@ -20,6 +22,18 @@ public class GesturePlayback : MonoBehaviour
     public TextMeshProUGUI userMessage;
     public Microsoft.MixedReality.Toolkit.UI.Interactable replayButton;
 
+    // Ensure only one instance of GesturePlayback
+    public void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
+    }
 
     /// <summary>
     /// TODO

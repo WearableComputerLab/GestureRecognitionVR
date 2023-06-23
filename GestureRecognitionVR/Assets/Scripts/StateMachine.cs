@@ -513,7 +513,7 @@ public class PlayGame : State
 {
 
     //private GestureDetect gestureDetect; // Using GestureDetect.Instance instead
-    private GesturePlayback gesturePlayback;
+    //private GesturePlayback gesturePlayback;
 
     public override IEnumerator Start()
     {
@@ -561,6 +561,7 @@ public class PlayGame : State
         PlayAgain(); 
     }
 
+    // RUN FOR MULTIPLE FRAMES (COROUTINE?)
     // Use gestureDetect to recognize and return the player's gesture
     private Gesture? Recognize()
     {
@@ -586,11 +587,11 @@ public class PlayGame : State
         return null;
     }
 
-
+    // GET THIS BEFORE COUNTDOWN?
     // Select random gesture (from rock paper or scissors) for computer and play it back using gesturePlayback
     private Gesture? GetComputerGesture()
     {
-        string[] validGestureNames = { "rock", "paper", "scissors" };
+        string[] validGestureNames = { "Rock", "Paper", "Scissors" };
         List<string> validGestures = new List<string>();
 
         // Find valid gestures from gestureDetect
@@ -607,7 +608,9 @@ public class PlayGame : State
             // Select a random gesture and play it using gesturePlayback
             string randomGestureName = validGestures[UnityEngine.Random.Range(0, validGestures.Count)];
             Gesture randomGesture = GestureDetect.Instance.gestures[randomGestureName];
-            gesturePlayback.PlayGesture(randomGesture.name);
+            //Debug.Log(randomGesture.name);
+            GesturePlayback.Instance.PlayGesture(randomGesture.name);
+            
             return randomGesture;
         }
         else
@@ -714,7 +717,7 @@ public class GameStart : State
 
     public override IEnumerator End()
     {
-        Debug.Log("GameStart ended");
+        //Debug.Log("GameStart ended");
         yield break;
     }
 }
