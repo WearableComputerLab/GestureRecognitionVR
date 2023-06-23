@@ -206,6 +206,29 @@ public class GestureDetect : MonoBehaviour
         }
     }
 
+    // Update is called once per frame (THIS WAS READDED)
+    //void Update()
+    //{
+    //    // Search for user Hands
+    //    hands = FindObjectsOfType<OVRSkeleton>();
+    //    Debug.Log(hands.Length);
+    //    FindHandToRecord();
+
+    //    //Debug.Log(handToRecord.transform.position);
+
+    //    // Check for Recognition (returns recognized Gesture if hand is in correct position)
+    //    currentGesture = Recognize();
+    //    bool hasRecognized = currentGesture.HasValue;
+
+    //    // Check if gesture is recognizable and new, log recognized gesture
+    //    if (hasRecognized && (!previousGesture.HasValue || !currentGesture.Value.Equals(previousGesture.Value)))
+    //    {
+    //        Debug.Log("Gesture Recognized: " + currentGesture.Value.name);
+    //        userMessage.text = $"Recognized: {currentGesture.Value.name}";
+    //        previousGesture = currentGesture;
+    //    }
+    //}
+
     public GameObject recordButton;
     public GameObject durationSlider;
 
