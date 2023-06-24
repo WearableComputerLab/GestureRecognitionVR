@@ -1,16 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using Microsoft.MixedReality.Toolkit;
-using Microsoft.MixedReality.Toolkit.UI;
-//using Microsoft.MixedReality.Toolkit.Utilities.FigmaImporter;
-using Newtonsoft.Json;
-using TMPro;
 using UnityEngine;
 using static GestureDetect;
-using static Unity.VisualScripting.LudiqRootObjectEditor;
-
 
 
 public class GestureGame : MonoBehaviour
@@ -47,12 +39,20 @@ public class GestureGame : MonoBehaviour
         Debug.Log("Go!");
         yield return new WaitForSeconds(1f);
 
+        Gesture? playerGesture = null;
+
+        yield return StartCoroutine(RecognizeForDuration(1f, (gesture) =>
+        {
+            playerGesture = gesture;
+        }));
+
         // Recognize player gesture and get computer gesture
-        Gesture? playerGesture = Recognize();
+        //Gesture? playerGesture = Recognize();
         Gesture? computerGesture = GetComputerGesture();
 
         // Display player and computer gestures
-        Debug.Log($"Player: {playerGesture.Value.name} - Computer: {computerGesture.Value.name}");
+        Debug.Log($"Player: {(playerGesture != null ? playerGesture.Value.name : "None")} - Computer: {(computerGesture != null ? computerGesture.Value.name : "None")}");
+
 
         // Determine the winner
         DetermineWinner(playerGesture, computerGesture);
@@ -60,31 +60,52 @@ public class GestureGame : MonoBehaviour
         yield return new WaitForSeconds(2f);
 
         // Ask if the player wants to play again
-        yield return StartCoroutine(PlayAgain());
+        //yield return StartCoroutine(PlayAgain());
     }
 
-    private Gesture? Recognize()
+    private IEnumerator RecognizeForDuration(float duration, Action<Gesture?> callback)
     {
-        if (gestureDetect != null)
+        float startTime = Time.time;
+        float endTime = startTime + duration;
+
+        while (Time.time < endTime)
         {
             Gesture? gesture = gestureDetect.Recognize();
-            if (gesture == null)
+            if (gesture != null)
             {
-                Debug.Log("No gesture recognized.");
-                // Perform some action when no gesture is recognized
+                callback?.Invoke(gesture);
+                yield break;
             }
-            else
-            {
-                return gesture;
-            }
-        }
-        else
-        {
-            Debug.Log("GestureDetect.Instance is null");
+            yield return null;
         }
 
-        return null;
+        Debug.Log("No gesture recognized within the duration.");
+        // Perform some action when no gesture is recognized
+        callback?.Invoke(null);
     }
+
+    //private Gesture? Recognize()
+    //{
+    //    if (gestureDetect != null)
+    //    {
+    //        Gesture? gesture = gestureDetect.Recognize();
+    //        if (gesture == null)
+    //        {
+    //            Debug.Log("No gesture recognized.");
+    //            // Perform some action when no gesture is recognized
+    //        }
+    //        else
+    //        {
+    //            return gesture;
+    //        }
+    //    }
+    //    else
+    //    {
+    //        Debug.Log("GestureDetect.Instance is null");
+    //    }
+
+    //    return null;
+    //}
 
     private Gesture? GetComputerGesture()
     {
@@ -146,20 +167,20 @@ public class GestureGame : MonoBehaviour
         }
     }
 
-    private IEnumerator PlayAgain()
-    {
-        Debug.Log("Do you want to play again? (yes/no)");
-        string input = Console.ReadLine().ToLower();
-        if (input == "yes")
-        {
-            StartCoroutine(PlayGame());
-        }
-        else
-        {
-            Debug.Log("Exiting game...");
-        }
+    //private IEnumerator PlayAgain()
+    //{
+    //    Debug.Log("Do you want to play again? (yes/no)");
+    //    string input = Console.ReadLine().ToLower();
+    //    if (input == "yes")
+    //    {
+    //        StartCoroutine(PlayGame());
+    //    }
+    //    else
+    //    {
+    //        Debug.Log("Exiting game...");
+    //    }
 
-        yield return null;
-    }
+    //    yield return null;
+    //}
 }
 

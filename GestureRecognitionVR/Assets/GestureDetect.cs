@@ -80,7 +80,7 @@ public class GestureDetect : MonoBehaviour
     private List<OVRBone> fingerBones = new List<OVRBone>();
 
     // set recording time default to 0.01 second (one frame, user should be able to change this)
-    private float recordingTime = 1f;
+    private float recordingTime = 1.5f;
     // lastRecordingTime, isRecording, and delay are used to ensure a gesture isnt recognised as soon as it is recorded.
     private float lastRecordTime = 0f;
     private float delay = 2.0f; //delay of 2 seconds after recording before gesture can be recognized
@@ -755,7 +755,7 @@ public class GestureDetect : MonoBehaviour
     // Method to compare 2 different hand rotations, change detectionThreshold to 50 degrees for whole hand rotations
     private bool CompareRotationData(Quaternion rotation1, Quaternion rotation2, float detectionThreshold)
     {
-        detectionThreshold = 50f;
+        detectionThreshold = 48f;
 
         Quaternion deltaRotation = Quaternion.Inverse(rotation1) * rotation2;
         float rotationAngle = Quaternion.Angle(Quaternion.identity, deltaRotation);
