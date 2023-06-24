@@ -407,7 +407,7 @@ public class GestureDetect : MonoBehaviour
             {
                 // Need every bone in hand to determine local position of fingers
                 fingerBones = new List<OVRBone>(handToRecord.Bones);
-                foreach(OVRBone bone in handToRecord.Bones)
+                foreach (OVRBone bone in handToRecord.Bones)
                 {
                     Debug.Log(bone);
                 }
@@ -417,7 +417,7 @@ public class GestureDetect : MonoBehaviour
                 //Debug.Log("No hand detected");
             }
         }
-        Debug.Log("no hands");
+        else { Debug.Log("no hands"); }
     }
 
 
