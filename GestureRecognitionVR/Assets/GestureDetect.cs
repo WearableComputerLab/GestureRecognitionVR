@@ -59,6 +59,11 @@ public class GestureDetect : MonoBehaviour
     private int currentGestureIndex = 0;
     public GesturePlayback gesturePlayback;
 
+
+    // Button to start rock paper scissors game
+    public Microsoft.MixedReality.Toolkit.UI.Interactable playButton;
+    public GestureGame gestureGame;
+
     // Set detectionThreshold. Smaller threshold = more precise hand detection. Set to 0.5. (Was [SerializeField])
     private float detectionThresholdPosition = 0.5f;
     private float detectionThresholdRotation = 10f;
@@ -140,7 +145,15 @@ public class GestureDetect : MonoBehaviour
         //Add listeners to the Next and Previous MRTK buttons
         nextButton.OnClick.AddListener(NextGesture);
         prevButton.OnClick.AddListener(PrevGesture);
+        playButton.OnClick.AddListener(PlayGameOnClick);
 
+    }
+
+    // Start Game when button is pressed
+    private void PlayGameOnClick()
+    {
+        Debug.Log("Starting Game");
+        StartCoroutine(gestureGame.PlayGame());
     }
 
     private void NextGesture()
@@ -501,7 +514,7 @@ public class GestureDetect : MonoBehaviour
    */ // Possibly use motionThreshold variable to accept gesture as recognized easier? OR change detectionThreshold when detecting motion.
       // and what about whole hand world position?
 
-    Gesture? Recognize()
+    public Gesture? Recognize()
     {
         Gesture? currentGesture = null;
         float currentMin = Mathf.Infinity;
