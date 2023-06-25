@@ -24,7 +24,7 @@ public class StateMachine : MonoBehaviour
 
     public AppVoiceExperience appVoiceExperienceName;
 
-    public TouchScreenKeyboard keyboard;
+    public TextMeshProUGUI currentText;
     
 
     /// <summary>
@@ -70,14 +70,6 @@ public class StateMachine : MonoBehaviour
         //Debug.Log($"Starting state: {state.GetType()}");
         yield return state.Start();
         yield return state.End();
-    }
-
-    public void OpenKeyboard()
-    {
-        //Debug.Log("About to Open Keyboard");
-        keyboard = TouchScreenKeyboard.Open("", TouchScreenKeyboardType.Default, false, false, false, false,
-            "Enter Name");
-        //Debug.Log("Opened Keyboard");
     }
 }
 
@@ -322,14 +314,16 @@ public class NameGesture : State
     {
         this.fingerData = fingerData;
     }
+    
+    private TouchScreenKeyboard _keyboard; 
 
     public override IEnumerator Start()
     {
         //TODO: Implement Keyboard Input for Naming and TTS to move away from Debug.Log
         GestureDetect.Instance.appVoiceExperience.Deactivate();
-        StateMachine.Instance.appVoiceExperienceName.Activate();
+        _keyboard = TouchScreenKeyboard.Open("", TouchScreenKeyboardType.Default,
+            false, false, false, false, "Enter Name");
         Debug.Log("What would you like to name this gesture?");
-        StateMachine.Instance.OpenKeyboard();
         yield break;
     }
 
@@ -345,13 +339,22 @@ public class NameGesture : State
                     {
                         StateMachine.Instance.appVoiceExperienceName.Activate();
                     }
+
+                    if (_keyboard.active)
+                    {
+                        _keyboard.active = false;
+                    }
                 }
                 else
                 {
+
+                    if (!_keyboard.active) _keyboard.active = true;
                     StateMachine.Instance.appVoiceExperienceName.Deactivate();
-                    if (StateMachine.Instance.keyboard != null)
+                    StateMachine.Instance.currentText.text = _keyboard.text;
+                    //If Enter Button is pressed
+                    if (_keyboard.status == TouchScreenKeyboard.Status.Done)
                     {
-                        GestureDetect.Instance.userInput = StateMachine.Instance.keyboard.text;
+                        GestureDetect.Instance.userInput = _keyboard.text;
                     }
                 }
 
@@ -364,7 +367,9 @@ public class NameGesture : State
         }
 
         string name = GestureDetect.Instance.userInput;
+        StateMachine.Instance.currentText.text = "";
         GestureDetect.Instance.userInput = "";
+        _keyboard = null;
         StateMachine.SetState(new SelectResponse(fingerData, name));
     }
 }
@@ -405,10 +410,14 @@ public class SelectResponse : State
             }));
             responseButton.GetComponentInChildren<TextMeshPro>().text = t.Name();
             buttons.Add(responseButton);
-            responseButton.SetActive(false);
         }
 
         GestureDetect.Instance.responseButtonPosition.GetComponent<GridObjectCollection>().UpdateCollection();
+
+        foreach (GameObject button in buttons)
+        {
+            button.SetActive(false);
+        }
 
         yield break;
     }
@@ -427,10 +436,7 @@ public class SelectResponse : State
                         StateMachine.Instance.appVoiceExperienceName.Activate();
                     }
                 }
-                else
-                {
-                    buttons.ForEach(button => button.SetActive(true));
-                }
+                buttons.ForEach(button => button.SetActive(!StateMachine.Instance.activateVoiceButton.isToggled));
 
                 yield return new WaitForEndOfFrame();
             }
