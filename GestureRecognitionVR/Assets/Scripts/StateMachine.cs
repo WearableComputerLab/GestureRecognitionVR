@@ -7,6 +7,7 @@ using System.Linq;
 using Microsoft.MixedReality.Toolkit.UI;
 using Microsoft.MixedReality.Toolkit.Utilities;
 using TMPro;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class StateMachine : MonoBehaviour
@@ -17,9 +18,7 @@ public class StateMachine : MonoBehaviour
     private State _currentState;
 
     public ToggleButton activateVoiceButton;
-    public PressableButtonHoloLens2 playGameButton;
     
-
     /// <summary>
     /// Singleton Instance of the State Machine
     /// </summary>
@@ -120,12 +119,11 @@ public class StartScene : State
         };
 
         //Add listeners to the Next and Previous MRTK buttons
-        GestureDetect.Instance.nextButton.OnClick.AddListener(GestureDetect.Instance.NextGesture);
-        GestureDetect.Instance.prevButton.OnClick.AddListener(GestureDetect.Instance.PrevGesture);
-
-        // Initialize the PlayGameButton and add listener to start the game
-        PressableButtonHoloLens2 startGame = StateMachine.Instance.playGameButton;
-        startGame.ButtonPressed.AddListener(StartGame);
+        if (GestureDetect.Instance.nextButton != null)
+        {
+            GestureDetect.Instance.nextButton.OnClick.AddListener(GestureDetect.Instance.NextGesture);
+            GestureDetect.Instance.prevButton.OnClick.AddListener(GestureDetect.Instance.PrevGesture);
+        }
 
         yield break;
     }
@@ -154,7 +152,8 @@ public class Waiting : State
     {
         None,
         Record,
-        PlayGame
+        PreGame,
+        Return
     }
 
     public override IEnumerator Start()
@@ -209,7 +208,24 @@ public class Waiting : State
             yield return new WaitForEndOfFrame();
         }
 
-        StateMachine.SetState(new RecordStart());
+        switch (GestureDetect.Instance.currentAction)
+        {
+            case InputAction.None:
+                throw new NotImplementedException();
+            case InputAction.Record:
+                StateMachine.SetState(new RecordStart());
+                break;
+            case InputAction.PreGame:
+                StateMachine.SetState(new PreGame());
+                break;
+            case InputAction.Return:
+                SceneManager.LoadScene("Scenes/Main");
+                StateMachine.SetState(new Waiting());
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+        
     }
 }
 
@@ -273,11 +289,11 @@ public class RecordStart : State
         GestureDetect.Instance.currentAction = Waiting.InputAction.None;
         const float frameTime = 1f / 20f;
 
+        List<Dictionary<string, SerializedBoneData>> fingerData = new List<Dictionary<string, SerializedBoneData>>();
+        
         //If no name is passed, the gesture finger data will be saved
         if (selectedName == "")
         {
-            List<Dictionary<string, SerializedBoneData>> fingerData = new List<Dictionary<string, SerializedBoneData>>();
-            
             //If the duration is not static (motion), record for the specified duration
             if (duration - GestureDetect.staticRecordingTime > 0.005f)
             {
@@ -311,10 +327,15 @@ public class RecordStart : State
             }
 
             StateMachine.SetState(new NameGesture(fingerData));
+            
         }
+        //If name is not empty, save data for specific name
         else
         {
             //TODO: If name is not "", prompt for whatever the name is, and reset to PlayGame state. !!Implement once rest of states are implemented!!
+            Dictionary<string, SerializedBoneData> frameData = SaveFrame();
+            fingerData.Add(frameData);
+            StateMachine.SetState(new SaveGesture(fingerData, selectedName, null));
         }
     }
 }
@@ -515,15 +536,79 @@ public class SaveGesture : State
 /// <summary>
 /// State that will deal with recording gestures for rock paper scissors game
 /// </summary>
-public class PlayGame : State
+public class PreGame : State
 {
-
-    //private GestureDetect gestureDetect; // Using GestureDetect.Instance instead
-    //private GesturePlayback gesturePlayback;
-
     public override IEnumerator Start()
     {
         // TODO: Make these not debug logs but a nice notification or something on the table canvas
+        SceneManager.LoadScene("Scenes/Game");
+        yield break;
+    }
+
+    // Call PlayAgain coroutine to ask the user if they want to play again
+    public override IEnumerator End()
+    {
+        yield return new WaitForSeconds(2f);
+        while (true)
+        {
+            foreach (string name in new []{"rock", "paper", "scissors"})
+            {
+                bool found = false;
+                foreach (KeyValuePair<string,Gesture> gesture in GestureDetect.Instance.gestures)
+                {
+                    if (gesture.Key.Equals(name))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    Debug.Log($"Could not find {name}, please record gesture.");
+                }
+            }
+
+            yield return new WaitForEndOfFrame();
+        }
+    }
+
+    
+}
+
+
+/// <summary>
+/// State that sets up the AI for the rock paper scissors game
+/// </summary>
+public class GameSetup : State
+{
+    //TODO: Implement State for recording Rock, Paper and Scissors
+    public override IEnumerator Start()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override IEnumerator End()
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// State that will control game scores and end game
+/// </summary>
+public class GameStart : State
+{
+    //TODO: Implement State for recording Rock, Paper and Scissors
+    public override IEnumerator Start()
+    {
+        Debug.Log("Game time started");
+        StateMachine.SetState(new PreGame());
+        yield return null;
+    }
+
+    public override IEnumerator End()
+    {
         // Display welcome message
         Debug.Log("Welcome to Rock Paper Scissors");
         yield return new WaitForSeconds(1f);
@@ -553,20 +638,11 @@ public class PlayGame : State
 
         // Determine the winner
         DetermineWinner(playerGesture, computerGesture);
-
-        yield return new WaitForSeconds(2f);
-
-        // Transition to the GameStart state
-        StateMachine.SetState(new GameStart());
+        
+        
+        //Debug.Log("GameStart ended");
+        yield break;
     }
-
-    // Call PlayAgain coroutine to ask the user if they want to play again
-    public override IEnumerator End()
-    {
-        yield return new WaitForSeconds(1f);
-        PlayAgain(); 
-    }
-
     // RUN FOR MULTIPLE FRAMES (COROUTINE?)
     // Use gestureDetect to recognize and return the player's gesture
     private Gesture? Recognize()
@@ -664,7 +740,7 @@ public class PlayGame : State
         string input = Console.ReadLine().ToLower();
         if (input == "yes")
         {
-            StateMachine.SetState(new PlayGame());
+            StateMachine.SetState(new PreGame());
         }
         else
         {
@@ -687,43 +763,5 @@ public class PlayGame : State
             yield return new WaitForSeconds(1f);
             StateMachine.SetState(new Waiting());
         }
-    }
-}
-
-
-/// <summary>
-/// State that sets up the AI for the rock paper scissors game
-/// </summary>
-public class GameSetup : State
-{
-    //TODO: Implement State for recording Rock, Paper and Scissors
-    public override IEnumerator Start()
-    {
-        throw new NotImplementedException();
-    }
-
-    public override IEnumerator End()
-    {
-        throw new NotImplementedException();
-    }
-}
-
-/// <summary>
-/// State that will control game scores and end game
-/// </summary>
-public class GameStart : State
-{
-    //TODO: Implement State for recording Rock, Paper and Scissors
-    public override IEnumerator Start()
-    {
-        Debug.Log("Game time started");
-        StateMachine.SetState(new PlayGame());
-        yield return null;
-    }
-
-    public override IEnumerator End()
-    {
-        //Debug.Log("GameStart ended");
-        yield break;
     }
 }

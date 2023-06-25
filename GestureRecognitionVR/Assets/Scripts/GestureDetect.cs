@@ -79,7 +79,9 @@ public class SerializableList<T>
 
 public class GestureDetect : MonoBehaviour
 {
-    public static GestureDetect Instance;
+    public static GestureDetect MainInstance;
+    public static GestureDetect GameInstance;
+    public static GestureDetect Instance => SceneManager.GetActiveScene().name == "Main" ? MainInstance : GameInstance;
 
     // TODO
     //public GameObject handModel;
@@ -197,13 +199,27 @@ public class GestureDetect : MonoBehaviour
 
     public void Awake()
     {
-        if (Instance == null)
+        if (SceneManager.GetActiveScene().name == "Main")
         {
-            Instance = this;
+            if (MainInstance == null)
+            {
+                MainInstance = this;
+            }
+            else
+            {
+                Destroy(this);
+            }
         }
-        else
+        if (SceneManager.GetActiveScene().name == "Game")
         {
-            Destroy(this);
+            if (GameInstance == null)
+            {
+                GameInstance = this;
+            }
+            else
+            {
+                Destroy(this);
+            }
         }
     }
 
@@ -238,10 +254,10 @@ public class GestureDetect : MonoBehaviour
         recordButton.SetActive(false);
         durationSlider.SetActive(true);
     }
-
+    
     public void OnPlayGameButtonPressed()
     {
-        SceneManager.LoadScene("Game");
+        currentAction = SceneManager.GetActiveScene().name == "Main" ? Waiting.InputAction.PreGame: Waiting.InputAction.Return;
     }
 
     public void OnDurationButtonPressed()

@@ -4,10 +4,13 @@ using System.Collections.Generic;
 //using Microsoft.MixedReality.Toolkit.Utilities.FigmaImporter;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GesturePlayback : MonoBehaviour
 {
-    public static GesturePlayback Instance;
+    public static GesturePlayback MainInstance;
+    public static GesturePlayback GameInstance;
+    public static GesturePlayback Instance => SceneManager.GetActiveScene().name == "Main" ? MainInstance : GameInstance;
 
     public GameObject handModel;
     public Transform hand_R;
@@ -25,14 +28,22 @@ public class GesturePlayback : MonoBehaviour
     // Ensure only one instance of GesturePlayback
     public void Awake()
     {
-        if (Instance == null)
+        string name = SceneManager.GetActiveScene().name;
+        if (name == "Main")
         {
-            Instance = this;
+            if (MainInstance == null)
+                MainInstance = this;
+            else
+                Destroy(this);
         }
-        else
+        else if (name == "Game")
         {
-            Destroy(this);
+            if (GameInstance == null)
+                GameInstance = this;
+            else
+                Destroy(this);
         }
+       
     }
 
     /// <summary>
@@ -41,7 +52,11 @@ public class GesturePlayback : MonoBehaviour
     private void Start()
     {
         //Debug.Log("STARTED!!");
-        replayButton.gameObject.SetActive(false);
+        if (replayButton != null)
+        {
+            replayButton.gameObject.SetActive(false);
+            replayButton.OnClick.AddListener(ReplayGesture);
+        }
         // Store the default position/rotation of the finger bones in model for reference
         InitializeDefaultModelPositions();
         InitializeDefaultModelRotations();
@@ -64,8 +79,6 @@ public class GesturePlayback : MonoBehaviour
         {
             Debug.LogWarning("Hand object not found in the hand model hierarchy");
         }
-
-        replayButton.OnClick.AddListener(ReplayGesture);
     }
 
     private void ReplayGesture()
