@@ -11,6 +11,7 @@ using System.Xml.Serialization;
 using UnityEngine.Serialization;
 using Application = UnityEngine.Application;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 [JsonObject(MemberSerialization.OptIn)]
 public struct Gesture
@@ -236,6 +237,11 @@ public class GestureDetect : MonoBehaviour
     {
         recordButton.SetActive(false);
         durationSlider.SetActive(true);
+    }
+
+    public void OnPlayGameButtonPressed()
+    {
+        SceneManager.LoadScene("Game");
     }
 
     public void OnDurationButtonPressed()
