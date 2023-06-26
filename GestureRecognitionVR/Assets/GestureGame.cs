@@ -14,6 +14,7 @@ public class GestureGame : MonoBehaviour
 
     private void Start()
     {
+        // PlayGame is run when PlayGame button is pressed
        //StartCoroutine(PlayGame());
     }
 
@@ -41,6 +42,7 @@ public class GestureGame : MonoBehaviour
 
         Gesture? playerGesture = null;
 
+
         yield return StartCoroutine(RecognizeForDuration(1f, (gesture) =>
         {
             playerGesture = gesture;
@@ -50,19 +52,20 @@ public class GestureGame : MonoBehaviour
         //Gesture? playerGesture = Recognize();
         Gesture? computerGesture = GetComputerGesture();
 
-        // Display player and computer gestures
+        // Display player and computer gestures (if either are null display "none" to prevent null error)
         Debug.Log($"Player: {(playerGesture != null ? playerGesture.Value.name : "None")} - Computer: {(computerGesture != null ? computerGesture.Value.name : "None")}");
-
 
         // Determine the winner
         DetermineWinner(playerGesture, computerGesture);
 
         yield return new WaitForSeconds(2f);
 
-        // Ask if the player wants to play again
-        //yield return StartCoroutine(PlayAgain());
+        // Ask if the player wants to play again (not needed here as user can press button)
+        // yield return StartCoroutine(PlayAgain());
     }
 
+    // Coroutine to check for users gesture after countdown
+    // Checks for 1 second and if a valid gesture is recognized, if so it is returned to playerGesture
     private IEnumerator RecognizeForDuration(float duration, Action<Gesture?> callback)
     {
         float startTime = Time.time;
@@ -70,6 +73,7 @@ public class GestureGame : MonoBehaviour
 
         while (Time.time < endTime)
         {
+            // Run Recognize function from GestureDetect
             Gesture? gesture = gestureDetect.Recognize();
             if (gesture != null)
             {
@@ -80,39 +84,18 @@ public class GestureGame : MonoBehaviour
         }
 
         Debug.Log("No gesture recognized within the duration.");
-        // Perform some action when no gesture is recognized
+        // Perform some action when no gesture is recognized?
         callback?.Invoke(null);
     }
 
-    //private Gesture? Recognize()
-    //{
-    //    if (gestureDetect != null)
-    //    {
-    //        Gesture? gesture = gestureDetect.Recognize();
-    //        if (gesture == null)
-    //        {
-    //            Debug.Log("No gesture recognized.");
-    //            // Perform some action when no gesture is recognized
-    //        }
-    //        else
-    //        {
-    //            return gesture;
-    //        }
-    //    }
-    //    else
-    //    {
-    //        Debug.Log("GestureDetect.Instance is null");
-    //    }
-
-    //    return null;
-    //}
-
+    // Function for selecting random Rock Paper Scissor gesture for computer player and playing it back
     private Gesture? GetComputerGesture()
     {
+        // List of Gestures we want to look for 
         string[] validGestureNames = { "Rock", "Paper", "Scissors" };
         List<string> validGestures = new List<string>();
 
-        // Find valid gestures from gestureDetect
+        // Find valid gestures in gesture list from gestureDetect
         foreach (string gestureName in validGestureNames)
         {
             if (gestureDetect.gestures.ContainsKey(gestureName))
@@ -121,6 +104,7 @@ public class GestureGame : MonoBehaviour
             }
         }
 
+        // If valid gestures are found, randomly select one and play it back on the hand model
         if (validGestures.Count > 0)
         {
             // Select a random gesture
@@ -130,6 +114,7 @@ public class GestureGame : MonoBehaviour
 
             return randomGesture;
         }
+        // Return null if no valid gestures are found
         else
         {
             Debug.LogWarning("No valid gestures found for rock, paper, or scissors.");
@@ -137,6 +122,7 @@ public class GestureGame : MonoBehaviour
         }
     }
 
+    // Logic to determine winner of Rock Paper Scissor game
     private void DetermineWinner(Gesture? playerGesture, Gesture? computerGesture)
     {
         if (playerGesture == null)
@@ -167,6 +153,7 @@ public class GestureGame : MonoBehaviour
         }
     }
 
+    // This is not needed here as the user can press the PlayGame button to play again
     //private IEnumerator PlayAgain()
     //{
     //    Debug.Log("Do you want to play again? (yes/no)");
@@ -182,5 +169,6 @@ public class GestureGame : MonoBehaviour
 
     //    yield return null;
     //}
+
 }
 
