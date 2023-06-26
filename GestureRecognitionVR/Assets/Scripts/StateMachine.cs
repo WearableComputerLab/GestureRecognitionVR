@@ -161,11 +161,10 @@ public class Waiting : State
 
     public override IEnumerator End()
     {
-        // TODO: Wait for input;
         // Based on input, move to specified state
         while (true)
         {
-            //if the current action is not None, break out of the loop and repeat until an appropriate input is found
+            //if the current action is not None, break out of the loop and move to the desired state
             if (GestureDetect.Instance.currentAction != InputAction.None)
             {
                 break;
@@ -175,6 +174,7 @@ public class Waiting : State
             GestureDetect.Instance.hands = GameObject.FindObjectsOfType<OVRSkeleton>();
             GestureDetect.Instance.FindHandToRecord();
 
+            //If the user has opted for voice recognition:
             if (StateMachine.Instance.activateVoiceButton.isToggled)
             {
                 //If the voice experience is not active, activate it.
@@ -184,6 +184,7 @@ public class Waiting : State
                 }
             }
 
+            //If user has not opted for voice recognition, set these active as appropriate.
             GestureDetect.Instance.durationSlider.SetActive(GestureDetect.Instance.durationSlider.activeSelf &&
                                                             !StateMachine.Instance.activateVoiceButton.isToggled);
             GestureDetect.Instance.recordButton.SetActive(!GestureDetect.Instance.durationSlider.activeSelf &&
@@ -210,6 +211,7 @@ public class Waiting : State
             yield return new WaitForEndOfFrame();
         }
 
+        //Switch case for all possible actions
         switch (GestureDetect.Instance.currentAction)
         {
             case InputAction.None:
@@ -244,7 +246,7 @@ public class RecordStart : State
         selectedName = name;
     }
 
-    //on start, set the duration to the selected recording time (default float.MinValue)
+    //on start, set the duration to the selected recording time (default float.MinValue) and countdown from 3
     public override IEnumerator Start()
     {
         duration = GestureDetect.Instance.selectedRecordingTime;
@@ -255,8 +257,13 @@ public class RecordStart : State
         }
     }
 
+    /// <summary>
+    /// Function that holds the saving of the gesture data
+    /// </summary>
+    /// <returns>frama data that is being saved</returns>
     private static Dictionary<string, SerializedBoneData> SaveFrame()
     {
+        //New Dictionary to save bone name and data
         Dictionary<string, SerializedBoneData> frameData = new Dictionary<string, SerializedBoneData>();
         // Save each individual finger bone in fingerData
         foreach (OVRBone bone in GestureDetect.Instance.fingerBones)
@@ -285,7 +292,6 @@ public class RecordStart : State
 
     public override IEnumerator End()
     {
-        //TODO: Get finger data from SaveGesture
         GestureDetect.Instance.selectedRecordingTime = float.MinValue;
         GestureDetect.Instance.currentAction = Waiting.InputAction.None;
         const float frameTime = 1f / 20f;
@@ -301,6 +307,7 @@ public class RecordStart : State
                 DateTime start = DateTime.Now;
                 double countdown = 0;
                 int lastPrint = -1;
+                //Whilst the countdown is less than the duration, save the frame data
                 while (countdown < duration)
                 {
                     Dictionary<string, SerializedBoneData> frameData = SaveFrame();
@@ -311,6 +318,7 @@ public class RecordStart : State
                     // Save Motion Gestures at 20fps to save resources (fine-tune this)
                     yield return new WaitForSeconds(frameTime);
 
+                    //Countdown timer for remaining time
                     countdown = (DateTime.Now - start).TotalSeconds;
                     int roundedCount = (int)countdown;
                     if (lastPrint != roundedCount && roundedCount != 0)
@@ -356,7 +364,7 @@ public class NameGesture : State
 
     public override IEnumerator Start()
     {
-        //TODO: Implement Keyboard Input for Naming and TTS to move away from Debug.Log
+        //TODO: TTS or other to move away from Debug.Log?
         GestureDetect.Instance.appVoiceExperience.Deactivate();
         _keyboard = TouchScreenKeyboard.Open("", TouchScreenKeyboardType.Default,
             false, false, false, false, "Enter Name");
@@ -366,10 +374,13 @@ public class NameGesture : State
 
     public override IEnumerator End()
     {
+        //Whilst the user input is empty, wait for user input
         while (true)
         {
+            //If the user input is empty, wait for user input
             if (string.IsNullOrEmpty(GestureDetect.Instance.userInput))
             {
+                //If the voice button is toggled, activate the voice experience
                 if (StateMachine.Instance.activateVoiceButton.isToggled)
                 {
                     if (!StateMachine.Instance.appVoiceExperienceName.Active)
@@ -377,11 +388,13 @@ public class NameGesture : State
                         StateMachine.Instance.appVoiceExperienceName.Activate();
                     }
 
+                    //If the keyboard is active, deactivate it
                     if (_keyboard.active)
                     {
                         _keyboard.active = false;
                     }
                 }
+                //If the voice button is not toggled, activate the keyboard
                 else
                 {
                     if (!_keyboard.active) _keyboard.active = true;
@@ -402,6 +415,7 @@ public class NameGesture : State
             }
         }
 
+        //Set name, reset all data and move on to next state
         string name = GestureDetect.Instance.userInput;
         StateMachine.Instance.currentText.text = "";
         GestureDetect.Instance.userInput = "";
@@ -427,7 +441,7 @@ public class SelectResponse : State
 
     public override IEnumerator Start()
     {
-        //TODO: Implement Button Selection for each Response and TTS for Debug.Log
+        //TODO: TTS or similar for Debug.Log
         StateMachine.Instance.appVoiceExperienceName.Deactivate();
         StateMachine.Instance.appVoiceExperienceName.Activate();
         Debug.Log($"Please select which response you would like to assign to {name}.");
@@ -435,7 +449,7 @@ public class SelectResponse : State
             $"Possible Responses: {string.Join(", ", GestureDetect.Instance.responses.Select(response => response.Name()))}");
 
         buttons = new List<GameObject>();
-        //Instantiate Buttons for each item in Response responses
+        //Instantiate Buttons for each item in Response responses and set to user input
         foreach (Response t in GestureDetect.Instance.responses)
         {
             GameObject responseButton = GameObject.Instantiate(GestureDetect.Instance.responseButtonPrefab,
@@ -448,8 +462,10 @@ public class SelectResponse : State
             buttons.Add(responseButton);
         }
 
+        //Updates Grid so all 3 buttons are positions and displaying correctly
         GestureDetect.Instance.responseButtonPosition.GetComponent<GridObjectCollection>().UpdateCollection();
 
+        //Hide initially in case of Voice Recognition being enabled.
         foreach (GameObject button in buttons)
         {
             button.SetActive(false);
@@ -461,10 +477,13 @@ public class SelectResponse : State
     public override IEnumerator End()
     {
         Response r = null;
+        //Whilst the user input is empty, wait for user input
         while (true)
         {
+            //If the user input is empty, wait for user input
             if (string.IsNullOrEmpty(GestureDetect.Instance.userInput))
             {
+                //If the voice button is toggled, activate the voice experience
                 if (StateMachine.Instance.activateVoiceButton.isToggled)
                 {
                     if (!StateMachine.Instance.appVoiceExperienceName.Active)
@@ -473,12 +492,14 @@ public class SelectResponse : State
                     }
                 }
 
+                //Change button visibility depending on whether voice button is toggled
                 buttons.ForEach(button => button.SetActive(!StateMachine.Instance.activateVoiceButton.isToggled));
 
                 yield return new WaitForEndOfFrame();
             }
             else
             {
+                //If the user input is a valid response from list of responses, set response to that response
                 if (GestureDetect.Instance.responses.Any(response => string.Equals(response.Name(),
                         GestureDetect.Instance.userInput, StringComparison.CurrentCultureIgnoreCase)))
                 {
@@ -487,11 +508,13 @@ public class SelectResponse : State
                     break;
                 }
 
+                //If the user input is not a valid response, reset user input and wait for new input
                 Debug.Log($"Response \"{GestureDetect.Instance.userInput}\" not found. Please try again.");
                 GestureDetect.Instance.userInput = "";
             }
         }
 
+        //Destroy all buttons, reset user input and move on to next state
         GestureDetect.Instance.userInput = "";
         foreach (GameObject button in buttons)
         {
@@ -528,10 +551,12 @@ public class SaveGesture : State
 
     public override IEnumerator End()
     {
+        //Move back to Waiting
         yield return new WaitForSeconds(1f);
         StateMachine.SetState(new Waiting());
     }
 }
+
 /// <summary>
 /// State that handles moving the scene from Main to Game when button pressed
 /// </summary>
@@ -539,12 +564,14 @@ public class ToGameScene : State
 {
     public override IEnumerator Start()
     {
+        //When appropriate button is pressed, move to Game Scene
         SceneManager.LoadScene("Scenes/Game");
         yield break;
     }
 
     public override IEnumerator End()
     {
+        //Move into PreGame State after 5 seconds to ensure StateMachine has caught up (this number can change)
         yield return new WaitForSeconds(5f);
         StateMachine.SetState(new PreGame());
     }
@@ -558,16 +585,17 @@ public class PreGame : State
     public override IEnumerator Start()
     {
         // TODO: Make these not debug logs but a nice notification or something on the table canvas
-        //SceneManager.LoadScene("Scenes/Game");
         yield break;
     }
 
-    // Call PlayAgain coroutine to ask the user if they want to play again
+
     public override IEnumerator End()
     {
         yield return new WaitForSeconds(2f);
+        //While there are not the 3 gestures recorded, wait for user to record gestures
         while (true)
         {
+            //Check to see if a gesture is recorded for names "Rock", "Paper" and "Scissors", if not, log error
             foreach (string name in new[] { "rock", "paper", "scissors" })
             {
                 bool found = false;
@@ -587,7 +615,9 @@ public class PreGame : State
             }
 
             yield return new WaitForEndOfFrame();
+            //StateMachine.SetState(new GameSetup());
         }
+        //StateMachine.SetState(new GameSetup());
     }
 }
 
@@ -721,35 +751,40 @@ public class GameStart : State
     // Logic to compare player and computer gestures and determine the winner
     private void DetermineWinner(Gesture? playerGesture, Gesture? computerGesture)
     {
+        //If there isn't a player gesture, log error
         if (playerGesture == null)
         {
             Debug.Log("\nInvalid player gesture!");
             return;
         }
 
+        //if there isn't a computer gesture, log error
         if (computerGesture == null)
         {
             Debug.Log("\nInvalid computer gesture!");
             return;
         }
 
+        //if player and computer gestures are the same, it's a tie
         if (playerGesture.Value.name == computerGesture.Value.name)
         {
             Debug.Log("\nIt's a tie!");
         }
+        //If player gesture beats computer gesture, player wins
         else if ((playerGesture.Value.name == "Rock" && computerGesture.Value.name == "Scissors") ||
                  (playerGesture.Value.name == "Paper" && computerGesture.Value.name == "Rock") ||
                  (playerGesture.Value.name == "Scissors" && computerGesture.Value.name == "Paper"))
         {
             Debug.Log("\nPlayer wins!");
         }
+        //Otherwise, computer wins
         else
         {
             Debug.Log("\nComputer wins!");
         }
     }
 
-    // Ask user to play again (TODO: change input to voice recog or virtual keyboard? instead of Console.Readline (which is used as placeholder))
+    // Ask user to play again (TODO: change input to voice recog or BUTTONS? instead of Console.Readline (which is used as placeholder))
     private IEnumerator PlayAgain()
     {
         Debug.Log("Do you want to play again? (yes/no)");
