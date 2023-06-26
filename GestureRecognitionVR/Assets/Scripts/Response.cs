@@ -10,7 +10,7 @@ public abstract class Response
 
     public void StartRoutine()
     {
-        StateMachine.Instance.StartCoroutine(Routine());
+        MainStateMachine.Instance.StartCoroutine(Routine());
     }
 }
 

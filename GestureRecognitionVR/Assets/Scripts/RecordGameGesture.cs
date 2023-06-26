@@ -8,14 +8,17 @@ using UnityEngine.SceneManagement;
 
 public class RecordGameGesture : MonoBehaviour
 {
-   private TextMeshProUGUI buttonText;
+   private TextMeshPro buttonText;
    public void Awake()
    {
-      buttonText = GetComponent<TextMeshProUGUI>();
+      buttonText = GetComponentInChildren<TextMeshPro>();
    }
 
    public void OnButtonPressed()
    {
-      string name = buttonText.text.Replace("record ", "");
+      string name = buttonText.text.Replace("Record ", "").ToLower();
+      Debug.Log(name);
+      GestureDetect.Instance.userInput = name;
+      GestureDetect.Instance.currentAction = StateMachine.InputAction.Record;
    }
 }

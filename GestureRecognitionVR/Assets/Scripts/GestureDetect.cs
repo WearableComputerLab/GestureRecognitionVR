@@ -42,7 +42,7 @@ public struct Gesture
         this.name = name;
         this.fingerData = fingerData;
         this._response = response;
-        this.responseName = response.Name();
+        this.responseName = response != null ? response.Name() : "";
     }
 
     /// <summary>
@@ -207,6 +207,7 @@ public class GestureDetect : MonoBehaviour
             }
             else
             {
+                Debug.Log("Destroying 1");
                 Destroy(this);
             }
         }
@@ -218,6 +219,7 @@ public class GestureDetect : MonoBehaviour
             }
             else
             {
+                Debug.Log("Destroying 2");
                 Destroy(this);
             }
         }
@@ -257,12 +259,12 @@ public class GestureDetect : MonoBehaviour
     
     public void OnPlayGameButtonPressed()
     {
-        currentAction = SceneManager.GetActiveScene().name == "Main" ? Waiting.InputAction.PreGame: Waiting.InputAction.Return;
+        currentAction = SceneManager.GetActiveScene().name == "Main" ? StateMachine.InputAction.ToGameScene: StateMachine.InputAction.Return;
     }
 
     public void OnDurationButtonPressed()
     {
-        currentAction = Waiting.InputAction.Record;
+        currentAction = StateMachine.InputAction.Record;
         selectedRecordingTime = sliderValue.currentValue;
         durationSlider.SetActive(false);
     }
@@ -281,7 +283,7 @@ public class GestureDetect : MonoBehaviour
     /// </summary>
     private string _voiceRecog;
 
-    public Waiting.InputAction currentAction = Waiting.InputAction.None;
+    public StateMachine.InputAction currentAction = StateMachine.InputAction.None;
 
 
     /// <summary>
@@ -317,7 +319,7 @@ public class GestureDetect : MonoBehaviour
                         // ignored
                     }
 
-                    currentAction = Waiting.InputAction.Record;
+                    currentAction = StateMachine.InputAction.Record;
                     selectedRecordingTime = timeNorm;
 
                     // Save("Gesture 1", timeNorm);
@@ -499,9 +501,10 @@ public class GestureDetect : MonoBehaviour
     /// TODO - LEWIS, COMMENT THIS CODE PLEASE
     /// </summary>
     /// <returns></returns>
-    public Gesture? Recognize()
+    public Gesture? Recognize(Dictionary<string, Gesture> gestures = null)
     {
         //Debug.Log("recognizin");
+        gestures ??= Instance.gestures;
         Gesture? currentGesture = null;
         float currentMin = Mathf.Infinity;
         int motionCounter = 0;

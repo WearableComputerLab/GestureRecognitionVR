@@ -1,0 +1,284 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+public class GameStateMachine : StateMachine
+{
+    /// <summary>
+    /// Singleton Instance of the State Machine
+    /// </summary>
+    public static GameStateMachine Instance;
+    
+    public static string[] GameGestures = new[] { "rock", "paper", "scissors" };
+    
+    /// <summary>
+    /// Runs before start to set up Singleton.
+    /// </summary>
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
+    }
+    
+    /// <summary>
+    /// Starts Program in StartScene State
+    /// </summary>
+    private void Start()
+    {
+        SetState(new PreGame());
+    }
+
+    /// <summary>
+    /// Sets the current state of the instance to a state and starts a coroutine for that state.
+    /// </summary>
+    /// <param name="state">The state to be set as the current state</param>
+    public static void SetState(State state)
+    {
+        StateMachine.SetState(state, Instance);
+    }
+}
+
+
+/// <summary>
+/// State that will deal with recording gestures for rock paper scissors game
+/// </summary>
+public class PreGame : State
+{
+    public override IEnumerator Start()
+    {
+        GestureDetect.Instance.ReadGesturesFromJSON();
+        GestureDetect.Instance.hands = GameObject.FindObjectsOfType<OVRSkeleton>();
+        GestureDetect.Instance.FindHandToRecord();
+        // TODO: Make these not debug logs but a nice notification or something on the table canvas
+        yield break;
+    }
+
+
+    public override IEnumerator End()
+    {
+        yield return new WaitForSeconds(2f);
+        
+        int foundLast = -1;
+        
+        GestureDetect.Instance.userInput = "";
+        GestureDetect.Instance.currentAction = StateMachine.InputAction.None;
+
+        //While there are not the 3 gestures recorded, wait for user to record gestures
+        while (true)
+        {
+            if (GestureDetect.Instance.currentAction == StateMachine.InputAction.Record)
+            {
+                break;
+            }
+            //Creates a list of found names based off of the names array involving rock, paper, scissors and stores when found.
+            List<string> found = GameStateMachine.GameGestures.Where(name => GestureDetect.Instance.gestures.Any(gesture => gesture.Key.Equals(name))).ToList();
+
+            if (found.Count != foundLast)
+                foreach (string name in GameStateMachine.GameGestures)
+                    if (!found.Contains(name))
+                        Debug.Log($"Could not find {name}, please record gesture.");
+
+            foundLast = found.Count;
+            yield return new WaitForEndOfFrame();
+            if (found.Count == 3) break;
+        }
+
+        if (GestureDetect.Instance.userInput != "")
+        {
+            string userInput = GestureDetect.Instance.userInput;
+            GestureDetect.Instance.userInput = "";
+            GestureDetect.Instance.currentAction = StateMachine.InputAction.None;
+            GameStateMachine.SetState(new RecordStart(userInput));
+        }
+        else
+        {
+            GameStateMachine.SetState(new GameStart());
+        }
+    }
+}
+
+/// <summary>
+/// State that will control game scores and end game
+/// </summary>
+public class GameStart : State
+{
+    //TODO: Implement State for recording Rock, Paper and Scissors
+    public override IEnumerator Start()
+    {
+        Debug.Log("Game time started");
+        yield break;
+    }
+
+    public override IEnumerator End()
+    {
+        // Display welcome message
+        Debug.Log("Welcome to Rock Paper Scissors");
+        yield return new WaitForSeconds(1f);
+
+        // Display countdown messages
+        Debug.Log("Get ready!");
+        yield return new WaitForSeconds(2f);
+
+        Debug.Log("Rock...");
+        yield return new WaitForSeconds(1f);
+
+        Debug.Log("Paper...");
+        yield return new WaitForSeconds(1f);
+
+        Debug.Log("Scissors...");
+        yield return new WaitForSeconds(1f);
+
+        Debug.Log("Go!");
+        yield return new WaitForSeconds(1f);
+
+        // Recognize player gesture and get computer gesture
+        Gesture? playerGesture = Recognize();
+        Gesture? computerGesture = GetComputerGesture();
+
+        // Display player and computer gestures
+        Debug.Log($"Player: {playerGesture.Value.name} - Computer: {computerGesture.Value.name}");
+
+        // Determine the winner
+        DetermineWinner(playerGesture, computerGesture);
+
+
+        //Debug.Log("GameStart ended");
+        yield break;
+    }
+
+    // RUN FOR MULTIPLE FRAMES (COROUTINE?)
+    // Use gestureDetect to recognize and return the player's gesture
+    private Gesture? Recognize()
+    {
+        if (GestureDetect.Instance != null)
+        {
+            Gesture? gesture = GestureDetect.Instance.Recognize(GestureDetect.Instance.gestures.Where(g=>GameStateMachine.GameGestures.Contains(g.Key)).ToDictionary(g=> g.Key, g => g.Value));
+            if (gesture == null)
+            {
+                Debug.Log("No gesture recognized.");
+                // Perform some action when no gesture is recognized (waiting state?)
+                MainStateMachine.SetState(new ExitState());
+            }
+            else
+            {
+                return gesture;
+            }
+        }
+        else
+        {
+            Debug.Log("GestureDetect.Instance is null");
+        }
+
+        return null;
+    }
+
+    // GET THIS BEFORE COUNTDOWN?
+    // Select random gesture (from rock paper or scissors) for computer and play it back using gesturePlayback
+    private Gesture? GetComputerGesture()
+    {
+        List<string> validGestures = new List<string>();
+
+        // Find valid gestures from gestureDetect
+        foreach (string gestureName in GameStateMachine.GameGestures)
+        {
+            if (GestureDetect.Instance.gestures.ContainsKey(gestureName))
+            {
+                validGestures.Add(gestureName);
+            }
+        }
+
+        if (validGestures.Count > 0)
+        {
+            // Select a random gesture and play it using gesturePlayback
+            string randomGestureName = validGestures[UnityEngine.Random.Range(0, validGestures.Count)];
+            Gesture randomGesture = GestureDetect.Instance.gestures[randomGestureName];
+            //Debug.Log(randomGesture.name);
+            GesturePlayback.Instance.PlayGesture(randomGesture.name);
+
+            return randomGesture;
+        }
+        else
+        {
+            Debug.LogWarning("No valid gestures found for rock, paper, or scissors.");
+            return null;
+        }
+    }
+
+    // Logic to compare player and computer gestures and determine the winner
+    private void DetermineWinner(Gesture? playerGesture, Gesture? computerGesture)
+    {
+        //If there isn't a player gesture, log error
+        if (playerGesture == null)
+        {
+            Debug.Log("\nInvalid player gesture!");
+            return;
+        }
+
+        //if there isn't a computer gesture, log error
+        if (computerGesture == null)
+        {
+            Debug.Log("\nInvalid computer gesture!");
+            return;
+        }
+
+        //if player and computer gestures are the same, it's a tie
+        if (playerGesture.Value.name == computerGesture.Value.name)
+        {
+            Debug.Log("\nIt's a tie!");
+        }
+        //If player gesture beats computer gesture, player wins
+        else if ((playerGesture.Value.name == "rock" && computerGesture.Value.name == "scissors") ||
+                 (playerGesture.Value.name == "paper" && computerGesture.Value.name == "rock") ||
+                 (playerGesture.Value.name == "scissors" && computerGesture.Value.name == "paper"))
+        {
+            Debug.Log("\nPlayer wins!");
+        }
+        //Otherwise, computer wins
+        else
+        {
+            Debug.Log("\nComputer wins!");
+        }
+    }
+
+    // Ask user to play again (TODO: change input to voice recog or BUTTONS? instead of Console.Readline (which is used as placeholder))
+    private IEnumerator PlayAgain()
+    {
+        Debug.Log("Do you want to play again? (yes/no)");
+        string input = Console.ReadLine().ToLower();
+        if (input == "yes")
+        {
+            MainStateMachine.SetState(new PreGame());
+        }
+        else
+        {
+            MainStateMachine.SetState(new ExitState());
+        }
+
+        yield return null;
+    }
+
+    // Exit State when player does not want to play again (back to Waiting state)
+    private class ExitState : State
+    {
+        public override IEnumerator Start()
+        {
+            Debug.Log("Exiting game...");
+            yield return null;
+        }
+
+        public override IEnumerator End()
+        {
+            yield return new WaitForSeconds(1f);
+            //TODO Scene reload
+            MainStateMachine.SetState(new Waiting());
+        }
+    }
+}

@@ -43,7 +43,6 @@ public class GesturePlayback : MonoBehaviour
             else
                 Destroy(this);
         }
-       
     }
 
     /// <summary>
@@ -127,7 +126,10 @@ public class GesturePlayback : MonoBehaviour
     public void PlayGesture(string gestureName)
     {
         gestName = gestureName;
-        replayButton.gameObject.SetActive(false);
+        if (replayButton != null)
+        {
+            replayButton.gameObject.SetActive(false);
+        }
         userMessage.text = "Playing " + gestureName;
         // Check if the gestureDetect.gestures dictionary is not null and contains the specified gesture
         if (gestureDetect.gestures != null && gestureDetect.gestures.ContainsKey(gestureName))
