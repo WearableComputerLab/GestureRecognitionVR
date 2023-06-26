@@ -18,7 +18,7 @@ public class StateMachine : MonoBehaviour
     private State _currentState;
 
     public ToggleButton activateVoiceButton;
-    
+
     /// <summary>
     /// Singleton Instance of the State Machine
     /// </summary>
@@ -27,7 +27,7 @@ public class StateMachine : MonoBehaviour
     public AppVoiceExperience appVoiceExperienceName;
 
     public TextMeshProUGUI currentText;
-    
+
 
     /// <summary>
     /// Runs before start to set up Singleton.
@@ -105,10 +105,10 @@ public class StartScene : State
     public override IEnumerator Start()
     {
         GestureDetect.Instance.userMessage.text = "Welcome";
-        
+
         //Read any previously saved Gestures from existing json data
         GestureDetect.Instance.ReadGesturesFromJSON();
-        
+
 
         //Set 3 default responses at startup
         GestureDetect.Instance.responses = new List<Response>()
@@ -139,8 +139,6 @@ public class StartScene : State
         StateMachine.SetState(new Waiting());
         yield break;
     }
-
-
 }
 
 /// <summary>
@@ -185,23 +183,27 @@ public class Waiting : State
                     GestureDetect.Instance.appVoiceExperience.Activate();
                 }
             }
-            GestureDetect.Instance.durationSlider.SetActive(GestureDetect.Instance.durationSlider.activeSelf && !StateMachine.Instance.activateVoiceButton.isToggled);
-            GestureDetect.Instance.recordButton.SetActive(!GestureDetect.Instance.durationSlider.activeSelf && !StateMachine.Instance.activateVoiceButton.isToggled);
+
+            GestureDetect.Instance.durationSlider.SetActive(GestureDetect.Instance.durationSlider.activeSelf &&
+                                                            !StateMachine.Instance.activateVoiceButton.isToggled);
+            GestureDetect.Instance.recordButton.SetActive(!GestureDetect.Instance.durationSlider.activeSelf &&
+                                                          !StateMachine.Instance.activateVoiceButton.isToggled);
 
             // Check for Recognition (returns recognized Gesture if hand is in correct position)
             GestureDetect.Instance.currentGesture = GestureDetect.Instance.Recognize();
 
             bool hasRecognized = GestureDetect.Instance.currentGesture.HasValue;
-            
+
             // Check if gesture is recognisable and new, log recognized gesture
             if (hasRecognized && (!GestureDetect.Instance.previousGesture.HasValue ||
                                   !GestureDetect.Instance.currentGesture.Value.Equals(GestureDetect.Instance
                                       .previousGesture.Value)))
             {
                 //Debug.Log("Gesture Recognized: " + GestureDetect.Instance.currentGesture.Value.name);
-                GestureDetect.Instance.userMessage.text = $"Recognized: {GestureDetect.Instance.currentGesture.Value.name}";
+                GestureDetect.Instance.userMessage.text =
+                    $"Recognized: {GestureDetect.Instance.currentGesture.Value.name}";
                 GestureDetect.Instance.previousGesture = GestureDetect.Instance.currentGesture;
-                
+
                 GestureDetect.Instance.currentGesture.Value.response.StartRoutine();
             }
 
@@ -225,7 +227,6 @@ public class Waiting : State
             default:
                 throw new ArgumentOutOfRangeException();
         }
-        
     }
 }
 
@@ -249,7 +250,7 @@ public class RecordStart : State
         duration = GestureDetect.Instance.selectedRecordingTime;
         for (int i = 0; i < 3; i++)
         {
-            Debug.Log($"Recording starting in {3-i}");
+            Debug.Log($"Recording starting in {3 - i}");
             yield return new WaitForSeconds(1f);
         }
     }
@@ -290,7 +291,7 @@ public class RecordStart : State
         const float frameTime = 1f / 20f;
 
         List<Dictionary<string, SerializedBoneData>> fingerData = new List<Dictionary<string, SerializedBoneData>>();
-        
+
         //If no name is passed, the gesture finger data will be saved
         if (selectedName == "")
         {
@@ -306,10 +307,10 @@ public class RecordStart : State
 
                     // Add the frame data to the fingerData list
                     fingerData.Add(frameData);
-                   
+
                     // Save Motion Gestures at 20fps to save resources (fine-tune this)
                     yield return new WaitForSeconds(frameTime);
-                    
+
                     countdown = (DateTime.Now - start).TotalSeconds;
                     int roundedCount = (int)countdown;
                     if (lastPrint != roundedCount && roundedCount != 0)
@@ -327,7 +328,6 @@ public class RecordStart : State
             }
 
             StateMachine.SetState(new NameGesture(fingerData));
-            
         }
         //If name is not empty, save data for specific name
         else
@@ -351,8 +351,8 @@ public class NameGesture : State
     {
         this.fingerData = fingerData;
     }
-    
-    private TouchScreenKeyboard _keyboard; 
+
+    private TouchScreenKeyboard _keyboard;
 
     public override IEnumerator Start()
     {
@@ -384,7 +384,6 @@ public class NameGesture : State
                 }
                 else
                 {
-
                     if (!_keyboard.active) _keyboard.active = true;
                     StateMachine.Instance.appVoiceExperienceName.Deactivate();
                     StateMachine.Instance.currentText.text = _keyboard.text;
@@ -473,6 +472,7 @@ public class SelectResponse : State
                         StateMachine.Instance.appVoiceExperienceName.Activate();
                     }
                 }
+
                 buttons.ForEach(button => button.SetActive(!StateMachine.Instance.activateVoiceButton.isToggled));
 
                 yield return new WaitForEndOfFrame();
@@ -511,7 +511,7 @@ public class SaveGesture : State
     private string name;
     private Response response;
 
-    public SaveGesture(List<Dictionary<string, SerializedBoneData>> fingerData,  string name, Response response)
+    public SaveGesture(List<Dictionary<string, SerializedBoneData>> fingerData, string name, Response response)
     {
         this.fingerData = fingerData;
         this.name = name;
@@ -532,6 +532,23 @@ public class SaveGesture : State
         StateMachine.SetState(new Waiting());
     }
 }
+/// <summary>
+/// State that handles moving the scene from Main to Game when button pressed
+/// </summary>
+public class ToGameScene : State
+{
+    public override IEnumerator Start()
+    {
+        SceneManager.LoadScene("Scenes/Game");
+        yield break;
+    }
+
+    public override IEnumerator End()
+    {
+        yield return new WaitForSeconds(5f);
+        StateMachine.SetState(new PreGame());
+    }
+}
 
 /// <summary>
 /// State that will deal with recording gestures for rock paper scissors game
@@ -541,7 +558,7 @@ public class PreGame : State
     public override IEnumerator Start()
     {
         // TODO: Make these not debug logs but a nice notification or something on the table canvas
-        SceneManager.LoadScene("Scenes/Game");
+        //SceneManager.LoadScene("Scenes/Game");
         yield break;
     }
 
@@ -551,10 +568,10 @@ public class PreGame : State
         yield return new WaitForSeconds(2f);
         while (true)
         {
-            foreach (string name in new []{"rock", "paper", "scissors"})
+            foreach (string name in new[] { "rock", "paper", "scissors" })
             {
                 bool found = false;
-                foreach (KeyValuePair<string,Gesture> gesture in GestureDetect.Instance.gestures)
+                foreach (KeyValuePair<string, Gesture> gesture in GestureDetect.Instance.gestures)
                 {
                     if (gesture.Key.Equals(name))
                     {
@@ -572,8 +589,6 @@ public class PreGame : State
             yield return new WaitForEndOfFrame();
         }
     }
-
-    
 }
 
 
@@ -638,11 +653,12 @@ public class GameStart : State
 
         // Determine the winner
         DetermineWinner(playerGesture, computerGesture);
-        
-        
+
+
         //Debug.Log("GameStart ended");
         yield break;
     }
+
     // RUN FOR MULTIPLE FRAMES (COROUTINE?)
     // Use gestureDetect to recognize and return the player's gesture
     private Gesture? Recognize()
@@ -692,7 +708,7 @@ public class GameStart : State
             Gesture randomGesture = GestureDetect.Instance.gestures[randomGestureName];
             //Debug.Log(randomGesture.name);
             GesturePlayback.Instance.PlayGesture(randomGesture.name);
-            
+
             return randomGesture;
         }
         else
@@ -746,6 +762,7 @@ public class GameStart : State
         {
             StateMachine.SetState(new ExitState());
         }
+
         yield return null;
     }
 

@@ -423,9 +423,9 @@ public class GestureDetect : MonoBehaviour
             // Hand Menu works when handToRecord is hands[0] (the GhostHand)
             // hands[2] = OVRRightHandPrefab
             handToRecord = hands[0];
-            Debug.Log($"hands[0]: {hands[0].name}" );
+            /*Debug.Log($"hands[0]: {hands[0].name}" );
             Debug.Log($"hands[1]: {hands[1].name}" );
-            Debug.Log($"hands[2]: {hands[2].name}" );
+            Debug.Log($"hands[2]: {hands[2].name}" );*/
 
             if (handToRecord != null && handToRecord.Bones != null && handToRecord.Bones.Count > 0)
             {
