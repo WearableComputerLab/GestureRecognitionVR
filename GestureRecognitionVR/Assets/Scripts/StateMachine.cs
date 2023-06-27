@@ -38,7 +38,8 @@ public abstract class StateMachine : MonoBehaviour
         None,
         Record,
         ToGameScene,
-        ToMainScene
+        ToMainScene,
+        PlayAgain
     }
 }
 

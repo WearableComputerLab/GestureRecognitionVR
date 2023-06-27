@@ -12,6 +12,8 @@ public class GameStateMachine : StateMachine
     public static GameStateMachine Instance;
 
     public static string[] GameGestures = new[] { "rock", "paper", "scissors" };
+    
+    public GameObject playAgainButton;
 
     /// <summary>
     /// Runs before start to set up Singleton.
@@ -36,6 +38,11 @@ public class GameStateMachine : StateMachine
     public static void SetState(State state)
     {
         StateMachine.SetState(state, Instance);
+    }
+    
+    public void OnButtonPressed()
+    {
+        GestureDetect.Instance.currentAction = InputAction.PlayAgain;
     }
 }
 
@@ -166,13 +173,9 @@ public class GameStart : State
 
         // Determine the winner
         DetermineWinner(playerGesture.Value, computerGesture);
-
-
-        if (GestureDetect.Instance.currentAction == StateMachine.InputAction.ToMainScene)
-        {
-            GameStateMachine.SetState(new ToMainScene());
-            GestureDetect.Instance.currentAction = StateMachine.InputAction.None;
-        }
+        
+        
+        GameStateMachine.SetState(new GameWaiting());
     }
 
     // RUN FOR MULTIPLE FRAMES (COROUTINE?)
@@ -232,21 +235,37 @@ public class GameStart : State
             Debug.Log("\nComputer wins!");
         }
     }
+}
 
-    // Ask user to play again (TODO: change input to voice recog or BUTTONS? instead of Console.Readline (which is used as placeholder))
-    private IEnumerator PlayAgain()
+public class GameWaiting : State
+{
+    public override IEnumerator Start()
     {
-        Debug.Log("Do you want to play again? (yes/no)");
-        string input = Console.ReadLine().ToLower();
-        if (input == "yes")
-        {
-            MainStateMachine.SetState(new PreGame());
-        }
-        else
-        {
-            //MainStateMachine.SetState(new ExitState());
-        }
+        Debug.Log("Would you like to Play Again?");
+        yield break;
+    }
 
-        yield return null;
+    public override IEnumerator End()
+    {
+        GameStateMachine.Instance.playAgainButton.SetActive(true);
+        while (true)
+        {
+            if (GestureDetect.Instance.currentAction != StateMachine.InputAction.None)
+            {
+                break;
+            }
+        }
+        switch (GestureDetect.Instance.currentAction)
+        {
+            case StateMachine.InputAction.PlayAgain:
+                GameStateMachine.SetState(new PreGame());
+                GameStateMachine.Instance.playAgainButton.SetActive(false);
+                yield break;
+            case StateMachine.InputAction.ToMainScene:
+                GameStateMachine.SetState(new ToMainScene());
+                GestureDetect.Instance.currentAction = StateMachine.InputAction.None;
+                break;
+        }
     }
 }
+
