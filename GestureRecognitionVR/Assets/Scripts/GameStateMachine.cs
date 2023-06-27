@@ -25,18 +25,8 @@ public class GameStateMachine : StateMachine
         }
         else
         {
-            Destroy(Instance);
-            Instance = this;
-            //Destroy(this);
+            Destroy(this);
         }
-    }
-
-    /// <summary>
-    /// Starts Program in StartScene State
-    /// </summary>
-    private void Start()
-    {
-        SetState(new PreGame());
     }
 
     /// <summary>
@@ -49,7 +39,6 @@ public class GameStateMachine : StateMachine
     }
 }
 
-
 /// <summary>
 /// State that will deal with recording gestures for rock paper scissors game
 /// </summary>
@@ -57,13 +46,13 @@ public class PreGame : State
 {
     public override IEnumerator Start()
     {
-        GestureDetect.Instance.ReadGesturesFromJSON();
+        //GestureDetect.Instance.ReadGesturesFromJSON();
         GestureDetect.Instance.hands = GameObject.FindObjectsOfType<OVRSkeleton>();
         GestureDetect.Instance.FindHandToRecord();
         // TODO: Make these not debug logs but a nice notification or something on the table canvas
         yield break;
     }
-    
+
     public override IEnumerator End()
     {
         int foundLast = -1;
@@ -78,10 +67,10 @@ public class PreGame : State
             {
                 break;
             }
-            
+
             if (GestureDetect.Instance.currentAction == StateMachine.InputAction.ToMainScene)
             {
-                MainStateMachine.SetState(new ToMainScene());
+                break;
             }
 
             //Creates a list of found names based off of the names array involving rock, paper, scissors and stores when found.
@@ -97,9 +86,13 @@ public class PreGame : State
             yield return new WaitForEndOfFrame();
             if (found.Count == 3) break;
         }
-        
 
-        if (GestureDetect.Instance.userInput != "")
+        if (GestureDetect.Instance.currentAction == StateMachine.InputAction.ToMainScene)
+        {
+            GameStateMachine.SetState(new ToMainScene());
+            GestureDetect.Instance.currentAction = StateMachine.InputAction.None;
+        }
+        else if (GestureDetect.Instance.userInput != "")
         {
             string userInput = GestureDetect.Instance.userInput;
             GestureDetect.Instance.userInput = "";
@@ -148,20 +141,27 @@ public class GameStart : State
 
         // Recognize player gesture and get computer gesture
         Gesture? playerGesture = Recognize();
-        Gesture? computerGesture = GetComputerGesture();
+        Gesture computerGesture = GetComputerGesture();
+
+        if (playerGesture == null)
+        {
+            Debug.Log("Gesture not recognized.");
+            yield return new WaitForSeconds(5f);
+            GameStateMachine.SetState(new GameStart());
+            yield break;
+        }
 
         // Display player and computer gestures
-        Debug.Log($"Player: {playerGesture.Value.name} - Computer: {computerGesture.Value.name}");
+        Debug.Log($"Player: {playerGesture.Value.name} - Computer: {computerGesture.name}");
 
         // Determine the winner
-        DetermineWinner(playerGesture, computerGesture);
+        DetermineWinner(playerGesture.Value, computerGesture);
 
-        Debug.Log("Current Action in GameStart" + GestureDetect.Instance.currentAction);
         if (GestureDetect.Instance.currentAction == StateMachine.InputAction.ToMainScene)
         {
-            MainStateMachine.SetState(new ToMainScene());
+            GameStateMachine.SetState(new ToMainScene());
+            GestureDetect.Instance.currentAction = StateMachine.InputAction.None;
         }
-        Debug.Log("Current Action in GameStart 2" + GestureDetect.Instance.currentAction);
     }
 
     // RUN FOR MULTIPLE FRAMES (COROUTINE?)
@@ -170,88 +170,50 @@ public class GameStart : State
     {
         if (GestureDetect.Instance != null)
         {
-            Gesture? gesture = GestureDetect.Instance.Recognize(GestureDetect.Instance.gestures
-                .Where(g => GameStateMachine.GameGestures.Contains(g.Key)).ToDictionary(g => g.Key, g => g.Value));
-            Debug.Log(gesture.Value.name);
+            Dictionary<string, Gesture> x = GestureDetect.Instance.gestures
+                .Where(g => GameStateMachine.GameGestures.Contains(g.Key)).ToDictionary(g => g.Key, g => g.Value);
+            Gesture? gesture = GestureDetect.Instance.Recognize();
+            Debug.Log(x.Count);
 
-            if (gesture == null || gesture.Value.name != GameStateMachine.GameGestures[0] && gesture.Value.name != GameStateMachine.GameGestures[1] &&
-                gesture.Value.name != GameStateMachine.GameGestures[2])
-            {
-                Debug.Log("No gesture recognized.");
-                // Perform some action when no gesture is recognized (waiting state?)
-                MainStateMachine.SetState(new PreGame());
-            }
-            else
-            {
-                return gesture;
-            }
+            //Debug.Log(gesture.Value.name);
+            return gesture != null && GameStateMachine.GameGestures.Any(x => x == gesture.Value.name) ? gesture : null;
         }
-        else
-        {
-            Debug.Log("GestureDetect.Instance is null");
-        }
+
+        Debug.Log("GestureDetect.Instance is null");
 
         return null;
     }
 
     // GET THIS BEFORE COUNTDOWN?
     // Select random gesture (from rock paper or scissors) for computer and play it back using gesturePlayback
-    private Gesture? GetComputerGesture()
+    private Gesture GetComputerGesture()
     {
-        List<string> validGestures = new List<string>();
+        List<string> validGestures = GameStateMachine.GameGestures
+            .Where(gestureName => GestureDetect.Instance.gestures.ContainsKey(gestureName)).ToList();
 
-        // Find valid gestures from gestureDetect
-        foreach (string gestureName in GameStateMachine.GameGestures)
-        {
-            if (GestureDetect.Instance.gestures.ContainsKey(gestureName))
-            {
-                validGestures.Add(gestureName);
-            }
-        }
+        // Select a random gesture and play it using gesturePlayback
+        string randomGestureName = validGestures[UnityEngine.Random.Range(0, validGestures.Count)];
+        Gesture randomGesture = GestureDetect.Instance.gestures[randomGestureName];
+        //Debug.Log(randomGesture.name);
+        GesturePlayback.Instance.PlayGesture(randomGesture.name);
 
-        if (validGestures.Count > 0)
-        {
-            // Select a random gesture and play it using gesturePlayback
-            string randomGestureName = validGestures[UnityEngine.Random.Range(0, validGestures.Count)];
-            Gesture randomGesture = GestureDetect.Instance.gestures[randomGestureName];
-            //Debug.Log(randomGesture.name);
-            GesturePlayback.Instance.PlayGesture(randomGesture.name);
-
-            return randomGesture;
-        }
-        else
-        {
-            Debug.LogWarning("No valid gestures found for rock, paper, or scissors.");
-            return null;
-        }
+        return randomGesture;
     }
 
     // Logic to compare player and computer gestures and determine the winner
-    private void DetermineWinner(Gesture? playerGesture, Gesture? computerGesture)
+    private void DetermineWinner(Gesture playerGesture, Gesture computerGesture)
     {
         //If there isn't a player gesture, log error
-        if (playerGesture == null)
-        {
-            Debug.Log("\nInvalid player gesture!");
-            return;
-        }
-
-        //if there isn't a computer gesture, log error
-        if (computerGesture == null)
-        {
-            Debug.Log("\nInvalid computer gesture!");
-            return;
-        }
 
         //if player and computer gestures are the same, it's a tie
-        if (playerGesture.Value.name == computerGesture.Value.name)
+        if (playerGesture.name == computerGesture.name)
         {
             Debug.Log("\nIt's a tie!");
         }
         //If player gesture beats computer gesture, player wins
-        else if ((playerGesture.Value.name == "rock" && computerGesture.Value.name == "scissors") ||
-                 (playerGesture.Value.name == "paper" && computerGesture.Value.name == "rock") ||
-                 (playerGesture.Value.name == "scissors" && computerGesture.Value.name == "paper"))
+        else if ((playerGesture.name == "rock" && computerGesture.name == "scissors") ||
+                 (playerGesture.name == "paper" && computerGesture.name == "rock") ||
+                 (playerGesture.name == "scissors" && computerGesture.name == "paper"))
         {
             Debug.Log("\nPlayer wins!");
         }
@@ -273,26 +235,9 @@ public class GameStart : State
         }
         else
         {
-            MainStateMachine.SetState(new ExitState());
+            //MainStateMachine.SetState(new ExitState());
         }
 
         yield return null;
-    }
-
-    // Exit State when player does not want to play again (back to Waiting state)
-    private class ExitState : State
-    {
-        public override IEnumerator Start()
-        {
-            Debug.Log("Exiting game...");
-            yield break;
-        }
-
-        public override IEnumerator End()
-        {
-            yield return new WaitForSeconds(1f);
-            //TODO Scene reload
-            MainStateMachine.SetState(new Waiting());
-        }
     }
 }

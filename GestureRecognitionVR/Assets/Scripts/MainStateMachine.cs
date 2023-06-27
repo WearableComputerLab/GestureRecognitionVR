@@ -30,14 +30,14 @@ public class MainStateMachine : StateMachine
     {
         if (Instance == null)
         {
+            //Debug.Log("MainStateMachine Instance Created");
             DontDestroyOnLoad(gameObject);
             Instance = this;
         }
         else
         {
-            Destroy(Instance);
-            Instance = this;
-            //Destroy(this);
+            //Debug.Log("MainStateMachine Instance Destroyed");
+            Destroy(this);
         }
     }
 
@@ -73,7 +73,7 @@ public class StartScene : State
         GestureDetect.Instance.userMessage.text = "Welcome";
 
         //Read any previously saved Gestures from existing json data
-        GestureDetect.Instance.ReadGesturesFromJSON();
+        //GestureDetect.Instance.ReadGesturesFromJSON();
 
 
         //Set 3 default responses at startup
@@ -411,14 +411,21 @@ public class ToGameScene : State
     {
         //When appropriate button is pressed, move to Game Scene
         SceneManager.LoadScene("Scenes/Game");
+
+        if (GameStateMachine.Instance != null)
+        {
+            GameStateMachine.Instance.gameObject.SetActive(true);
+        }
+
         yield break;
     }
 
     public override IEnumerator End()
     {
         //Move into PreGame State after 1 second to ensure StateMachine has caught up (this number can change)
-        yield return new WaitForSeconds(1f);
-        MainStateMachine.SetState(new PreGame());
+        GameStateMachine.SetState(new PreGame());
+        MainStateMachine.Instance.gameObject.SetActive(false);
+        yield break;
     }
 }
 
@@ -430,18 +437,16 @@ public class ToMainScene : State
     public override IEnumerator Start()
     {
         //When appropriate button is pressed, move to Main Scene
-        Debug.Log("In ToMainScene");
         SceneManager.LoadScene("Scenes/Main");
-        Debug.Log("Moved Scene");
+        MainStateMachine.Instance.gameObject.SetActive(true);
         yield break;
     }
 
     public override IEnumerator End()
     {
-        //Move into Waiting State after 1 second to ensure StateMachine has caught up (this number can change)
-        yield return new WaitForSeconds(1f);
-        Debug.Log("Before Set State Waiting");
+        //Move into Waiting State
         MainStateMachine.SetState(new Waiting());
-        Debug.Log("After Set State Waiting");
+        GameStateMachine.Instance.gameObject.SetActive(false);
+        yield break;
     }
 }

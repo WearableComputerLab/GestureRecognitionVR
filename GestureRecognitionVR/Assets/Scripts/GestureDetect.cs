@@ -111,12 +111,14 @@ public class GestureDetect : MonoBehaviour
     /// <summary>
     /// Create List for Gestures
     /// </summary>
-    public Dictionary<string, Gesture> gestures;
+    public Dictionary<string, Gesture> gestures => _gestures ??= ReadGesturesFromJSON();
+
+    private Dictionary<string, Gesture> _gestures;
 
     /// <summary>
     /// Finds hand used to record gestures
     /// </summary>
-    [Header("Recording")][SerializeField] public OVRSkeleton handToRecord;
+    [Header("Recording")] [SerializeField] public OVRSkeleton handToRecord;
 
     /// <summary>
     /// NOTE: fingerBones is currently including all 24 bones in the hand
@@ -211,6 +213,7 @@ public class GestureDetect : MonoBehaviour
                 Destroy(this);
             }
         }
+
         if (SceneManager.GetActiveScene().name == "Game")
         {
             if (GameInstance == null)
@@ -256,12 +259,14 @@ public class GestureDetect : MonoBehaviour
         recordButton.SetActive(false);
         durationSlider.SetActive(true);
     }
-    
+
     public void OnPlayGameButtonPressed()
     {
-        Debug.Log(SceneManager.GetActiveScene().name);
-        currentAction = SceneManager.GetActiveScene().name == "Main" ? StateMachine.InputAction.ToGameScene: StateMachine.InputAction.ToMainScene;
-        Debug.Log("Current Action: " + currentAction);
+        //Debug.Log(SceneManager.GetActiveScene().name);
+        currentAction = SceneManager.GetActiveScene().name == "Main"
+            ? StateMachine.InputAction.ToGameScene
+            : StateMachine.InputAction.ToMainScene;
+        //Debug.Log("Current Action: " + currentAction);
     }
 
     public void OnDurationButtonPressed()
@@ -365,6 +370,7 @@ public class GestureDetect : MonoBehaviour
             Debug.LogWarning("No gestures recorded.");
             return;
         }
+
         // currentGestureIndex is used to cycle through recorded gestures
         currentGestureIndex++;
         //If end of gesture list is reached, start from the start
@@ -445,7 +451,10 @@ public class GestureDetect : MonoBehaviour
                 //Debug.Log("No hand detected");
             }
         }
-        else { Debug.Log("no hands"); }
+        else
+        {
+            Debug.Log("no hands");
+        }
     }
 
 
@@ -481,7 +490,7 @@ public class GestureDetect : MonoBehaviour
     /// <summary>
     /// Reads json data from existing json files, saves in gesture dictionary
     /// </summary>
-    public void ReadGesturesFromJSON()
+    public Dictionary<string, Gesture> ReadGesturesFromJSON()
     {
         string directory = Application.persistentDataPath + "/GestureRecognitionVR/";
         string saveFile = directory + "savedGestures.json";
@@ -490,11 +499,11 @@ public class GestureDetect : MonoBehaviour
         if (File.Exists(saveFile))
         {
             string contents = File.ReadAllText(saveFile);
-            gestures = JsonConvert.DeserializeObject<Dictionary<string, Gesture>>(contents);
+            return JsonConvert.DeserializeObject<Dictionary<string, Gesture>>(contents);
         }
         else
         {
-            gestures = new Dictionary<string, Gesture>();
+            return new Dictionary<string, Gesture>();
         }
     }
 
@@ -521,7 +530,8 @@ public class GestureDetect : MonoBehaviour
                 break;
             }
         }
-
+        Debug.Log("InRecognize "+gestures.Count);
+        
         // Create a dictionary to store finger bones by their bone names (a snapshot of the current position of the user's hand)
         Dictionary<string, OVRBone> fingerBonesDict = new Dictionary<string, OVRBone>();
 
@@ -580,7 +590,8 @@ public class GestureDetect : MonoBehaviour
                             Quaternion currentBoneRotation = fingerBonesDict[boneName].Transform.localRotation;
 
                             // Compare the position and rotation of the bones using the CompareBoneData method
-                            if (!CompareBoneData(gestureBonePosition, gestureBoneRotation, currentBonePosition, currentBoneRotation))
+                            if (!CompareBoneData(gestureBonePosition, gestureBoneRotation, currentBonePosition,
+                                    currentBoneRotation))
                             {
                                 discard = true;
                                 break;
@@ -591,7 +602,8 @@ public class GestureDetect : MonoBehaviour
                             float rotationAngle = Quaternion.Angle(currentBoneRotation, gestureBoneRotation);
 
                             // Check if the position or rotation distance exceeds the detection threshold
-                            if (positionDistance > detectionThresholdPosition || rotationAngle > detectionThresholdRotation)
+                            if (positionDistance > detectionThresholdPosition ||
+                                rotationAngle > detectionThresholdRotation)
                             {
                                 discard = true;
                                 break;
@@ -599,7 +611,6 @@ public class GestureDetect : MonoBehaviour
 
                             sumDistance += positionDistance + rotationAngle;
                         }
-
                     }
 
                     if (discard)
@@ -629,8 +640,10 @@ public class GestureDetect : MonoBehaviour
                         }
                         else if (motionCounter < kvp.Value.fingerData.Count)
                         {
-                            Dictionary<string, SerializedBoneData> motionFrameData = kvp.Value.fingerData[motionCounter];
-                            if (MatchMotionFrameData(frameData, motionFrameData, rightHand.transform.position, rightHand.transform.rotation))
+                            Dictionary<string, SerializedBoneData>
+                                motionFrameData = kvp.Value.fingerData[motionCounter];
+                            if (MatchMotionFrameData(frameData, motionFrameData, rightHand.transform.position,
+                                    rightHand.transform.rotation))
                             {
                                 motionCounter++;
                             }
@@ -654,7 +667,9 @@ public class GestureDetect : MonoBehaviour
     }
 
     // TODO: use HandPosition here to compare whole hand position across frames (introduce offset so position is independent of starting position)
-    private bool MatchMotionFrameData(Dictionary<string, SerializedBoneData> frameData, Dictionary<string, SerializedBoneData> motionFrameData, Vector3 currentHandPosition, Quaternion currentHandRotation)
+    private bool MatchMotionFrameData(Dictionary<string, SerializedBoneData> frameData,
+        Dictionary<string, SerializedBoneData> motionFrameData, Vector3 currentHandPosition,
+        Quaternion currentHandRotation)
     {
         // Get the initial hand position from the motion frame data // is this right? just put motionFrameData["HandPosition"].position in CompareHandPosition
         Vector3 initialHandPosition = motionFrameData["HandPosition"].position;
@@ -702,7 +717,8 @@ public class GestureDetect : MonoBehaviour
             Vector3 adjustedBonePosition = frameBoneData.position - translationOffset;
 
             // Compare the bone positions and rotations using the adjusted positions
-            if (!CompareBoneData(adjustedBonePosition, frameBoneData.rotation, motionBoneData.position, motionBoneData.rotation))
+            if (!CompareBoneData(adjustedBonePosition, frameBoneData.rotation, motionBoneData.position,
+                    motionBoneData.rotation))
             {
                 return false;
             }
@@ -734,7 +750,6 @@ public class GestureDetect : MonoBehaviour
     // Method to compare 2 different hand positions using detectionThreshold
     private bool CompareHandPosition(Vector3 handPosition1, Vector3 handPosition2, float detectionThreshold)
     {
-
         float positionDistance = Vector3.Distance(handPosition1, handPosition2);
 
         //Debug.Log($"Current Hand Position: {handPosition1}");
@@ -764,5 +779,4 @@ public class GestureDetect : MonoBehaviour
 
         return rotationAngle <= detectionThreshold;
     }
-
 }
