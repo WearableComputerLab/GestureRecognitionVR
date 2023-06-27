@@ -18,6 +18,7 @@ public class GestureGame : MonoBehaviour
        //StartCoroutine(PlayGame());
     }
 
+    // Runs through one round of the game, runs when button is pressed
     public IEnumerator PlayGame()
     {
         // Display welcome message
@@ -42,14 +43,13 @@ public class GestureGame : MonoBehaviour
 
         Gesture? playerGesture = null;
 
-
+        // Start looking for Users gesture for 1 second, set as playerGesture if recognized
         yield return StartCoroutine(RecognizeForDuration(1f, (gesture) =>
         {
             playerGesture = gesture;
         }));
 
-        // Recognize player gesture and get computer gesture
-        //Gesture? playerGesture = Recognize();
+        // Get computer gesture
         Gesture? computerGesture = GetComputerGesture();
 
         // Display player and computer gestures (if either are null display "none" to prevent null error)

@@ -310,6 +310,7 @@ public class GestureDetect : MonoBehaviour
             // Save each individual finger bone in fingerData
             Dictionary<string, SerializedBoneData> frameData = new Dictionary<string, SerializedBoneData>();
 
+            // Save every bone in hand as SerializedBoneData for json storage (name/position/rotation)
             foreach (OVRBone bone in fingerBones)
             {
                 string boneName = bone.Id.ToString();
@@ -322,7 +323,7 @@ public class GestureDetect : MonoBehaviour
                 frameData[boneName] = boneData;
             }
 
-            // Get the hand position and rotation data of hand being recorded
+            // Get the whole hand position and rotation data of hand being recorded
             Vector3 handPosition = rightHand.transform.position;
             Quaternion handRotation = rightHand.transform.rotation;
 
@@ -364,7 +365,7 @@ public class GestureDetect : MonoBehaviour
         GesturesToJSON();
     }
 
-
+    // SerializedBoneData is how Gestures are stored. Each individual hand bone is saved as this
     public class SerializedBoneData
     {
         public string boneName;
@@ -435,18 +436,6 @@ public class GestureDetect : MonoBehaviour
         }
     }
 
-    /*
-    private void OnValidate()
-    {
-        // update JSON if any changes to the gesture list have been made
-        if (gestures.list.Count > 0)
-        {
-            GesturesToJSON();
-        }
-    }
-    */
-
-
     //Starts the G1Routine when "Gesture 1" is recognised
     public void G1()
     {
@@ -502,7 +491,7 @@ public class GestureDetect : MonoBehaviour
         sphere.SetActive(false);
     }
 
-    // Check if current hand gesture is a recorded gesture TODO: make work
+    // Check if current hand gesture is a recorded gesture
     /*
       Start by iterating over each gesture, both motion and static gestures.
       For each gesture, compare the first frame of the recorded motion data with the current frame being played.
@@ -511,13 +500,14 @@ public class GestureDetect : MonoBehaviour
       For subsequent frames, compare the next frame of the recorded motion data with the current frame being played.
       If there is a match, increment the counter or progression value for the corresponding motion gesture.       
       If the current or next frame doesn't match the recorded motion data, reset the counter or progression value and continue checking for other gestures.
-   */ // Possibly use motionThreshold variable to accept gesture as recognized easier? OR change detectionThreshold when detecting motion.
-      // and what about whole hand world position?
+   */ 
 
     public Gesture? Recognize()
     {
         Gesture? currentGesture = null;
         float currentMin = Mathf.Infinity;
+
+        // motionCounter is how we keep track of how far into a motion gesture we recognize
         int motionCounter = 0;
 
         // Find the OVRRightHandPrefab in the hands array (the hand we'll be recognising)
@@ -605,11 +595,13 @@ public class GestureDetect : MonoBehaviour
                                 break;
                             }
 
+                            // Keep track of the sumDistance
                             sumDistance += positionDistance + rotationAngle;
                         }
 
                     }
 
+                    // If threshold is exceeded, its not a saved gesture
                     if (discard)
                     {
                         break;
@@ -618,7 +610,7 @@ public class GestureDetect : MonoBehaviour
                     // If it's a motion gesture, compare the frames and update the motion counter
                     if (isMotionGesture)
                     {
-                        // Separate Thresholds for Recognizing Motion Gestures (1f and 20f)
+                        // Separate Thresholds for Recognizing Motion Gestures (1f and 35f work)
                         detectionThresholdPosition = 1f;
                         detectionThresholdRotation = 35f;
 
@@ -627,14 +619,17 @@ public class GestureDetect : MonoBehaviour
 
                         //Debug.Log($"Counter: {motionCounter}");
                         //Debug.Log($"Gesture length: {kvp.Value.fingerData.Count}");
-                        // Debug.Log($"Threshold: {motionGestureThreshold}");
+                        //Debug.Log($"Threshold: {motionGestureThreshold}");
 
+                        // If motionCounter is more than 90% of the gesture length, consider it recognized
                         if (motionCounter >= motionGestureThreshold)
                         {
                             // Motion gesture has been matched completely
                             currentGesture = kvp.Value;
                             return currentGesture;
                         }
+
+                        // else continue to match motion frame data using MatchMotionFrameData method
                         else if (motionCounter < kvp.Value.fingerData.Count)
                         {
                             Dictionary<string, SerializedBoneData> motionFrameData = kvp.Value.fingerData[motionCounter];
@@ -661,13 +656,14 @@ public class GestureDetect : MonoBehaviour
         return currentGesture;
     }
 
-    // TODO: use HandPosition here to compare whole hand position across frames (introduce offset so position is independent of starting position)
+    // MatchMotionFrameData, takes current frameData (current hand position) and motionFrameData (frame at current motionCounter), as well as whole hand position and rotation
+    // Compares them to check if the frames match
     private bool MatchMotionFrameData(Dictionary<string, SerializedBoneData> frameData, Dictionary<string, SerializedBoneData> motionFrameData, Vector3 currentHandPosition, Quaternion currentHandRotation)
     {
-        // Get the initial hand position from the motion frame data // is this right? just put motionFrameData["HandPosition"].position in CompareHandPosition
+        // Get the initial hand position from the motion frame data // is this right? just put motionFrameData["HandPosition"].position in CompareHandPosition?
         Vector3 initialHandPosition = motionFrameData["HandPosition"].position;
 
-        // Calculate the translation offset
+        // Calculate the translation offset (so that hand position is relative to users)
         Vector3 translationOffset = currentHandPosition - initialHandPosition;
 
         // Compare the hand positions using the adjusted positions
@@ -719,7 +715,7 @@ public class GestureDetect : MonoBehaviour
         return true;
     }
 
-    // Compares the position and rotation values of two bones against detectionThreshold
+    // Compares the position and rotation values of two bones against appropriate detectionThreshold
     private bool CompareBoneData(Vector3 position1, Quaternion rotation1, Vector3 position2, Quaternion rotation2)
     {
         // Compare the bone positions
@@ -752,7 +748,7 @@ public class GestureDetect : MonoBehaviour
         return positionDistance <= detectionThreshold;
     }
 
-    // Method to compare 2 different hand rotations, change detectionThreshold to 50 degrees for whole hand rotations
+    // Method to compare 2 different hand rotations, change detectionThreshold to 48 degrees for whole hand rotations
     private bool CompareRotationData(Quaternion rotation1, Quaternion rotation2, float detectionThreshold)
     {
         detectionThreshold = 48f;

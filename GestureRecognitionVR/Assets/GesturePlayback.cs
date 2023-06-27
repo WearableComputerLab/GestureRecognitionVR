@@ -155,8 +155,6 @@ public class GesturePlayback : MonoBehaviour
                                     // Calculate the change in position based on the default bone position
                                     Vector3 positionChange = localPosition - finger.localPosition;
 
-                                    // TODO: Set the finger's position using Lerp for smooth interpolation between Gestures
-                                    // finger.localPosition = positionChange;
                                 }
                                 else
                                 {
