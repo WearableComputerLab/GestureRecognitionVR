@@ -656,8 +656,8 @@ public class GestureDetect : MonoBehaviour
         return currentGesture;
     }
 
-    // MatchMotionFrameData, takes current frameData (current hand position) and motionFrameData (frame at current motionCounter), as well as whole hand position and rotation
-    // Compares them to check if the frames match
+    // MatchMotionFrameData, takes current frameData (current frame) and motionFrameData (frame at current motionCounter), as well as users whole hand position and rotation
+    // Compares them to check if the frames match. Specifically, the Hand Positions and Rotations.
     private bool MatchMotionFrameData(Dictionary<string, SerializedBoneData> frameData, Dictionary<string, SerializedBoneData> motionFrameData, Vector3 currentHandPosition, Quaternion currentHandRotation)
     {
         // Get the initial hand position from the motion frame data // is this right? just put motionFrameData["HandPosition"].position in CompareHandPosition?
@@ -681,7 +681,7 @@ public class GestureDetect : MonoBehaviour
             return false;
         }
 
-        // Compare the bone positions and rotations
+        // Compare the bone positions and rotations between current frame and the frame the motionCounter is up to
         foreach (KeyValuePair<string, SerializedBoneData> kvp in motionFrameData)
         {
             string boneName = kvp.Key;
