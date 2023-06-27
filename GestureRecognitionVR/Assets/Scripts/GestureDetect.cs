@@ -259,7 +259,9 @@ public class GestureDetect : MonoBehaviour
     
     public void OnPlayGameButtonPressed()
     {
-        currentAction = SceneManager.GetActiveScene().name == "Main" ? StateMachine.InputAction.ToGameScene: StateMachine.InputAction.Return;
+        Debug.Log(SceneManager.GetActiveScene().name);
+        currentAction = SceneManager.GetActiveScene().name == "Main" ? StateMachine.InputAction.ToGameScene: StateMachine.InputAction.ToMainScene;
+        Debug.Log("Current Action: " + currentAction);
     }
 
     public void OnDurationButtonPressed()

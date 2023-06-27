@@ -20,9 +20,9 @@ MonoBehaviour:
     isPrivate: 1
     createdAt: 2023-04-02T20:21:52-0700
     trainingStatus: 1
-    lastTrainDuration: 47
-    lastTrainedAt: 2023-05-17T21:33:45-0700
-    nextTrainAt: 2023-05-17T21:32:58-0700
+    lastTrainDuration: 39
+    lastTrainedAt: 2023-06-26T17:20:42-0700
+    nextTrainAt: 2023-06-26T17:20:03-0700
     intents:
     - id: 913217826570276
       name: next
@@ -33,9 +33,30 @@ MonoBehaviour:
     - id: 969831814453487
       name: record
       entities:
+      - name: gestureName:gestureName
+        id: 1601748063640565
       - name: wit$duration:duration
         id: 187603800750873
     entities:
+    - name: gestureName
+      id: 839861710324111
+      lookups:
+      - free-text
+      - keywords
+      roles:
+      - name: gestureName
+        id: 1601748063640565
+      keywords:
+      - keyword: Paper
+        synonyms:
+        - paper
+      - keyword: Rock
+        synonyms:
+        - Rock
+      - keyword: Scissors
+        synonyms:
+        - rock
+        - scissors
     - name: wit$duration
       id: 535a80fb-4be9-4991-a48e-8b2ca4ef6e54
       lookups: []

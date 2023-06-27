@@ -30,11 +30,14 @@ public class MainStateMachine : StateMachine
     {
         if (Instance == null)
         {
+            DontDestroyOnLoad(gameObject);
             Instance = this;
         }
         else
         {
-            Destroy(this);
+            Destroy(Instance);
+            Instance = this;
+            //Destroy(this);
         }
     }
 
@@ -101,7 +104,7 @@ public class StartScene : State
 /// <summary>
 /// State that waits for other states to be referenced such as Record, Next Gesture, Previous Gesture and Recognizing Gestures. 
 /// </summary>
-public partial class Waiting : State
+public class Waiting : State
 {
     public override IEnumerator Start()
     {
@@ -171,7 +174,7 @@ public partial class Waiting : State
             case StateMachine.InputAction.ToGameScene:
                 MainStateMachine.SetState(new ToGameScene());
                 break;
-            case StateMachine.InputAction.Return:
+            case StateMachine.InputAction.ToMainScene:
                 MainStateMachine.SetState(new ToMainScene());
                 break;
             default:
@@ -413,25 +416,32 @@ public class ToGameScene : State
 
     public override IEnumerator End()
     {
-        //Move into PreGame State after 2 seconds to ensure StateMachine has caught up (this number can change)
-        yield return new WaitForSeconds(2f);
+        //Move into PreGame State after 1 second to ensure StateMachine has caught up (this number can change)
+        yield return new WaitForSeconds(1f);
         MainStateMachine.SetState(new PreGame());
     }
 }
 
+/// <summary>
+/// State that handles moving the scene from Game to Main when button pressed
+/// </summary>
 public class ToMainScene : State
 {
     public override IEnumerator Start()
     {
-        //When appropriate button is pressed, move to Game Scene
+        //When appropriate button is pressed, move to Main Scene
+        Debug.Log("In ToMainScene");
         SceneManager.LoadScene("Scenes/Main");
+        Debug.Log("Moved Scene");
         yield break;
     }
 
     public override IEnumerator End()
     {
-        //Move into PreGame State after 2 seconds to ensure StateMachine has caught up (this number can change)
-        yield return new WaitForSeconds(2f);
+        //Move into Waiting State after 1 second to ensure StateMachine has caught up (this number can change)
+        yield return new WaitForSeconds(1f);
+        Debug.Log("Before Set State Waiting");
         MainStateMachine.SetState(new Waiting());
+        Debug.Log("After Set State Waiting");
     }
 }

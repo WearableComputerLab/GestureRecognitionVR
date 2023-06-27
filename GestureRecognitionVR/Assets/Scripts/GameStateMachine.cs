@@ -10,9 +10,9 @@ public class GameStateMachine : StateMachine
     /// Singleton Instance of the State Machine
     /// </summary>
     public static GameStateMachine Instance;
-    
+
     public static string[] GameGestures = new[] { "rock", "paper", "scissors" };
-    
+
     /// <summary>
     /// Runs before start to set up Singleton.
     /// </summary>
@@ -20,14 +20,17 @@ public class GameStateMachine : StateMachine
     {
         if (Instance == null)
         {
+            DontDestroyOnLoad(gameObject);
             Instance = this;
         }
         else
         {
-            Destroy(this);
+            Destroy(Instance);
+            Instance = this;
+            //Destroy(this);
         }
     }
-    
+
     /// <summary>
     /// Starts Program in StartScene State
     /// </summary>
@@ -60,14 +63,11 @@ public class PreGame : State
         // TODO: Make these not debug logs but a nice notification or something on the table canvas
         yield break;
     }
-
-
+    
     public override IEnumerator End()
     {
-        yield return new WaitForSeconds(2f);
-        
         int foundLast = -1;
-        
+
         GestureDetect.Instance.userInput = "";
         GestureDetect.Instance.currentAction = StateMachine.InputAction.None;
 
@@ -78,8 +78,15 @@ public class PreGame : State
             {
                 break;
             }
+            
+            if (GestureDetect.Instance.currentAction == StateMachine.InputAction.ToMainScene)
+            {
+                MainStateMachine.SetState(new ToMainScene());
+            }
+
             //Creates a list of found names based off of the names array involving rock, paper, scissors and stores when found.
-            List<string> found = GameStateMachine.GameGestures.Where(name => GestureDetect.Instance.gestures.Any(gesture => gesture.Key.Equals(name))).ToList();
+            List<string> found = GameStateMachine.GameGestures
+                .Where(name => GestureDetect.Instance.gestures.Any(gesture => gesture.Key.Equals(name))).ToList();
 
             if (found.Count != foundLast)
                 foreach (string name in GameStateMachine.GameGestures)
@@ -90,6 +97,7 @@ public class PreGame : State
             yield return new WaitForEndOfFrame();
             if (found.Count == 3) break;
         }
+        
 
         if (GestureDetect.Instance.userInput != "")
         {
@@ -113,7 +121,6 @@ public class GameStart : State
     //TODO: Implement State for recording Rock, Paper and Scissors
     public override IEnumerator Start()
     {
-        Debug.Log("Game time started");
         yield break;
     }
 
@@ -149,9 +156,12 @@ public class GameStart : State
         // Determine the winner
         DetermineWinner(playerGesture, computerGesture);
 
-
-        //Debug.Log("GameStart ended");
-        yield break;
+        Debug.Log("Current Action in GameStart" + GestureDetect.Instance.currentAction);
+        if (GestureDetect.Instance.currentAction == StateMachine.InputAction.ToMainScene)
+        {
+            MainStateMachine.SetState(new ToMainScene());
+        }
+        Debug.Log("Current Action in GameStart 2" + GestureDetect.Instance.currentAction);
     }
 
     // RUN FOR MULTIPLE FRAMES (COROUTINE?)
@@ -160,12 +170,16 @@ public class GameStart : State
     {
         if (GestureDetect.Instance != null)
         {
-            Gesture? gesture = GestureDetect.Instance.Recognize(GestureDetect.Instance.gestures.Where(g=>GameStateMachine.GameGestures.Contains(g.Key)).ToDictionary(g=> g.Key, g => g.Value));
-            if (gesture == null)
+            Gesture? gesture = GestureDetect.Instance.Recognize(GestureDetect.Instance.gestures
+                .Where(g => GameStateMachine.GameGestures.Contains(g.Key)).ToDictionary(g => g.Key, g => g.Value));
+            Debug.Log(gesture.Value.name);
+
+            if (gesture == null || gesture.Value.name != GameStateMachine.GameGestures[0] && gesture.Value.name != GameStateMachine.GameGestures[1] &&
+                gesture.Value.name != GameStateMachine.GameGestures[2])
             {
                 Debug.Log("No gesture recognized.");
                 // Perform some action when no gesture is recognized (waiting state?)
-                MainStateMachine.SetState(new ExitState());
+                MainStateMachine.SetState(new PreGame());
             }
             else
             {
@@ -271,7 +285,7 @@ public class GameStart : State
         public override IEnumerator Start()
         {
             Debug.Log("Exiting game...");
-            yield return null;
+            yield break;
         }
 
         public override IEnumerator End()
