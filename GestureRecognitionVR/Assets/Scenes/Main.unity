@@ -4735,7 +4735,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   handModel: {fileID: 1923444200}
   hand_R: {fileID: 1923444201}
-  gestureDetect: {fileID: 1652884387}
   userMessage: {fileID: 1781209941}
   replayButton: {fileID: 304308732}
 --- !u!4 &805709333
@@ -5516,7 +5515,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1870938896605422, guid: 835e735ca71bf78459fb2cababd74112, type: 3}
       propertyPath: m_Name
-      value: OVRHandPrefab
+      value: OVRRightHandPrefab
       objectReference: {fileID: 0}
     - target: {fileID: 4453513310108136, guid: 835e735ca71bf78459fb2cababd74112, type: 3}
       propertyPath: m_RootOrder

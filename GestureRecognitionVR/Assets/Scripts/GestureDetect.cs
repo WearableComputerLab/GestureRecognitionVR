@@ -28,7 +28,7 @@ public struct Gesture
             if (_response == null)
             {
                 string rName = responseName;
-                _response = GestureDetect.Instance.responses.First(r => string.Equals(r.Name(),
+                _response = GestureDetect.Instance.responses.FirstOrDefault(r => string.Equals(r.Name(),
                     rName, StringComparison.CurrentCultureIgnoreCase));
             }
 
@@ -79,9 +79,7 @@ public class SerializableList<T>
 
 public class GestureDetect : MonoBehaviour
 {
-    public static GestureDetect MainInstance;
-    public static GestureDetect GameInstance;
-    public static GestureDetect Instance => SceneManager.GetActiveScene().name == "Main" ? MainInstance : GameInstance;
+    public static GestureDetect Instance;
 
     // TODO
     //public GameObject handModel;
@@ -99,9 +97,9 @@ public class GestureDetect : MonoBehaviour
     /// <summary>
     /// Set detectionThreshold. Smaller threshold = more precise hand detection. Set to 0.5.
     /// </summary>
-    private float detectionThresholdPosition = 0.5f;
+    private float detectionThresholdPosition = 1f;
 
-    private float detectionThresholdRotation = 10f;
+    private float detectionThresholdRotation = 20f;
 
     /// <summary>
     /// Hands to record
@@ -201,30 +199,14 @@ public class GestureDetect : MonoBehaviour
 
     public void Awake()
     {
-        if (SceneManager.GetActiveScene().name == "Main")
+        if (Instance == null)
         {
-            if (MainInstance == null)
-            {
-                MainInstance = this;
-            }
-            else
-            {
-                Debug.Log("Destroying 1");
-                Destroy(this);
-            }
+            DontDestroyOnLoad(gameObject);
+            Instance = this;
         }
-
-        if (SceneManager.GetActiveScene().name == "Game")
+        else
         {
-            if (GameInstance == null)
-            {
-                GameInstance = this;
-            }
-            else
-            {
-                Debug.Log("Destroying 2");
-                Destroy(this);
-            }
+            Destroy(this);
         }
     }
 
@@ -432,7 +414,7 @@ public class GestureDetect : MonoBehaviour
         {
             // Hand Menu works when handToRecord is hands[0] (the GhostHand)
             // hands[2] = OVRRightHandPrefab
-            handToRecord = hands[0];
+            handToRecord = hands.FirstOrDefault(hand => hand.transform.name == "OVRRightHandPrefab");
             /*Debug.Log($"hands[0]: {hands[0].name}" );
             Debug.Log($"hands[1]: {hands[1].name}" );
             Debug.Log($"hands[2]: {hands[2].name}" );*/
@@ -441,10 +423,6 @@ public class GestureDetect : MonoBehaviour
             {
                 // Need every bone in hand to determine local position of fingers
                 fingerBones = new List<OVRBone>(handToRecord.Bones);
-                foreach (OVRBone bone in handToRecord.Bones)
-                {
-                    Debug.Log(bone);
-                }
             }
             else
             {
@@ -520,18 +498,6 @@ public class GestureDetect : MonoBehaviour
         float currentMin = Mathf.Infinity;
         int motionCounter = 0;
 
-        // Find the OVRRightHandPrefab in the hands array (the hand we'll be recognising)
-        OVRSkeleton rightHand = null;
-        foreach (OVRSkeleton hand in hands)
-        {
-            if (hand.transform.name == "OVRRightHandPrefab")
-            {
-                rightHand = hand;
-                break;
-            }
-        }
-        Debug.Log("InRecognize "+gestures.Count);
-        
         // Create a dictionary to store finger bones by their bone names (a snapshot of the current position of the user's hand)
         Dictionary<string, OVRBone> fingerBonesDict = new Dictionary<string, OVRBone>();
 
@@ -540,7 +506,7 @@ public class GestureDetect : MonoBehaviour
         {
             string boneName = bone.Id.ToString();
             fingerBonesDict[boneName] = bone;
-            //Debug.Log(boneName);
+            
         }
 
         // Check that gesture is not currently being recorded, and that one second (delay) has passed from when gesture was recorded.
@@ -642,8 +608,8 @@ public class GestureDetect : MonoBehaviour
                         {
                             Dictionary<string, SerializedBoneData>
                                 motionFrameData = kvp.Value.fingerData[motionCounter];
-                            if (MatchMotionFrameData(frameData, motionFrameData, rightHand.transform.position,
-                                    rightHand.transform.rotation))
+                            if (MatchMotionFrameData(frameData, motionFrameData, handToRecord.transform.position,
+                                    handToRecord.transform.rotation))
                             {
                                 motionCounter++;
                             }
@@ -740,7 +706,9 @@ public class GestureDetect : MonoBehaviour
         // Compare the bone rotations
         if (Quaternion.Angle(rotation1, rotation2) > detectionThresholdRotation)
         {
-            //Debug.Log("Rotation don't match");
+            /*Debug.Log("Rotation don't match");
+            Debug.Log(rotation1.eulerAngles);
+            Debug.Log(rotation2.eulerAngles);*/
             return false;
         }
 

@@ -140,7 +140,17 @@ public class GameStart : State
         yield return new WaitForSeconds(1f);
 
         // Recognize player gesture and get computer gesture
-        Gesture? playerGesture = Recognize();
+        DateTime start = DateTime.Now;
+        Gesture? playerGesture = null;
+
+        while (true)
+        {
+            playerGesture = Recognize();
+            if (playerGesture != null || (DateTime.Now - start).TotalSeconds > 5)
+                break;
+            yield return new WaitForEndOfFrame();
+        }
+
         Gesture computerGesture = GetComputerGesture();
 
         if (playerGesture == null)
@@ -157,6 +167,7 @@ public class GameStart : State
         // Determine the winner
         DetermineWinner(playerGesture.Value, computerGesture);
 
+
         if (GestureDetect.Instance.currentAction == StateMachine.InputAction.ToMainScene)
         {
             GameStateMachine.SetState(new ToMainScene());
@@ -170,10 +181,8 @@ public class GameStart : State
     {
         if (GestureDetect.Instance != null)
         {
-            Dictionary<string, Gesture> x = GestureDetect.Instance.gestures
-                .Where(g => GameStateMachine.GameGestures.Contains(g.Key)).ToDictionary(g => g.Key, g => g.Value);
-            Gesture? gesture = GestureDetect.Instance.Recognize();
-            Debug.Log(x.Count);
+            Gesture? gesture = GestureDetect.Instance.Recognize(GestureDetect.Instance.gestures
+                .Where(g => GameStateMachine.GameGestures.Contains(g.Key)).ToDictionary(g => g.Key, g => g.Value));
 
             //Debug.Log(gesture.Value.name);
             return gesture != null && GameStateMachine.GameGestures.Any(x => x == gesture.Value.name) ? gesture : null;

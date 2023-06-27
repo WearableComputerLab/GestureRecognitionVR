@@ -8,13 +8,10 @@ using UnityEngine.SceneManagement;
 
 public class GesturePlayback : MonoBehaviour
 {
-    public static GesturePlayback MainInstance;
-    public static GesturePlayback GameInstance;
-    public static GesturePlayback Instance => SceneManager.GetActiveScene().name == "Main" ? MainInstance : GameInstance;
+    public static GesturePlayback Instance;
 
     public GameObject handModel;
     public Transform hand_R;
-    public GestureDetect gestureDetect;
 
     // Declare dictionaries to store default position/rotation values for each bone and whole hand model
     private Dictionary<string, Quaternion> defaultBoneRotations = new Dictionary<string, Quaternion>();
@@ -28,20 +25,17 @@ public class GesturePlayback : MonoBehaviour
     // Ensure only one instance of GesturePlayback
     public void Awake()
     {
-        string name = SceneManager.GetActiveScene().name;
-        if (name == "Main")
+        if (Instance == null)
         {
-            if (MainInstance == null)
-                MainInstance = this;
-            else
-                Destroy(this);
+            DontDestroyOnLoad(gameObject);
+            Instance = this;
         }
-        else if (name == "Game")
+        else
         {
-            if (GameInstance == null)
-                GameInstance = this;
-            else
-                Destroy(this);
+            Instance.handModel = handModel;
+            Debug.Log("Destroying");
+            Instance.hand_R = hand_R;
+            Destroy(this);
         }
     }
 
@@ -132,10 +126,10 @@ public class GesturePlayback : MonoBehaviour
         }
         userMessage.text = "Playing " + gestureName;
         // Check if the gestureDetect.gestures dictionary is not null and contains the specified gesture
-        if (gestureDetect.gestures != null && gestureDetect.gestures.ContainsKey(gestureName))
+        if (GestureDetect.Instance.gestures != null && GestureDetect.Instance.gestures.ContainsKey(gestureName))
         {
             handModel.SetActive(true);
-            Gesture currentGesture = gestureDetect.gestures[gestureName];
+            Gesture currentGesture = GestureDetect.Instance.gestures[gestureName];
             Debug.Log($"Playing Gesture: {currentGesture.name}");
 
             // Check if it's a motion gesture
@@ -213,7 +207,7 @@ public class GesturePlayback : MonoBehaviour
         }
         else
         {
-            if (gestureDetect.gestures == null)
+            if (GestureDetect.Instance.gestures == null)
             {
                 Debug.LogWarning("gestureDetect.gestures dictionary is null");
             }

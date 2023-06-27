@@ -157,7 +157,10 @@ public class Waiting : State
                     $"Recognized: {GestureDetect.Instance.currentGesture.Value.name}";
                 GestureDetect.Instance.previousGesture = GestureDetect.Instance.currentGesture;
 
-                GestureDetect.Instance.currentGesture.Value.response.StartRoutine();
+                if (GestureDetect.Instance.currentGesture.Value.response != null)
+                {
+                    GestureDetect.Instance.currentGesture.Value.response.StartRoutine();
+                }
             }
 
             yield return new WaitForEndOfFrame();
