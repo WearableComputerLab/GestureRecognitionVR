@@ -39,16 +39,21 @@ public class GesturePlayback : MonoBehaviour
     }
 
     /// <summary>
-    /// TODO
+    /// Start Method:
+    /// - Hides replay button at start, add listener to ReplayGesture method
+    /// - Store the default position/rotation of the finger bones in model
+    /// - Set the start position/rotation of the whole hand model
+    /// - Calculates the forward-facing point on the palm relative to handToRecord
     /// </summary>
     private void Start()
     {
-        //Debug.Log("STARTED!!");
+        // Hide replay button at start, add listener to ReplayGesture method
         if (replayButton != null)
         {
             replayButton.gameObject.SetActive(false);
             replayButton.OnClick.AddListener(ReplayGesture);
         }
+
         // Store the default position/rotation of the finger bones in model for reference
         InitializeDefaultModelPositions();
         InitializeDefaultModelRotations();
@@ -73,26 +78,41 @@ public class GesturePlayback : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// ReplayGesture Method:
+    /// - Plays the current motion gesture again
+    /// <summary>
     private void ReplayGesture()
     {
         PlayGesture(gestName);
     }
 
-    // Set the initial/default reference rotations for the hand model bones
+    /// <summary>
+    /// InitializeDefaultModelRotations Method:
+    /// - Set the initial/default reference rotations for the hand model bones
+    /// - Calls RecurseRotations with the parent hand bone, and defaultBoneRotations
+    /// <summary>
     private void InitializeDefaultModelRotations()
     {
         RecurseRotations(hand_R, defaultBoneRotations);
     }
 
-
-    // Set the initial/default reference positions for the hand model bones
+    /// <summary>
+    /// InitializeDefaultModelPositions Method:
+    /// - Set the initial/default reference positions for the hand model bones
+    /// - Calls RecursePositions with the parent hand bone, and defaultBonePositions
+    /// <summary>
     private void InitializeDefaultModelPositions()
     {
         RecursePositions(hand_R, defaultBonePositions);
     }
 
-
-    // Recursively set default rotations for finger bones
+    /// <summary>
+    /// RecurseRotations Method:
+    /// - Recursively set default rotations for finger bones
+    /// - Takes a bone (initially hand_R), and Dict of rotations (intially defaultBoneRotations)
+    /// - for each child in the parent bone, we loop through and get/set that bones rotation value
+    /// <summary>
     public void RecurseRotations(Transform bone, Dictionary<string, Quaternion> rotations)
     {
         rotations[bone.name] = GetBoneRotation(bone);
@@ -102,7 +122,12 @@ public class GesturePlayback : MonoBehaviour
         }
     }
 
-    // Recursively set default positions for finger bones
+    /// <summary>
+    /// RecursePositions Method:
+    /// - Recursively set default positions for finger bones
+    /// - Takes a bone (initially hand_R), and Dict of positions (intially defaultBonePositions)
+    /// - for each child in the parent bone, we loop through and get/set that bones position value
+    /// <summary>
     public void RecursePositions(Transform bone, Dictionary<string, Vector3> positions)
     {
         positions[bone.name] = GetBonePosition(bone);
@@ -113,16 +138,23 @@ public class GesturePlayback : MonoBehaviour
     }
 
     /// <summary>
-    /// TODO
+    /// PlayGesture Method:
+    /// - Is called when Next/Prev or Replay gesture button is pressed
+    /// - Takes current gesture name, finds that gesture in the gestures list
+    /// - Checks if its a motion or static gesture
+    /// - If static, iterate over each bone in each finger and map their position/rotation to the hand model
+    /// - If motion, start the PlayGesture Coroutine
     /// </summary>
     /// <param name="gestureName"></param>
     public void PlayGesture(string gestureName)
     {
         gestName = gestureName;
+
         if (replayButton != null)
         {
             replayButton.gameObject.SetActive(false);
         }
+
         userMessage.text = "Playing " + gestureName;
         // Check if the gestureDetect.gestures dictionary is not null and contains the specified gesture
         if (GestureDetect.Instance.gestures != null && GestureDetect.Instance.gestures.ContainsKey(gestureName))
@@ -170,8 +202,6 @@ public class GesturePlayback : MonoBehaviour
                                     // Calculate the change in position based on the default bone position
                                     Vector3 positionChange = localPosition - finger.localPosition;
 
-                                    // TODO: Set the finger's position using Lerp for smooth interpolation between Gestures
-                                    // finger.localPosition = positionChange;
                                 }
                                 else
                                 {
@@ -216,8 +246,21 @@ public class GesturePlayback : MonoBehaviour
         }
     }
 
-
-    // Coroutine to Playback Motion gestureDetect.gestures on the hand model
+    /// <summary>
+    /// PlayGestureCoroutine Method:
+    /// - Is called when playing back a motion gesture
+    /// - Saves hand models initial position/rotation
+    /// - Loops through each frame of the motion gesture
+    /// - for each frame we get the position/rotation of each finger bone
+    /// - Calculate the change in position and rotation relative to the finger's current position
+    /// - Calls MoveFingerCoroutine to move the fingers with Lerp
+    /// - Gets the current frame's HandPosition data
+    /// - Calculate rotation/scale offset so hand model plays back gesture facing the user
+    /// - Calculate change in position/rotation and calls MoveHandCoroutine to move hand with Lerp
+    /// - Sets replay button to active so user can replay the gesture
+    /// - Calls ResetHandModelCoroutine which returns hand to initial position ready for next gesture
+    /// </summary>
+    /// <param name="fingerData"></param>
     private IEnumerator PlayGestureCoroutine(List<Dictionary<string, SerializedBoneData>> fingerData)
     {
         Vector3 initialHandPosition = handModel.transform.position;
@@ -314,8 +357,18 @@ public class GesturePlayback : MonoBehaviour
         StartCoroutine(ResetHandModelCoroutine(initialHandPosition, initialHandRotation));
     }
 
-
-    // Coroutine for moving the whole hand model with Lerp during motion gesture playback
+    /// <summary>
+    /// MoveHandCoroutine Method:
+    /// - Saves current position/rotation of the hand model
+    /// - Calculates target rotation using rotationChange and initialRotation
+    /// - While the gesture continues, calculate t using elapsed time and duration for Lerp
+    /// - Calculate newPosition and newRotation values and set the hand model accordingly
+    /// - Ensure hand model reaches final position after playback
+    /// </summary>
+    /// <param name="handModel"></param>
+    /// <param name="positionChange"></param>
+    /// <param name="rotationChange"></param>
+    /// <param name="duration"></param>
     private IEnumerator MoveHandCoroutine(Transform handModel, Vector3 positionChange, Vector3 rotationChange, float duration)
     {
         float elapsedTime = 0f;
@@ -348,8 +401,13 @@ public class GesturePlayback : MonoBehaviour
         handModel.localRotation = initialRotation * Quaternion.Euler(rotationChange);
     }
 
-
-    // Coroutine called after playing back a motion gesture (PlayGestureCoroutine), which resets the hand models position
+    /// <summary>
+    /// ResetHandModelCoroutine Method:
+    /// - Coroutine called after playing back a motion gesture (PlayGestureCoroutine)
+    /// - Resets the hand models position and rotation ready for the next gesture
+    /// </summary>
+    /// <param name="initialHandPosition"></param>
+    /// <param name="initialHandRotation"></param>
     private IEnumerator ResetHandModelCoroutine(Vector3 initialHandPosition, Quaternion initialHandRotation)
     {
         // Delay for a short duration to allow any ongoing movements to complete
@@ -361,8 +419,17 @@ public class GesturePlayback : MonoBehaviour
 
     }
 
-
-    // Coroutine for moving each individual finger with Lerp during motion gesture playback
+    /// <summary>
+    /// MoveFingerCoroutine:
+    /// - Saves current position/rotation of finger
+    /// - Calculates target position/rotation using positionChange and rotationChange
+    /// - While the gesture continues, calculate t using elapsed time and duration for Lerp
+    /// - Set hand models finger localPosition and localRotation (local because its relative to the fingers parent)
+    /// </summary>
+    /// <param name="finger"></param>
+    /// <param name="positionChange"></param>
+    /// <param name="rotationChange"></param>
+    /// <param name="duration"></param>
     private IEnumerator MoveFingerCoroutine(Transform finger, Vector3 positionChange, Vector3 rotationChange, float duration)
     {
         float elapsedTime = 0f;
@@ -393,8 +460,11 @@ public class GesturePlayback : MonoBehaviour
         finger.localRotation = targetRotation;
     }
 
-
-    // Wrap Euler angles to the range of -180 to 180 degrees
+    /// <summary>
+    /// WrapEulerAngles:
+    /// - Helper method that wraps euler angles to the range of -180 to 180 degrees
+    /// </summary>
+    /// <param name="eulerAngles"></param>
     private Vector3 WrapEulerAngles(Vector3 eulerAngles)
     {
         return new Vector3(
@@ -404,8 +474,12 @@ public class GesturePlayback : MonoBehaviour
         );
     }
 
-
-    // For euler angles
+    /// <summary>
+    /// WrapAngle:
+    /// - Helper method that takes just one angle and wraps it
+    /// </summary>
+    /// <param name="angle"></param>
+    /// <returns></returns>
     private float WrapAngle(float angle)
     {
         // Make sure that we get value between (-360, 360], we cannot use here module of 180 and call it a day, because we would get wrong values
@@ -428,8 +502,11 @@ public class GesturePlayback : MonoBehaviour
     }
 
 
-
-    // Helper function to get the hierarchy of bones
+    /// <summary>
+    /// GetBoneHierarchy:
+    /// - Helper function for debugging that returns the bone hierarchy
+    /// </summary>
+    /// <param name="bone"></param>
     private string GetBoneHierarchy(Transform bone)
     {
         string hierarchy = bone.name;
@@ -443,8 +520,11 @@ public class GesturePlayback : MonoBehaviour
         return hierarchy;
     }
 
-
-    // Retrieve the default rotation value for a bone
+    /// <summary>
+    /// GetReferenceRotationForBone:
+    /// - Helper method which retrieves the default rotation value for a specific bone
+    /// </summary>
+    /// <param name="boneName"></param>
     private Quaternion GetReferenceRotationForBone(string boneName)
     {
         // Check if the bone name exists in the dictionary
@@ -458,7 +538,11 @@ public class GesturePlayback : MonoBehaviour
         }
     }
 
-    // Retrieve the Rotation of a given bone (used in Start() to get default rotation of hand model bones)
+    /// <summary>
+    /// GetBoneRotation:
+    /// - Retrieve the current rotation of a given bone (used in Start() to get default rotation of hand model bones)
+    /// </summary>
+    /// <param name="boneTransform"></param>
     private Quaternion GetBoneRotation(Transform boneTransform)
     {
 
@@ -471,7 +555,6 @@ public class GesturePlayback : MonoBehaviour
                 WrapAngle(boneTransform.localEulerAngles.z)
             );
 
-            //Debug.Log("Default Euler Angles for " + boneTransform.name + ": " + wrappedEulerAngles);
             return Quaternion.Euler(wrappedEulerAngles);
         }
         else
@@ -481,13 +564,11 @@ public class GesturePlayback : MonoBehaviour
         }
     }
 
-    private string VectorString(Vector3 toPrint)
-    {
-        return $"({toPrint.x},{toPrint.y},{toPrint.z})";
-    }
-
-
-    // Retrieve the default position value for a bone
+    /// <summary>
+    /// GetReferencePositionForBone:
+    /// - Helper method which retrieves the default position value for a specific bone
+    /// </summary>
+    /// <param name="boneName"></param>
     private Vector3 GetReferencePositionForBone(string boneName)
     {
         // Check if the bone name exists in the dictionary
@@ -501,18 +582,26 @@ public class GesturePlayback : MonoBehaviour
         }
     }
 
-    // Retrieve the position of a given bone (used in Start() to get default position of hand model bones)
+    /// <summary>
+    /// GetBoneRotation:
+    /// - Retrieve the current position of a given bone (used in Start() to get default position of hand model bones)
+    /// </summary>
+    /// <param name="boneTransform"></param>
     private Vector3 GetBonePosition(Transform boneTransform)
     {
         Vector3 localPosition = boneTransform.localPosition;
-        //Debug.Log("Default Position for " + boneTransform.name + ": " + VectorString(localPosition));
         return localPosition;
     }
 
-
-    // Recursive function to find the finger transform in the hand model hierarchy
+    /// <summary>
+    /// FindFingerTransform:
+    /// - Recursive function to find the finger transform in the hand model hierarchy
+    /// </summary>
+    /// <param name="parent"></param>
+    /// <param name="fingerName"></param>
     private Transform FindFingerTransform(Transform parent, string fingerName)
     {
+        // for each child in parent bone, check if name is correct, otherwise recurse and check again
         foreach (Transform child in parent)
         {
             if (child.name.Equals(fingerName))
@@ -530,93 +619,5 @@ public class GesturePlayback : MonoBehaviour
         return null;
     }
 
-    // Helper function to find the bone transform by name
-    private Transform FindBoneTransform(Transform parent, string boneName)
-    {
-        Transform bone = null;
-
-        // Iterate over each child transform of the parent
-        for (int i = 0; i < parent.childCount; i++)
-        {
-            Transform child = parent.GetChild(i);
-
-            // Debug log to see the child's name
-            // Debug.Log("Child name: " + child.name);
-
-            // Check if the child's name matches the boneName
-            if (child.name.Equals(boneName))
-            {
-                // Bone found!
-                bone = child;
-                break;
-            }
-            else
-            {
-                // Recursively search for the bone in the child's hierarchy
-                bone = FindBoneTransform(child, boneName);
-
-                // If bone is found, exit the loop
-                if (bone != null)
-                    break;
-            }
-        }
-
-        return bone;
-    }
-
-
-
-    // Recursively count the number of child bones under the finger transform
-    private int GetChildBoneCountRecursive(Transform fingerBone)
-    {
-        int count = 0;
-
-        // Check if the fingerBone has children
-        if (fingerBone.childCount > 0)
-        {
-            // Iterate through the children and count the bones
-            foreach (Transform child in fingerBone)
-            {
-                count++;
-                count += GetChildBoneCountRecursive(child); // Recursively count child bones
-            }
-        }
-
-        return count;
-    }
-
-    // Check if a transform represents a finger bone
-    bool IsFingerBone(Transform transform)
-    {
-        return transform.name.EndsWith("_R");
-    }
-
-
-    // Get the bone index based on a finger bone transform
-    private int GetBoneIndex(Transform boneTransform, List<Vector3> gestureBonePositions)
-    {
-        Vector3 bonePosition = boneTransform.position;
-        float minDistance = float.MaxValue;
-        int boneIndex = -1;
-
-        for (int i = 0; i < gestureBonePositions.Count; i++)
-        {
-            float distance = Vector3.Distance(bonePosition, gestureBonePositions[i]);
-            if (distance < minDistance)
-            {
-                minDistance = distance;
-                boneIndex = i;
-            }
-        }
-
-        if (boneIndex != -1)
-        {
-            return boneIndex;
-        }
-        else
-        {
-            Debug.LogWarning("Failed to find matching bone index for transform: " + boneTransform.name);
-            return -1; // or another appropriate default value
-        }
-    }
+    
 }
