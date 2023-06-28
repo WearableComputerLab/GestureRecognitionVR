@@ -42,7 +42,7 @@ public class GameStateMachine : StateMachine
     
     public void OnButtonPressed()
     {
-        GestureDetect.Instance.currentAction = InputAction.PlayAgain;
+        GestureDetect.Instance.currentAction = StateMachine.InputAction.PlayAgain;
     }
 }
 
@@ -118,9 +118,8 @@ public class PreGame : State
 /// </summary>
 public class GameStart : State
 {
-    public int playerScore = 0;
-
-    public int compScore = 0;
+    public int playerScore;
+    public int compScore;
     
     //TODO: Implement State for recording Rock, Paper and Scissors
     public override IEnumerator Start()
@@ -173,7 +172,7 @@ public class GameStart : State
             if (playerGesture == null)
             {
                 Debug.Log("Gesture not recognized.");
-                yield return new WaitForSeconds(5f);
+                yield return new WaitForSeconds(1f);
                 GameStateMachine.SetState(new GameStart());
                 yield break;
             }
@@ -186,8 +185,10 @@ public class GameStart : State
         }
 
         Debug.Log(playerScore == 2 ? "Player Wins!" : "Computer Wins!");
+        playerScore = 0;
+        compScore = 0;
 
-        //GameStateMachine.SetState(new GameWaiting());
+        GameStateMachine.SetState(new GameWaiting());
     }
 
     // RUN FOR MULTIPLE FRAMES (COROUTINE?)
@@ -272,12 +273,16 @@ public class GameWaiting : State
             {
                 break;
             }
+
+            yield return new WaitForEndOfFrame();
         }
+        Debug.Log(GestureDetect.Instance.currentAction);
         switch (GestureDetect.Instance.currentAction)
         {
             case StateMachine.InputAction.PlayAgain:
                 GameStateMachine.SetState(new PreGame());
                 GameStateMachine.Instance.playAgainButton.SetActive(false);
+                GestureDetect.Instance.currentAction = StateMachine.InputAction.None;
                 yield break;
             case StateMachine.InputAction.ToMainScene:
                 GameStateMachine.SetState(new ToMainScene());
