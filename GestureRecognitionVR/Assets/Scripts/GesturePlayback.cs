@@ -166,14 +166,11 @@ public class GesturePlayback : MonoBehaviour
             if (currentGesture.fingerData != null && currentGesture.fingerData.Count > 1)
             {
                 // It's a motion gesture
-                //Debug.Log("It's a motion gesture");
                 StartCoroutine(PlayGestureCoroutine(currentGesture.fingerData));
             }
             else if (currentGesture.fingerData != null)
             {
                 // It's a static gesture
-                //Debug.Log("It's a static gesture");
-
                 int frameIndex = 0;
 
                 // Iterate over each finger in the gesture data

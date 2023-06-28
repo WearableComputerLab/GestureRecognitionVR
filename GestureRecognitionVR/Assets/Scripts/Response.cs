@@ -1,26 +1,45 @@
 using UnityEngine;
 using System.Collections;
 
-
+/// <summary>
+/// Class for handling the responses to gestures
+/// </summary>
 public abstract class Response
 {
+    /// <summary>
+    /// Routine to be run when a gesture is recognised
+    /// </summary>
+    /// <returns></returns>
     protected abstract IEnumerator Routine();
 
+    /// <summary>
+    /// Name of the response
+    /// </summary>
+    /// <returns></returns>
     public abstract string Name();
 
+    /// <summary>
+    /// Runs the routine for the response
+    /// </summary>
     public void StartRoutine()
     {
         MainStateMachine.Instance.StartCoroutine(Routine());
     }
 }
 
-
+/// <summary>
+/// Response for when "Blue Cube" response gesture is recognised
+/// </summary>
 public class BlueCube : Response
 {
+    /// <summary>
+    /// Set name to Blue Cube
+    /// </summary>
+    /// <returns>Name</returns>
     public override string Name() => "Blue Cube";
 
     /// <summary>
-    /// When "Gesture 1" is recognised, change cube color to blue for 2 seconds, then back to red.
+    /// When a "Blue Cube" gesture is recognised, change cube color to blue for 2 seconds, then back to red.
     /// </summary>
     /// <returns>Returns a WaitForSeconds for 2 seconds</returns>
     protected override IEnumerator Routine()
@@ -28,17 +47,23 @@ public class BlueCube : Response
         Material material = GestureDetect.Instance.cubeRenderer.material;
         material.color = GestureDetect.Instance.newColour;
         yield return new WaitForSeconds(2);
-
         material.color = GestureDetect.Instance.oldColour;
     }
 }
 
+/// <summary>
+/// Response for when "Sphere" response gesture is recognised
+/// </summary>
 public class Sphere : Response
 {
+    /// <summary>
+    /// Set name to Sphere
+    /// </summary>
+    /// <returns></returns>
     public override string Name() => "Sphere";
 
     /// <summary>
-    /// When "Gesture 2" is recognised, change cube to a sphere for 2 seconds, then back to cube.
+    /// When a "Sphere" gesture is recognised, change cube to a sphere for 2 seconds, then back to cube.
     /// </summary>
     /// <returns>Returns a WaitForSeconds for 2 seconds</returns>
     protected override IEnumerator Routine()
@@ -54,12 +79,19 @@ public class Sphere : Response
     }
 }
 
+/// <summary>
+/// Response for when "Blue Cube and Sphere" response gesture is recognised
+/// </summary>
 public class BlueSphere : Response
 {
+    /// <summary>
+    /// Set name to Blue Cube and Sphere
+    /// </summary>
+    /// <returns></returns>
     public override string Name() => "Blue Cube and Sphere";
 
     /// <summary>
-    /// When "Gesture 3" is recognized, change cube color and change cube to sphere for 2 seconds, then back to original color and cube.
+    /// When "Blue Cube and Sphere" is recognized, change cube color and change cube to sphere for 2 seconds, then back to original color and cube.
     /// </summary>
     /// <returns>Returns a WaitForSeconds for 2 seconds</returns>
     protected override IEnumerator Routine()

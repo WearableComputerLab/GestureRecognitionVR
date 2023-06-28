@@ -9,8 +9,14 @@ using Microsoft.MixedReality.Toolkit.Utilities;
 using TMPro;
 using UnityEngine.SceneManagement;
 
+/// <summary>
+/// Class that handles the state machine for the application
+/// </summary>
 public class MainStateMachine : StateMachine
 {
+    /// <summary>
+    /// Voice button toggler
+    /// </summary>
     public ToggleButton activateVoiceButton;
 
     /// <summary>
@@ -18,8 +24,14 @@ public class MainStateMachine : StateMachine
     /// </summary>
     public static MainStateMachine Instance;
 
+    /// <summary>
+    /// App Voice Experience for naming and assigning response
+    /// </summary>
     public AppVoiceExperience appVoiceExperienceName;
 
+    /// <summary>
+    /// Text for Keyboard input
+    /// </summary>
     public TextMeshProUGUI currentText;
 
 
@@ -30,13 +42,11 @@ public class MainStateMachine : StateMachine
     {
         if (Instance == null)
         {
-            //Debug.Log("MainStateMachine Instance Created");
             DontDestroyOnLoad(gameObject);
             Instance = this;
         }
         else
         {
-            //Debug.Log("MainStateMachine Instance Destroyed");
             Destroy(this);
         }
     }
@@ -72,10 +82,6 @@ public class StartScene : State
     {
         GestureDetect.Instance.userMessage.text = "Welcome";
 
-        //Read any previously saved Gestures from existing json data
-        //GestureDetect.Instance.ReadGesturesFromJSON();
-
-
         //Set 3 default responses at startup
         GestureDetect.Instance.responses = new List<Response>()
         {
@@ -94,6 +100,10 @@ public class StartScene : State
         yield break;
     }
 
+    /// <summary>
+    /// Move into Waiting State
+    /// </summary>
+    /// <returns>New State</returns>
     public override IEnumerator End()
     {
         MainStateMachine.SetState(new Waiting());
@@ -111,12 +121,18 @@ public class Waiting : State
         yield break;
     }
 
+    /// <summary>
+    /// Waiting for other states to be referenced such as Record and Play Game, or for Next and Previous Buttons to be pressed.
+    /// </summary>
+    /// <returns>State Change</returns>
+    /// <exception cref="NotImplementedException">Should never reach</exception>
+    /// <exception cref="ArgumentOutOfRangeException">If currentAction is set to something that doesn't exist</exception>
     public override IEnumerator End()
     {
-        // Based on input, move to specified state
+        //Based on input, move to specified state
         while (true)
         {
-            //if the current action is not None, break out of the loop and move to the desired state
+            //If the current action is not None, break out of the loop and move to the desired state
             if (GestureDetect.Instance.currentAction != StateMachine.InputAction.None)
             {
                 break;
@@ -152,7 +168,6 @@ public class Waiting : State
                                   !GestureDetect.Instance.currentGesture.Value.Equals(GestureDetect.Instance
                                       .previousGesture.Value)))
             {
-                //Debug.Log("Gesture Recognized: " + GestureDetect.Instance.currentGesture.Value.name);
                 GestureDetect.Instance.userMessage.text =
                     $"Recognized: {GestureDetect.Instance.currentGesture.Value.name}";
                 GestureDetect.Instance.previousGesture = GestureDetect.Instance.currentGesture;
@@ -191,18 +206,31 @@ public class Waiting : State
 /// </summary>
 public class NameGesture : State
 {
+    /// <summary>
+    /// List holding finger data for the gesture
+    /// </summary>
     private List<Dictionary<string, SerializedBoneData>> fingerData;
 
+    /// <summary>
+    /// Constructor for NameGesture
+    /// </summary>
+    /// <param name="fingerData">Fingerdata saved from previous State</param>
     public NameGesture(List<Dictionary<string, SerializedBoneData>> fingerData)
     {
         this.fingerData = fingerData;
     }
 
+    /// <summary>
+    /// Keyboard for user input
+    /// </summary>
     private TouchScreenKeyboard _keyboard;
 
+    /// <summary>
+    /// Prompt user to name the gesture and open keyboard.
+    /// </summary>
+    /// <returns></returns>
     public override IEnumerator Start()
     {
-        //TODO: TTS or other to move away from Debug.Log?
         GestureDetect.Instance.appVoiceExperience.Deactivate();
         _keyboard = TouchScreenKeyboard.Open("", TouchScreenKeyboardType.Default,
             false, false, false, false, "Enter Name");
@@ -210,6 +238,10 @@ public class NameGesture : State
         yield break;
     }
 
+    /// <summary>
+    /// Waits for user to input a name for the gesture
+    /// </summary>
+    /// <returns></returns>
     public override IEnumerator End()
     {
         //Whilst the user input is empty, wait for user input
@@ -238,6 +270,7 @@ public class NameGesture : State
                     if (!_keyboard.active) _keyboard.active = true;
                     MainStateMachine.Instance.appVoiceExperienceName.Deactivate();
                     MainStateMachine.Instance.currentText.text = _keyboard.text;
+
                     //If Enter Button is pressed
                     if (_keyboard.status == TouchScreenKeyboard.Status.Done)
                     {
@@ -267,16 +300,36 @@ public class NameGesture : State
 /// </summary>
 public class SelectResponse : State
 {
+    /// <summary>
+    /// Finger data for the gesture
+    /// </summary>
     private List<Dictionary<string, SerializedBoneData>> fingerData;
+
+    /// <summary>
+    /// Name of the gesture
+    /// </summary>
     private string name;
+
+    /// <summary>
+    /// Buttons for each response
+    /// </summary>
     private List<GameObject> buttons;
 
+    /// <summary>
+    /// Constructor for SelectResponse
+    /// </summary>
+    /// <param name="fingerData">Fingerdata of gesture</param>
+    /// <param name="name">name of gesture</param>
     public SelectResponse(List<Dictionary<string, SerializedBoneData>> fingerData, string name)
     {
         this.fingerData = fingerData;
         this.name = name;
     }
 
+    /// <summary>
+    /// Resets Voice Experience, Creates Response Buttons and prompts user to select a response
+    /// </summary>
+    /// <returns>Response</returns>
     public override IEnumerator Start()
     {
         //TODO: TTS or similar for Debug.Log
@@ -312,6 +365,10 @@ public class SelectResponse : State
         yield break;
     }
 
+    /// <summary>
+    /// Waits for user to select a response and saves it
+    /// </summary>
+    /// <returns></returns>
     public override IEnumerator End()
     {
         Response r = null;
@@ -368,11 +425,33 @@ public class SelectResponse : State
 /// </summary>
 public class SaveGesture : State
 {
+    /// <summary>
+    /// finger data for the gesture
+    /// </summary>
     private List<Dictionary<string, SerializedBoneData>> fingerData;
+
+    /// <summary>
+    /// name of the gesture
+    /// </summary>
     private string name;
+
+    /// <summary>
+    /// response for the gesture
+    /// </summary>
     private Response response;
+
+    /// <summary>
+    /// Bool to check if this is the main scene
+    /// </summary>
     private bool isMain;
 
+    /// <summary>
+    /// Constructor for SaveGesture
+    /// </summary>
+    /// <param name="fingerData">Fingerdata of Gesture</param>
+    /// <param name="name">Name of Gesture</param>
+    /// <param name="response">Response of Gesture</param>
+    /// <param name="isMain">If Main Scene</param>
     public SaveGesture(List<Dictionary<string, SerializedBoneData>> fingerData, string name, Response response,
         bool isMain = true)
     {
@@ -382,6 +461,10 @@ public class SaveGesture : State
         this.isMain = isMain;
     }
 
+    /// <summary>
+    /// Saves the gesture into the dictionary
+    /// </summary>
+    /// <returns></returns>
     public override IEnumerator Start()
     {
         // Add gesture to Gesture List
@@ -390,6 +473,10 @@ public class SaveGesture : State
         yield break;
     }
 
+    /// <summary>
+    /// Checks if this is the main scene and moves to the appropriate state
+    /// </summary>
+    /// <returns></returns>
     public override IEnumerator End()
     {
         //Move back to Waiting
@@ -410,6 +497,10 @@ public class SaveGesture : State
 /// </summary>
 public class ToGameScene : State
 {
+    /// <summary>
+    /// Loads the Game Scene and activates the Game State Machine
+    /// </summary>
+    /// <returns>Scene</returns>
     public override IEnumerator Start()
     {
         //When appropriate button is pressed, move to Game Scene
@@ -423,6 +514,10 @@ public class ToGameScene : State
         yield break;
     }
 
+    /// <summary>
+    /// Moves to the PreGame State and deactivates the Main State Machine
+    /// </summary>
+    /// <returns>State</returns>
     public override IEnumerator End()
     {
         //Move into PreGame State after 1 second to ensure StateMachine has caught up (this number can change)
@@ -437,6 +532,10 @@ public class ToGameScene : State
 /// </summary>
 public class ToMainScene : State
 {
+    /// <summary>
+    /// Loads the Main Scene and activates the Main State Machine
+    /// </summary>
+    /// <returns></returns>
     public override IEnumerator Start()
     {
         //When appropriate button is pressed, move to Main Scene
@@ -445,6 +544,10 @@ public class ToMainScene : State
         yield break;
     }
 
+    /// <summary>
+    /// Moves to the Waiting State and deactivates the Game State Machine
+    /// </summary>
+    /// <returns></returns>
     public override IEnumerator End()
     {
         //Move into Waiting State

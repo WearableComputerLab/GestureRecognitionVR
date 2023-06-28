@@ -3,6 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Class dealing with default state machine
+/// </summary>
 public abstract class StateMachine : MonoBehaviour
 {
     /// <summary>
@@ -33,6 +36,9 @@ public abstract class StateMachine : MonoBehaviour
         yield return state.End();
     }
 
+    /// <summary>
+    /// Input Actions that can be performed by the State Machine
+    /// </summary>
     public enum InputAction
     {
         None,
@@ -55,7 +61,7 @@ public abstract class State
     public abstract IEnumerator Start();
 
     /// <summary>
-    /// 
+    /// Runs at the end of every State start to allow for functionality to be performed
     /// </summary>
     /// <returns></returns>
     public abstract IEnumerator End();
@@ -66,16 +72,29 @@ public abstract class State
 /// </summary>
 public class RecordStart : State
 {
+    /// <summary>
+    /// Name of the gesture being recorded
+    /// </summary>
     private string selectedName;
+    
+    /// <summary>
+    /// Duration of the recording
+    /// </summary>
     private float duration;
 
-    //If no name is passed, the gesture will be saved as a new gesture
+    /// <summary>
+    /// Assigns selectedName to name, defaulted to empty
+    /// </summary>
+    /// <param name="name">default empty</param>
     public RecordStart(string name = "")
     {
         selectedName = name;
     }
 
-    //on start, set the duration to the selected recording time (default float.MinValue) and countdown from 3
+    /// <summary>
+    /// On start, set the duration to the selected recording time (default float.MinValue) and countdown from 3
+    /// </summary>
+    /// <returns>moves to end</returns>
     public override IEnumerator Start()
     {
         duration = GestureDetect.Instance.selectedRecordingTime;
@@ -119,12 +138,20 @@ public class RecordStart : State
         return frameData;
     }
 
+    /// <summary>
+    /// Records the gesture data for the specified duration
+    /// </summary>
+    /// <returns>fingerdata</returns>
     public override IEnumerator End()
     {
+        //Set the selected recording time to the default
         GestureDetect.Instance.selectedRecordingTime = float.MinValue;
+        //Set the current action to none
         GestureDetect.Instance.currentAction = StateMachine.InputAction.None;
+        //Sets frame time to 1/20th of a second (20fps)
         const float frameTime = 1f / 20f;
 
+        //List of dictionaries to save the finger data
         List<Dictionary<string, SerializedBoneData>> fingerData = new List<Dictionary<string, SerializedBoneData>>();
 
         //If no name is passed, the gesture finger data will be saved
@@ -169,7 +196,6 @@ public class RecordStart : State
         //If name is not empty, save data for specific name
         else
         {
-            //TODO: If name is not "", prompt for whatever the name is, and reset to PlayGame state. !!Implement once rest of states are implemented!!
             Dictionary<string, SerializedBoneData> frameData = SaveFrame();
             fingerData.Add(frameData);
             GameStateMachine.SetState(new SaveGesture(fingerData, selectedName, null, false));

@@ -213,21 +213,28 @@ public class GestureDetect : MonoBehaviour
     public GameObject recordButton;
     public GameObject durationSlider;
 
+    /// <summary>
+    /// Disable Record Button and Enable Duration Slider when Record Button is pressed
+    /// </summary>
     public void OnRecordButtonPressed()
     {
         recordButton.SetActive(false);
         durationSlider.SetActive(true);
     }
 
+    /// <summary>
+    /// When Play Game Button is pressed, change currentAction to ToGameScene if in Main Scene, or ToMainScene if in Game Scene
+    /// </summary>
     public void OnPlayGameButtonPressed()
     {
-        //Debug.Log(SceneManager.GetActiveScene().name);
         currentAction = SceneManager.GetActiveScene().name == "Main"
             ? StateMachine.InputAction.ToGameScene
             : StateMachine.InputAction.ToMainScene;
-        //Debug.Log("Current Action: " + currentAction);
     }
 
+    /// <summary>
+    /// When Duration Button is pressed, change currentAction to Record
+    /// </summary>
     public void OnDurationButtonPressed()
     {
         currentAction = StateMachine.InputAction.Record;
@@ -249,6 +256,9 @@ public class GestureDetect : MonoBehaviour
     /// </summary>
     private string _voiceRecog;
 
+    /// <summary>
+    /// Set default currentAction to None
+    /// </summary>
     public StateMachine.InputAction currentAction = StateMachine.InputAction.None;
 
 
@@ -262,7 +272,6 @@ public class GestureDetect : MonoBehaviour
         //If the confidence exists and is higher than threshold
         if (float.TryParse(response["intents"][0]["confidence"], out float conf) && conf >= confidence)
         {
-            // Debug.Log(response["intents"][0]["name"].Value);
             //Switch for Intents
             switch (response["intents"][0]["name"].Value)
             {
@@ -287,20 +296,15 @@ public class GestureDetect : MonoBehaviour
 
                     currentAction = StateMachine.InputAction.Record;
                     selectedRecordingTime = timeNorm;
-
-                    // Save("Gesture 1", timeNorm);
-
                     break;
                 //If "Next" is recognised, call NextGesture function
                 case "next":
                     NextGesture();
                     break;
-
                 //If "Previous" is recognised, call PrevGesture function
                 case "previous":
                     PrevGesture();
                     break;
-
                 //If no command is recognised, log that the command is not recognised.
                 default:
                     Debug.Log("Command not recognised");
@@ -309,6 +313,9 @@ public class GestureDetect : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Getter and Setter for userInput
+    /// </summary>
     public string userInput
     {
         get { return _userInput; }
@@ -381,12 +388,12 @@ public class GestureDetect : MonoBehaviour
     /// <summary>
     /// TODO
     /// </summary>
-    public float UpdateFrequency = 0.05f; // 20 times per second (fine-tune along with frameTime in SaveGesture())
+    //public float UpdateFrequency = 0.05f; // 20 times per second (fine-tune along with frameTime in SaveGesture())
 
     /// <summary>
     /// TODO
     /// </summary>
-    public float lastUpdateTime;
+    //public float lastUpdateTime;
 
 
     /// <summary>
@@ -399,7 +406,7 @@ public class GestureDetect : MonoBehaviour
         {
             // Find OVRRightHandPrefab in hands[] array
             handToRecord = hands.FirstOrDefault(hand => hand.transform.name == "OVRRightHandPrefab");
-            
+
             if (handToRecord != null && handToRecord.Bones != null && handToRecord.Bones.Count > 0)
             {
                 // Need every bone in hand to determine local position of fingers
@@ -411,7 +418,6 @@ public class GestureDetect : MonoBehaviour
             Debug.Log("no hands");
         }
     }
-
 
     /// <summary>
     /// GesturesToJSON:
@@ -486,7 +492,6 @@ public class GestureDetect : MonoBehaviour
         Gesture? currentGesture = null;
         float currentMin = Mathf.Infinity;
         int motionCounter = 0;
-        
 
         // Create a dictionary to store finger bones by their bone names (a snapshot of the current position of the user's hand)
         Dictionary<string, OVRBone> fingerBonesDict = new Dictionary<string, OVRBone>();
@@ -496,12 +501,11 @@ public class GestureDetect : MonoBehaviour
         {
             string boneName = bone.Transform.name;
             fingerBonesDict[boneName] = bone;
-            
         }
 
         // Check that gesture is not currently being recorded, and that one second (delay) has passed from when gesture was recorded.
         if (!isRecording && Time.time > lastRecordTime + delay)
-        { 
+        {
             // Going through each saved Gesture
             foreach (KeyValuePair<string, Gesture> kvp in gestures)
             {
@@ -531,7 +535,6 @@ public class GestureDetect : MonoBehaviour
                             // Check if the bone name exists in the current frame data and in the user's hand bone data
                             if (!frameData.ContainsKey(boneName) || !fingerBonesDict.ContainsKey(boneName))
                             {
-                                //Debug.Log($"Bone: {boneName} not found in gesture or user's hand");
                                 discard = true;
                                 break;
                             }
@@ -614,6 +617,7 @@ public class GestureDetect : MonoBehaviour
                 }
             }
         }
+
         return currentGesture;
     }
 
