@@ -4299,7 +4299,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d765aba49e3718142be27880f2e071ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playAgainButton: {fileID: 0}
+  playAgainButton: {fileID: 1907412294}
 --- !u!4 &532758135
 Transform:
   m_ObjectHideFlags: 0

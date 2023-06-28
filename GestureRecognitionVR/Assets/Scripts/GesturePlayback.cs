@@ -33,7 +33,6 @@ public class GesturePlayback : MonoBehaviour
         else
         {
             Instance.handModel = handModel;
-            Debug.Log("Destroying");
             Instance.hand_R = hand_R;
             Destroy(this);
         }

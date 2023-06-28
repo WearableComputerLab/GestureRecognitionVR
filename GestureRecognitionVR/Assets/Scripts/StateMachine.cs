@@ -97,7 +97,7 @@ public class RecordStart : State
         // Save each individual finger bone in fingerData
         foreach (OVRBone bone in GestureDetect.Instance.fingerBones)
         {
-            string boneName = bone.Id.ToString();
+            string boneName = bone.Transform.name;
 
             SerializedBoneData boneData = new SerializedBoneData();
             boneData.boneName = bone.Transform.name;
@@ -108,8 +108,8 @@ public class RecordStart : State
         }
 
         // Add the hand position data to the frameData dictionary
-        Vector3 handPosition = GestureDetect.Instance.hands[2].transform.position;
-        Quaternion handRotation = GestureDetect.Instance.hands[2].transform.rotation;
+        Vector3 handPosition = GestureDetect.Instance.handToRecord.transform.position;
+        Quaternion handRotation = GestureDetect.Instance.handToRecord.transform.rotation;
         SerializedBoneData handData = new SerializedBoneData();
         handData.boneName = "hand_R";
         handData.position = handPosition;
