@@ -116,7 +116,7 @@ public class GestureDetect : MonoBehaviour
     /// <summary>
     /// Finds hand used to record gestures
     /// </summary>
-    [Header("Recording")] [SerializeField] public OVRSkeleton handToRecord;
+    [SerializeField] public OVRSkeleton handToRecord;
 
     /// <summary>
     /// NOTE: fingerBones is currently including all 24 bones in the hand
@@ -424,11 +424,6 @@ public class GestureDetect : MonoBehaviour
                 // Need every bone in hand to determine local position of fingers
                 fingerBones = new List<OVRBone>(handToRecord.Bones);
             }
-
-            foreach (OVRBone bone in handToRecord.Bones)
-            {
-                Debug.Log(bone);
-            }
         }
         else
         {
@@ -498,6 +493,7 @@ public class GestureDetect : MonoBehaviour
         Gesture? currentGesture = null;
         float currentMin = Mathf.Infinity;
         int motionCounter = 0;
+        
 
         // Create a dictionary to store finger bones by their bone names (a snapshot of the current position of the user's hand)
         Dictionary<string, OVRBone> fingerBonesDict = new Dictionary<string, OVRBone>();
@@ -505,15 +501,14 @@ public class GestureDetect : MonoBehaviour
         // Populate the fingerBonesDict dictionary with all bones in the current hand
         foreach (OVRBone bone in fingerBones)
         {
-            string boneName = bone.Id.ToString();
+            string boneName = bone.Transform.name;
             fingerBonesDict[boneName] = bone;
             
         }
 
         // Check that gesture is not currently being recorded, and that one second (delay) has passed from when gesture was recorded.
         if (!isRecording && Time.time > lastRecordTime + delay)
-        {
-            // Going through each saved Gesture
+        { // Going through each saved Gesture
             foreach (KeyValuePair<string, Gesture> kvp in gestures)
             {
                 Gesture gesture = kvp.Value;
@@ -629,7 +624,6 @@ public class GestureDetect : MonoBehaviour
                 }
             }
         }
-
         return currentGesture;
     }
 
