@@ -118,6 +118,10 @@ public class PreGame : State
 /// </summary>
 public class GameStart : State
 {
+    public int playerScore = 0;
+
+    public int compScore = 0;
+    
     //TODO: Implement State for recording Rock, Paper and Scissors
     public override IEnumerator Start()
     {
@@ -130,52 +134,60 @@ public class GameStart : State
         Debug.Log("Welcome to Rock Paper Scissors");
         yield return new WaitForSeconds(1f);
 
-        // Display countdown messages
-        Debug.Log("Get ready!");
-        yield return new WaitForSeconds(2f);
-
-        Debug.Log("Rock...");
-        yield return new WaitForSeconds(1f);
-
-        Debug.Log("Paper...");
-        yield return new WaitForSeconds(1f);
-
-        Debug.Log("Scissors...");
-        yield return new WaitForSeconds(1f);
-
-        Debug.Log("Go!");
-        yield return new WaitForSeconds(1f);
-
-        // Recognize player gesture and get computer gesture
-        DateTime start = DateTime.Now;
-        Gesture? playerGesture = null;
-
-        while (true)
+        while (playerScore != 2 || compScore != 2)
         {
-            playerGesture = Recognize();
-            if (playerGesture != null || (DateTime.Now - start).TotalSeconds > 5)
+            if (playerScore == 2 || compScore == 2)
+            {
                 break;
-            yield return new WaitForEndOfFrame();
+            }
+            // Display countdown messages
+            Debug.Log("Get ready!");
+            yield return new WaitForSeconds(2f);
+
+            Debug.Log("Rock...");
+            yield return new WaitForSeconds(1f);
+
+            Debug.Log("Paper...");
+            yield return new WaitForSeconds(1f);
+
+            Debug.Log("Scissors...");
+            yield return new WaitForSeconds(1f);
+
+            Debug.Log("Go!");
+            yield return new WaitForSeconds(1f);
+
+            // Recognize player gesture and get computer gesture
+            DateTime start = DateTime.Now;
+            Gesture? playerGesture = null;
+
+            while (true)
+            {
+                playerGesture = Recognize();
+                if (playerGesture != null || (DateTime.Now - start).TotalSeconds > 5)
+                    break;
+                yield return new WaitForEndOfFrame();
+            }
+
+            Gesture computerGesture = GetComputerGesture();
+
+            if (playerGesture == null)
+            {
+                Debug.Log("Gesture not recognized.");
+                yield return new WaitForSeconds(5f);
+                GameStateMachine.SetState(new GameStart());
+                yield break;
+            }
+
+            // Display player and computer gestures
+            Debug.Log($"Player: {playerGesture.Value.name} - Computer: {computerGesture.name}");
+
+            // Determine the winner
+            DetermineWinner(playerGesture.Value, computerGesture);
         }
 
-        Gesture computerGesture = GetComputerGesture();
+        Debug.Log(playerScore == 2 ? "Player Wins!" : "Computer Wins!");
 
-        if (playerGesture == null)
-        {
-            Debug.Log("Gesture not recognized.");
-            yield return new WaitForSeconds(5f);
-            GameStateMachine.SetState(new GameStart());
-            yield break;
-        }
-
-        // Display player and computer gestures
-        Debug.Log($"Player: {playerGesture.Value.name} - Computer: {computerGesture.name}");
-
-        // Determine the winner
-        DetermineWinner(playerGesture.Value, computerGesture);
-        
-        
-        GameStateMachine.SetState(new GameWaiting());
+        //GameStateMachine.SetState(new GameWaiting());
     }
 
     // RUN FOR MULTIPLE FRAMES (COROUTINE?)
@@ -227,12 +239,18 @@ public class GameStart : State
                  (playerGesture.name == "paper" && computerGesture.name == "rock") ||
                  (playerGesture.name == "scissors" && computerGesture.name == "paper"))
         {
-            Debug.Log("\nPlayer wins!");
+            Debug.Log("\nPlayer wins round!");
+            playerScore++;
+            Debug.Log($"Player Score: {playerScore}");
+            //PlayerText = $"Player: {playerScore}"
         }
         //Otherwise, computer wins
         else
         {
-            Debug.Log("\nComputer wins!");
+            Debug.Log("\nComputer wins round!");
+            compScore++;
+            Debug.Log($"Computer Score: {compScore}");
+            //CompText = //Text = $"Comp: {playerScore}"
         }
     }
 }
