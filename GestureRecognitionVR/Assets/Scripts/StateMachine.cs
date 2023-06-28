@@ -31,7 +31,7 @@ public abstract class StateMachine : MonoBehaviour
     /// <returns>Start and End WaitForEndOfFrame CoRoutine</returns>
     protected static IEnumerator ManageState(State state)
     {
-        Debug.Log($"Starting state: {state.GetType()}");
+        //Debug.Log($"Starting state: {state.GetType()}");
         yield return state.Start();
         yield return state.End();
     }
@@ -191,6 +191,7 @@ public class RecordStart : State
                 fingerData.Add(frameData);
             }
 
+            GestureDetect.Instance.appVoiceExperience.Deactivate();
             MainStateMachine.SetState(new NameGesture(fingerData));
         }
         //If name is not empty, save data for specific name

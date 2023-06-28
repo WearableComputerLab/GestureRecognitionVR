@@ -278,6 +278,7 @@ public class GameStart : State
         if (playerGesture.name == computerGesture.name)
         {
             Debug.Log("\nIt's a tie!");
+            Debug.Log($"Player Score: {playerScore}, Computer Score: {compScore}");
         }
         //If player gesture beats computer gesture, player wins
         else if ((playerGesture.name == "rock" && computerGesture.name == "scissors") ||
@@ -286,16 +287,14 @@ public class GameStart : State
         {
             Debug.Log("\nPlayer wins round!");
             playerScore++;
-            Debug.Log($"Player Score: {playerScore}");
-            //PlayerText = $"Player: {playerScore}"
+            Debug.Log($"Player Score: {playerScore}, Computer Score: {compScore}");
         }
         //Otherwise, computer wins
         else
         {
             Debug.Log("\nComputer wins round!");
             compScore++;
-            Debug.Log($"Computer Score: {compScore}");
-            //CompText = //Text = $"Comp: {playerScore}"
+            Debug.Log($"Player Score: {playerScore}, Computer Score: {compScore}");
         }
     }
 }

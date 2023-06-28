@@ -21,6 +21,9 @@ public struct Gesture
     [Newtonsoft.Json.JsonProperty] public string responseName;
     private Response _response;
 
+    /// <summary>
+    /// Getters and setters for response, primarily useful due to GameStateMachine recording not needing a response.
+    /// </summary>
     public Response response
     {
         get
@@ -37,6 +40,12 @@ public struct Gesture
         set { _response = value; }
     }
 
+    /// <summary>
+    /// Constructor for Gesture
+    /// </summary>
+    /// <param name="name">Name of Gesture</param>
+    /// <param name="fingerData">Finger Data of Gesture</param>
+    /// <param name="response">Response of Gesture</param>
     public Gesture(string name, List<Dictionary<string, SerializedBoneData>> fingerData, Response response)
     {
         this.name = name;
@@ -46,7 +55,7 @@ public struct Gesture
     }
 
     /// <summary>
-    /// TODO
+    /// Equals method for Gesture to assist the check if two Gestures are the same
     /// </summary>
     /// <param name="obj"></param>
     /// <returns></returns>
@@ -64,6 +73,9 @@ public struct Gesture
     }
 }
 
+/// <summary>
+/// Serialized Bone Data for Gesture, includes bone name, position and rotation
+/// </summary>
 public class SerializedBoneData
 {
     public string boneName;
@@ -80,8 +92,7 @@ public class SerializableList<T>
 public class GestureDetect : MonoBehaviour
 {
     public static GestureDetect Instance;
-
-    // TODO
+    
     //public GameObject handModel;
     public Microsoft.MixedReality.Toolkit.UI.Interactable nextButton;
     public Microsoft.MixedReality.Toolkit.UI.Interactable prevButton;
@@ -89,7 +100,6 @@ public class GestureDetect : MonoBehaviour
     public GesturePlayback gesturePlayback;
 
     /// <summary>
-    /// TODO: Set confidence back to 0.95f
     /// Confidence required for a voice command to be recognised
     /// </summary>
     public float confidence = 0.9f;
@@ -172,7 +182,7 @@ public class GestureDetect : MonoBehaviour
     [SerializeField] public GameObject cube2;
 
     /// <summary>
-    /// TODO
+    /// Sphere GameObject
     /// </summary>
     public GameObject sphere;
 
@@ -182,7 +192,7 @@ public class GestureDetect : MonoBehaviour
     public List<Response> responses;
 
     /// <summary>
-    /// TODO
+    /// Button Prefabs and Positions for Response Buttons
     /// </summary>
     [FormerlySerializedAs("gestureNamerPrefab")]
     public GameObject responseButtonPrefab;
@@ -197,6 +207,9 @@ public class GestureDetect : MonoBehaviour
 
     public SliderValue sliderValue;
 
+    /// <summary>
+    /// Singleton Pattern for GestureDetect
+    /// </summary>
     public void Awake()
     {
         if (Instance == null)
@@ -210,7 +223,14 @@ public class GestureDetect : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Button to Record Gesture
+    /// </summary>
     public GameObject recordButton;
+    
+    /// <summary>
+    /// Slider to select duration of recording
+    /// </summary>
     public GameObject durationSlider;
 
     /// <summary>
@@ -384,18 +404,7 @@ public class GestureDetect : MonoBehaviour
         string gestureName = currentGesture.name;
         gesturePlayback.PlayGesture(gestureName);
     }
-
-    /// <summary>
-    /// TODO
-    /// </summary>
-    //public float UpdateFrequency = 0.05f; // 20 times per second (fine-tune along with frameTime in SaveGesture())
-
-    /// <summary>
-    /// TODO
-    /// </summary>
-    //public float lastUpdateTime;
-
-
+    
     /// <summary>
     /// FindHandToRecord:
     /// - Finds the hand to record and sets finger bones for the hand
@@ -404,7 +413,7 @@ public class GestureDetect : MonoBehaviour
     {
         if (hands.Length > 0)
         {
-            // Find OVRRightHandPrefab in hands[] array
+            // Assigns the Hand to record to the right hand.
             handToRecord = hands.FirstOrDefault(hand => hand.transform.name == "OVRRightHandPrefab");
 
             if (handToRecord != null && handToRecord.Bones != null && handToRecord.Bones.Count > 0)

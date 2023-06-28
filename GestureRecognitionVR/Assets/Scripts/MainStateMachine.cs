@@ -75,7 +75,7 @@ public class MainStateMachine : StateMachine
 public class StartScene : State
 {
     /// <summary>
-    /// Starts the application by reading in gestures from JSON and creating the Next and Previous buttons
+    /// Starts the application by setting up the responses and creating the Next and Previous buttons
     /// </summary>
     /// <returns></returns>
     public override IEnumerator Start()
