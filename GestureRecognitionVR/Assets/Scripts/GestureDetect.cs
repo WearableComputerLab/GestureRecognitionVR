@@ -210,29 +210,6 @@ public class GestureDetect : MonoBehaviour
         }
     }
 
-    // Update is called once per frame (THIS WAS READDED)
-    //void Update()
-    //{
-    //    // Search for user Hands
-    //    hands = FindObjectsOfType<OVRSkeleton>();
-    //    Debug.Log(hands.Length);
-    //    FindHandToRecord();
-
-    //    //Debug.Log(handToRecord.transform.position);
-
-    //    // Check for Recognition (returns recognized Gesture if hand is in correct position)
-    //    currentGesture = Recognize();
-    //    bool hasRecognized = currentGesture.HasValue;
-
-    //    // Check if gesture is recognizable and new, log recognized gesture
-    //    if (hasRecognized && (!previousGesture.HasValue || !currentGesture.Value.Equals(previousGesture.Value)))
-    //    {
-    //        Debug.Log("Gesture Recognized: " + currentGesture.Value.name);
-    //        userMessage.text = $"Recognized: {currentGesture.Value.name}";
-    //        previousGesture = currentGesture;
-    //    }
-    //}
-
     public GameObject recordButton;
     public GameObject durationSlider;
 
@@ -342,7 +319,11 @@ public class GestureDetect : MonoBehaviour
 
 
     /// <summary>
-    /// TODO
+    /// NextGesture:
+    /// - Is run when nextButton is pressed
+    /// - Checks the gesture list and increments currentGestureIndex by one
+    /// - If the end of the gestures list is reached, it cycles back to the beginning
+    /// - Sends the gestureName of the gesture at currentGestureIndex to PlayGesture in GesturePlayback
     /// </summary>
     public void NextGesture()
     {
@@ -368,7 +349,11 @@ public class GestureDetect : MonoBehaviour
     }
 
     /// <summary>
-    /// TODO 
+    /// PrevGesture:
+    /// - Is run when prevButton is pressed
+    /// - Checks the gesture list and decreases currentGestureIndex by one
+    /// - If the beginning of the gestures list is reached, it cycles around to the end
+    /// - Sends the gestureName of the gesture at currentGestureIndex to PlayGesture in GesturePlayback
     /// </summary>
     public void PrevGesture()
     {
@@ -405,20 +390,16 @@ public class GestureDetect : MonoBehaviour
 
 
     /// <summary>
-    /// Find a hand to record and set finger bones for the hand
+    /// FindHandToRecord:
+    /// - Finds the hand to record and sets finger bones for the hand
     /// </summary>
     public void FindHandToRecord()
     {
-        //Debug.Log("Finding hand");
         if (hands.Length > 0)
         {
-            // Hand Menu works when handToRecord is hands[0] (the GhostHand)
-            // hands[2] = OVRRightHandPrefab
+            // Find OVRRightHandPrefab in hands[] array
             handToRecord = hands.FirstOrDefault(hand => hand.transform.name == "OVRRightHandPrefab");
-            /*Debug.Log($"hands[0]: {hands[0].name}" );
-            Debug.Log($"hands[1]: {hands[1].name}" );
-            Debug.Log($"hands[2]: {hands[2].name}" );*/
-
+            
             if (handToRecord != null && handToRecord.Bones != null && handToRecord.Bones.Count > 0)
             {
                 // Need every bone in hand to determine local position of fingers
@@ -433,7 +414,10 @@ public class GestureDetect : MonoBehaviour
 
 
     /// <summary>
-    /// Save gestures in Dictionary as JSON data for future use
+    /// GesturesToJSON:
+    /// - Save gestures in Dictionary as JSON data for future use
+    /// - Sets the directory and saveFile location/name
+    /// - If one doesnt exist it creates it, or overwrites if it exists
     /// </summary>
     public void GesturesToJSON()
     {
@@ -462,7 +446,10 @@ public class GestureDetect : MonoBehaviour
 
 
     /// <summary>
-    /// Reads json data from existing json files, saves in gesture dictionary
+    /// ReadGesturesFromJSON:
+    /// - Reads json data from existing json files, saves in gesture dictionary
+    /// - Finds json file at correct directory
+    /// - Deserializes data and saves those gestures in the gesture dict
     /// </summary>
     public Dictionary<string, Gesture> ReadGesturesFromJSON()
     {
@@ -483,12 +470,18 @@ public class GestureDetect : MonoBehaviour
 
 
     /// <summary>
-    /// TODO - LEWIS, COMMENT THIS CODE PLEASE
+    /// Recognize:
+    /// - Start by iterating over each gesture, both motion and static gestures.
+    /// - If static gesture, compare finger positions/rotations of current hand with saved gesture (CompareBoneData method)
+    /// - For motion gestures (isMotionGesture), compare the first frame of the recorded motion data with the current frame being played (MatchMotionGestures method).
+    /// - If there is a match, increase motionCounter to represent progression through that specific gesture.
+    /// - For subsequent frames, compare the next frame of the recorded motion data with the current frame being played.
+    /// - If there is a match, increment the counter for the corresponding motion gesture. 
+    /// - If the current or next frame doesn't match the recorded motion data, reset the counter or progression value and continue checking for other gestures.
     /// </summary>
-    /// <returns></returns>
     public Gesture? Recognize(Dictionary<string, Gesture> gestures = null)
     {
-        //Debug.Log("recognizin");
+        //Set gestures dict, set motionCounter to 0
         gestures ??= Instance.gestures;
         Gesture? currentGesture = null;
         float currentMin = Mathf.Infinity;
@@ -508,7 +501,8 @@ public class GestureDetect : MonoBehaviour
 
         // Check that gesture is not currently being recorded, and that one second (delay) has passed from when gesture was recorded.
         if (!isRecording && Time.time > lastRecordTime + delay)
-        { // Going through each saved Gesture
+        { 
+            // Going through each saved Gesture
             foreach (KeyValuePair<string, Gesture> kvp in gestures)
             {
                 Gesture gesture = kvp.Value;
@@ -590,10 +584,6 @@ public class GestureDetect : MonoBehaviour
                         // Threshold for how far into a motion gesture before it's recognized (90%)
                         int motionGestureThreshold = Mathf.CeilToInt(kvp.Value.fingerData.Count * 0.9f);
 
-                        //Debug.Log($"Counter: {motionCounter}");
-                        //Debug.Log($"Gesture length: {kvp.Value.fingerData.Count}");
-                        // Debug.Log($"Threshold: {motionGestureThreshold}");
-
                         if (motionCounter >= motionGestureThreshold)
                         {
                             // Motion gesture has been matched completely
@@ -627,12 +617,21 @@ public class GestureDetect : MonoBehaviour
         return currentGesture;
     }
 
-    // TODO: use HandPosition here to compare whole hand position across frames (introduce offset so position is independent of starting position)
+    /// <summary>
+    /// MatchMotionFrameData:
+    /// - Takes current frameData (current frame) and motionFrameData (frame at current motionCounter), as well as users whole hand position and rotation
+    /// - Compares them to check if the frames match (using CompareHandPosition, CompareRotationData & CompareBoneData methods).
+    /// </summary>
+    /// <param name="frameData"></param>
+    /// <param name="motionFrameData"></param>
+    /// <param name="currentHandPosition"></param>
+    /// <param name="currentHandRotation"></param>
+    /// <returns></returns>
     private bool MatchMotionFrameData(Dictionary<string, SerializedBoneData> frameData,
         Dictionary<string, SerializedBoneData> motionFrameData, Vector3 currentHandPosition,
         Quaternion currentHandRotation)
     {
-        // Get the initial hand position from the motion frame data // is this right? just put motionFrameData["HandPosition"].position in CompareHandPosition
+        // Get the initial hand position from the motion frame data
         Vector3 initialHandPosition = motionFrameData["HandPosition"].position;
 
         // Calculate the translation offset
@@ -688,52 +687,60 @@ public class GestureDetect : MonoBehaviour
         return true;
     }
 
-    // Compares the position and rotation values of two bones against detectionThreshold
+    /// <summary>
+    /// CompareBoneData:
+    /// - Compares the position and rotation values of two bones against appropriate detectionThreshold
+    /// </summary>
+    /// <param name="position1"></param>
+    /// <param name="rotation1"></param>
+    /// <param name="position2"></param>
+    /// <param name="rotation2"></param>
+    /// <returns></returns>
     private bool CompareBoneData(Vector3 position1, Quaternion rotation1, Vector3 position2, Quaternion rotation2)
     {
         // Compare the bone positions
         if (Vector3.Distance(position1, position2) > detectionThresholdPosition)
         {
-            //Debug.Log("Position don't match");
             return false;
         }
 
         // Compare the bone rotations
         if (Quaternion.Angle(rotation1, rotation2) > detectionThresholdRotation)
         {
-            /*Debug.Log("Rotation don't match");
-            Debug.Log(rotation1.eulerAngles);
-            Debug.Log(rotation2.eulerAngles);*/
             return false;
         }
 
         return true;
     }
 
-    // Method to compare 2 different hand positions using detectionThreshold
+    /// <summary>
+    /// CompareHandPosition:
+    /// - Method to compare 2 different hand positions using detectionThreshold
+    /// </summary>
+    /// <param name="handPosition1"></param>
+    /// <param name="handPosition2"></param>
+    /// <param name="detectionThreshold"></param>
     private bool CompareHandPosition(Vector3 handPosition1, Vector3 handPosition2, float detectionThreshold)
     {
         float positionDistance = Vector3.Distance(handPosition1, handPosition2);
 
-        //Debug.Log($"Current Hand Position: {handPosition1}");
-        //Debug.Log($"Saved Hand Position: {handPosition2}");
-        //Debug.Log($"Distance: {positionDistance}");
-
         return positionDistance <= detectionThreshold;
     }
 
-    // Method to compare 2 different hand rotations, change detectionThreshold to 50 degrees for whole hand rotations
+    /// <summary>
+    /// CompareRotationData:
+    /// - Method to compare 2 different hand rotations
+    /// - Change detectionThreshold to 50 degrees for whole hand rotations
+    /// </summary>
+    /// <param name="rotation1"></param>
+    /// <param name="rotation2"></param>
+    /// <param name="detectionThreshold"></param>
     private bool CompareRotationData(Quaternion rotation1, Quaternion rotation2, float detectionThreshold)
     {
         detectionThreshold = 50f;
 
         Quaternion deltaRotation = Quaternion.Inverse(rotation1) * rotation2;
         float rotationAngle = Quaternion.Angle(Quaternion.identity, deltaRotation);
-
-        //Debug.Log($"Current Hand Rotation: {rotation1}");
-        //Debug.Log($"Saved Hand Rotation: {rotation2}");
-        //Debug.Log($"Delta Rotation: {deltaRotation}");
-        //Debug.Log($"Angle: {rotationAngle}");
 
         if (rotationAngle > detectionThreshold)
         {
